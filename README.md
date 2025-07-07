@@ -146,7 +146,7 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 
 ##### 6. UML Diagram
 
-![UC-01: Run SAs - Including FE Import](./uml/uc_01.png)
+![UC-01: Run SAs - Including FE Import](./uml/UC_01.png)
 
 
 

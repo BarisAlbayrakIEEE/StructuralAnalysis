@@ -1,0 +1,5 @@
+{
+  "java.jdt.ls.java.home": "/usr/lib/jvm/java-11-openjdk-amd64",
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.format.settings.url": ".vscode/java-formatter.xml"
+}

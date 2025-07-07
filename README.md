@@ -1,3 +1,35 @@
+**Contents**
+1.   [About The Project](#sec1)
+2.   [Problem Definition: Stress Analysis of the Structural Components](#sec2)
+3.   [Software Design: Requirements, Limitations & Assumptions](#sec3)
+4.   [Software Design Summary](#sec4)
+5.   [Further Discussions](#sec5)
+
+## 1. About The Project <a id='sec1'></a>
+
+This project is a part of the repositories to illustrate my software engineering experience.
+This repository especially demonstrates my skills the software design.
+
+In the first section, I will start by describing the problem without diving into too much detail.
+Then, I will define the requirements, the limitations and the assumptions for the requested software.
+
+**Nomenclature**
+- **TODO:** TODO
+
+## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
+
+## 3. Software Design: Requirements, Limitations & Assumptions <a id='sec3'></a>
+
+## 4. Software Design Summary <a id='sec4'></a>
+
+## 5. Further Discussions <a id='sec5'></a>
+
+
+
+
+
+
+
 First of all, lets start with a discussion about the general aspects of a structural aanalysis application.
 Structural analysis is performed on the structural elements (e.g. panel and stiffener) against a number of the failure modes (e.g. materail failure and buckling).
 The variaty of the structural elements and the failure modes depends on the industry.

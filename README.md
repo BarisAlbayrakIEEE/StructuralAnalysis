@@ -23,6 +23,7 @@ Finally, I will discuss on the issues related to the design and architecture.
 - **SAA:** Structural Analysis Application
 - **SAE:** Structural Analysis Engineer (i.e. the user of the application)
 - **SAMM:** Structural Analysis Method & Module
+- **SAR:** Structural Analysis Result
 - **FE:** Finite Element
 - **FEM:** Finite Element Model
 - **FEA:** Finite Element Analysis
@@ -55,7 +56,7 @@ The **target software** aims to serve a *closed form stand-alone* solution for t
 This project defines the **framework** which would support the target software.
 
 Additionally, there are three terms which will be used frequently in this document:
-- **Reserve Factor (RF):** A unitless value to measure the inspection result obtained by comparing the current stiffness with the failure value
+- **Reserve Factor (RF):** A unitless value to measure the structural analysis result (SAR): the current stiffness / the critical stiffness
 - **Inspection:** The procedure to find the RF value of an SC for a given failure mode (FM)
 - **Sizing:** The procedure to determine the required properties of an SC to have an acceptable RF
 
@@ -122,9 +123,9 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 8. **UI** emits an event to activate the system for an analysis request with the selected dataset.
 9. **System** retrieves the FE data from the DAG corresponding to the requested dataset.
 10. **System** executes the SAMMs with the requested dataset.
-11. **System** creates the **Result** nodes in the DAG and links them to the requested dataset.
+11. **System** creates the SAR nodes in the DAG and links them to the requested dataset.
 12. **System** updates the states of the SCs as **up-to-date**.
-13. **System** emits an event to activate the UI for the states and results.
+13. **System** emits an event to activate the UI for the states and SARs.
 14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
@@ -148,7 +149,7 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 17. **UI** displays the error message for the erroneous SA.
 
 #### 3.1.4. Postconditions
-- The **Result** nodes for the successful SAs exist in the DAG.
+- The SAR nodes for the successful SAs exist in the DAG.
 - The RF in the current user form has the latest value if not erroneous.
 - UI reflects the updated state data.
 

@@ -17,8 +17,8 @@ if (Import error?) then (no)
     :[System] Execute SAMM;
 
     if (Computation error?) then (no)
-      :[System] Create DAG nodes for "Results";
-      :[System] Call [UI] to update the states and results;
+      :[System] Create DAG nodes for SARs;
+      :[System] Call [UI] to update the states and SARs;
       :[UI] Update states in SCT and RFs in the current form;
 
       stop;

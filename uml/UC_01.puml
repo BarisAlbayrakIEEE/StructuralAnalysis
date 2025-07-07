@@ -20,7 +20,6 @@ if (Import error?) then (no)
       :[System] Create DAG nodes for "Results";
       :[System] Call [UI] to update the states and results;
       :[UI] Update states in SCT and RFs in the current form;
-      stop
     else (yes)
       :[System] log;
       :[System] Set status to Error;
@@ -43,5 +42,7 @@ else (yes)
   :[UI] Show message;
   stop
 endif
+
+stop
 
 @enduml

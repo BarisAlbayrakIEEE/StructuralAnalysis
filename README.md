@@ -73,9 +73,9 @@ Besides, the size of the engineering team is another parameter due to the role d
 This application is the candidate to take place of excel in such conditions.
 In other words, the target customers is the large companies with projects containing large variaty of SCs managed by large teams of engineers.
 Hence, we can underline three points about the application:
-1. The application should manage large data
-2. The application should manage the configuration issues
-3. The application should manage the aspects of the multi-user model
+- **[Note 1]:** The application should manage large data
+- **[Note 2]:** The application should manage the configuration issues
+- **[Note 3]:** The application should manage the aspects of the multi-user model
 
 Additional to the above three, there is one more important point.
 The large companies in the industry have their own methods for the SAs and they dont want this data to be public.
@@ -83,9 +83,9 @@ Hence, they would like to embed their methods into the application themselves.
 This requires a plugin based software where the development of the structural analysis methods/modules (SAMMs) is left to the customer.
 Additionally, the companies may assign a team of structural engineers instead of the software engineers for the plugin development.
 This is quite common in the industry as the engineers are equipped with some level of software development skills.
-Hence, the design of the plugins must allow fast and easy development for the SAMMs:\
-4. A plugin based application in terms of the SAMMs\
-5. Define only the framework and leave SAMM development to the customer -> assume python for the SAMMs as it is the most well-known language
+Hence, the design of the plugins must allow fast and easy development for the SAMMs:
+- **[Note 4]:** A plugin based application in terms of the SAMMs
+- **[Note 5]:** Define only the framework and leave SAMMs to the customer -> assume python for the SAMMs as it is the most well-known language
 
 Next, I will go through the use-case, the process flow and the activity diagrams.
 

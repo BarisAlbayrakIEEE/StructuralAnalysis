@@ -56,10 +56,10 @@ This project defines the **framework** which would support the target software.
 
 Additionally, there are three terms which will be used frequently in this document:
 - **Reserve Factor (RF):** A unitless value to measure the inspection result obtained by comparing the current stiffness with the failure value
-- **Inspection:** The procedure to find the RF value of an SC
+- **Inspection:** The procedure to find the RF value of an SC for a given failure mode (FM)
 - **Sizing:** The procedure to determine the required properties of an SC to have an acceptable RF
 
-The target software should be capable of pereforming both of the inspection and the sizing procedures.
+The target software should be capable of performing both of the inspection and the sizing procedures.
 
 ## 3. Software Design: Requirements, Limitations & Assumptions <a id='sec3'></a>
 

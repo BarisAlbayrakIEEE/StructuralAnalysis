@@ -109,7 +109,7 @@ There are mainly two use case scenarios:
 I will demonstrate the former scenario.
 The later requires an existing DAG which is an issue related to the IO algorithms.
 
-**Main Flow**\
+**Main Flow**
 1. **SAE** selects to import an FE data with a predefined format.
 2. **UI** emits an event to activate the system for the FE data extraction.
 3. **System** creates the DAG corresponding to the FE data and links the DAG to the FE.

@@ -1,9 +1,9 @@
 **Contents**
-1.   [About The Project](#sec1)
-2.   [Problem Definition: Stress Analysis of the Structural Components](#sec2)
-3.   [Software Design: Requirements, Limitations & Assumptions](#sec3)
-4.   [Software Design Summary](#sec4)
-5.   [Further Discussions](#sec5)
+1. [About The Project](#sec1)
+2. [Problem Definition: Stress Analysis of the Structural Components](#sec2)
+3. [Software Design: Requirements, Limitations & Assumptions](#sec3)
+4. [Software Design Summary](#sec4)
+5. [Further Discussions](#sec5)
 
 ## 1. About The Project <a id='sec1'></a>
 
@@ -14,16 +14,23 @@ In the first section, I will start by describing the problem without diving into
 Then, I will define the requirements, the limitations and the assumptions for the requested software.
 
 **Nomenclature**
-- **SA:** Structural Analysis
-- **SAE:** Structural Analysis Engineer (i.e. the user of the application)
-- **SAMM:** Structural Analysis Method/Module
 - **SC:** Structural Component
+- **SA:** Structural Analysis of an SC
+- **SAA:** Structural Analysis Application
+- **SAE:** Structural Analysis Engineer (i.e. the user of the application)
+- **SAMM:** Structural Analysis Method & Module
 - **FE:** Finite Element
 - **FEM:** Finite Element Model
 - **FEA:** Finite Element Analysis
 - **CAE:** Computer Aided Engineering
 - **FM:** Failure Mode
+- **LC:** LoadCase
 - **RF:** Reserve Factor
+
+**CAUTION**\
+**This project defines only the core framework of an SAA.**
+**The other components (e.g. the UI) are excluded intensionally as I am not a frontend developer.**
+**However, I was involved such a project previously and implemented the UI and graphics interface using javascript with the help of Claude AI.**
 
 ## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
 
@@ -76,7 +83,206 @@ Hence, the design of the plugins must allow an easy development for the structur
 4. A plugin based application in terms of the SAMMs
 5. Define only the framework and leave SAMM development to the customer -> assume python for the SAMMs as it is the most well-known language
 
-**Functionality**\
+Next, I will go through the use-case, the process flow and the activity diagrams.
+
+### 3.1. Use Case Diagram <a id='sec31'></a>
+
+#### UC-01: Run SA - Including FE Import
+
+**Primary Actor:** SAE
+**Scope:** SAA
+**Level:** User goal  
+
+##### 1. Stakeholders and Interests
+- **SAE**: wants to inspect the SC under the FE extracted loads.
+- **Project Manager**: needs quick feedback on the analysis status.
+
+##### 2. Preconditions
+- the FE data pack (i.e. geometry, material and loading) with a predefined format exists.
+
+##### 3. Main Success Scenario (Basic Flow)
+1. **SAE** import an FE data containing the SCs to be inspected.
+2. **UI** emits an event to activate the system for the FE data extraction.
+3. **System** creates the DAG corresponding to the FE data and links the DAG to the FE.
+4. **System** emits an event to initialize the user forms and the graphics.
+5. **UI** initializes the user forms and the graphics.
+6. **SAE** selects the analysis dataset (i.e. SCs, LCs and SAMMs) from the component tree.
+7. **SAE** clicks **Run Analysis** to execute the SAs for the selected analysis dataset.
+8. **UI** emits an event to activate the system for an analysis request with the selected dataset.
+9. **System** retrieves the FE data from the DAG corresponding to the requested dataset.
+10. **System** executes the SAMMs with the requested dataset.
+11. **System** creates the **Result** nodes in the DAG and links them to the requested dataset.
+12. **System** updates the states of the SCs as **up-to-date**.
+13. **System** emits an event to wake up the UI.
+14. **UI** updates the RFs in the form of the active SC.
+15. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
+
+##### 4. Alternate Flows
+- **1a. Working with an existing DAG - 1**
+  - **SAE** opens a DAG from the harddisk or selects a DAG from the DB/PLM.
+- **3a. Working with an existing DAG - 2**
+  - **System** creates the DAG corresponding to the opened file or selected DB data.
+- **3b. Error: Error during FE import**
+  - **System** terminates the current process.
+  - **System** logs an error and sets status to **Error**.
+  - **System** emits an event to activate the UI to display the error message for the import failure.
+  - **UI** terminates the current process.
+  - **UI** displays the error message for the import failure.
+- **6a. Error: Missing data (the analysis dataset is incomplete)**  
+  - **System** terminates the current process.
+  - **System** emits an event to activate the UI to display the error message for the missing dataset.
+  - **UI** terminates the current process.
+  - **UI** displays the error message for the missing dataset.
+- **10a. Error: The computation fails**
+  - **System** logs an error for the erroneous SA.
+  - **System** sets status to **Error**.
+  - **System** waits until the remainning SAs finishes.
+  - **System** emits an event to activate the UI to display the error message for the erroneous SA.
+  - **UI** displays the error message for the erroneous SA.
+  - **UI** updates the RFs in the form of the active SC if not erroneous.
+  - **UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
+
+##### 5. Postconditions
+- The **Result** nodes exist in the DAG.
+- The RF in the current user form has the latest value.
+- UI reflects the updated state data.
+
+##### 6. UML Diagram
+
+```plantuml
+@startuml UC01_RunSAs
+actor "SAE" as SAE
+
+rectangle "SAA" {
+  SAE --> (Import FE Data)
+  SAE --> (Define Structural Elements)
+  SAE --> (Run SAs)
+  (Run SAs) --> (View Analysis Results)
+}
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3.2. Process Flow Diagram <a id='sec32'></a>
+
+
+
+### 3.3. Activity Diagram <a id='sec33'></a>
+
+
+
+
+
+
+
+
+
+
+
+
+## Use Cases
+
+### UC-01: Run Panel Analysis
+
+**Primary Actor:** Structural Engineer  
+**Scope:** Structural Analysis Application  
+**Level:** User goal  
+
+##### 1. Stakeholders and Interests
+- **Structural Engineer**: wants to verify panel strength under given loads.
+- **Project Manager**: needs quick feedback on analysis status.
+
+##### 2. Preconditions
+1. Finite‐element data has been imported.
+2. The panel element and at least one LoadCase exist in the DAG.
+3. Material properties are assigned to the panel.
+
+##### 3. Main Success Scenario (Basic Flow)
+1. **Engineer** selects a panel in the UI.
+2. **Engineer** clicks **Run Analysis**.
+3. **System** retrieves panel geometry, material, and load case from the DAG.
+4. **System** executes the panel‐buckling algorithm.
+5. **System** creates a **BucklingResult** node and links it to the panel.
+6. **System** updates the panel’s status to **Up-To-Date**.
+7. **UI** refreshes: RFs in the panel form update, and the panel’s tree node turns green.
+
+##### 4. Extensions (Alternate Flows)
+- **3a. Missing LoadCase**  
+  - If no load case is assigned, **System** prompts the engineer to select or create one.
+- **4a. Analysis Error**  
+  - If the computation fails, **System** logs an error, sets status to **Error**, and displays a message.
+
+##### 5. Postconditions
+- A **BucklingResult** exists in the DAG.
+- Panel node annotated with latest safety factor.
+- UI reflects new result and updated status.
+
+##### 6. UML Diagram
+
+```plantuml
+@startuml UC01_RunPanelAnalysis
+actor "Structural Engineer" as SE
+
+rectangle "Structural Analysis App" {
+  SE --> (Import FE Data)
+  SE --> (Define Structural Elements)
+  SE --> (Run Panel Analysis)
+  (Run Panel Analysis) --> (View Analysis Results)
+}
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

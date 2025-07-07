@@ -27,22 +27,22 @@ if (Import error?) then (no)
       :[System] Call [UI] for update and message;
       :[UI] Update for non-failed SAMMs;
       :[UI] Show message for failed SAMMs;
-      stop
+      stop;
     endif
   else (yes)
     :[System] Terminate SAMM run;
     :[System] Call [UI] for meassage;
     :[UI] Show message;
-    stop
+    stop;
   endif
 else (yes)
   :[System] Terminate FE import;
   :[System] log;
   :[System] Call [UI] for message;
   :[UI] Show message;
-  stop
+  stop;
 endif
 
-stop
+stop;
 
 @enduml

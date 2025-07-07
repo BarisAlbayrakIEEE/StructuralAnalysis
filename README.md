@@ -32,7 +32,7 @@ Finally, I will discuss on the issues related to the design and architecture.
 - **RF:** Reserve Factor
 
 **CAUTION**\
-**This project defines only the core framework of an SAA.**
+**This project defines only the core framework of a structural analysis application (SAA).**
 **The other components (e.g. the UI) are excluded intensionally as I am not a frontend developer.**
 **However, I was involved such a project previously and implemented the UI and graphics interface using javascript with the help of Claude AI.**
 

@@ -89,9 +89,9 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 
 #### UC-01: Run SAs - Including FE Import
 
-**Primary Actor:** SAE
-**Scope:** SAA
-**Level:** User goal  
+- **Primary Actor:** SAE
+- **Scope:** SAA
+- **Level:** User goal  
 
 ##### 1. Stakeholders and Interests
 - **SAE**: wants to inspect the SCs under the FE extracted loads.
@@ -171,9 +171,9 @@ rectangle "SAA" {
 
 #### UC-02: Run SA - Existing DAG
 
-**Primary Actor:** SAE
-**Scope:** SAA
-**Level:** User goal  
+- **Primary Actor:** SAE
+- **Scope:** SAA
+- **Level:** User goal  
 
 ##### 1. Stakeholders and Interests
 - **SAE**: wants to inspect the SCs already included in the existing DAG.
@@ -293,9 +293,9 @@ rectangle "SAA" {
 
 ### UC-01: Run Panel Analysis
 
-**Primary Actor:** Structural Engineer  
-**Scope:** Structural Analysis Application  
-**Level:** User goal  
+- **Primary Actor:** Structural Engineer  
+- **Scope:** Structural Analysis Application  
+- **Level:** User goal  
 
 ##### 1. Stakeholders and Interests
 - **Structural Engineer**: wants to verify panel strength under given loads.

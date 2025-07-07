@@ -16,18 +16,17 @@ if (Import error?) then (no)
   if (Dataset error?) then (no)
     :[System] Execute SAMM;
 
-    if (Computation error?) then (yes)
+    if (Computation error?) then (no)
+      :[System] Create DAG nodes for "Results";
+      :[System] Call [UI] to update the states and results;
+      :[UI] Update states in SCT and RFs in the current form;
+    else (yes)
       :[System] log;
       :[System] Set status to Error;
       :[System] Wait end of SAMM run;
       :[System] Call [UI] for update and message;
       :[UI] Update for non-failed SAMMs;
       :[UI] Show message for failed SAMMs;
-      stop
-    else (no)
-      :[System] Create DAG nodes for "Results";
-      :[System] Call [UI] to update the states and results;
-      :[UI] Update states in SCT and RFs in the current form;
     endif
   else (yes)
     :[System] Terminate SAMM run;

@@ -8,15 +8,42 @@
 ## 1. About The Project <a id='sec1'></a>
 
 This project is a part of the repositories to illustrate my software engineering experience.
-This repository especially demonstrates my skills the software design.
+This repository especially demonstrates my skills about the software design.
 
 In the first section, I will start by describing the problem without diving into too much detail.
 Then, I will define the requirements, the limitations and the assumptions for the requested software.
 
 **Nomenclature**
-- **TODO:** TODO
+- **FE:** Finite Element
+- **FEM:** Finite Element Model
+- **FEA:** Finite Element Analysis
+- **CAE:** Computer Aided Engineering
+- **RF:** Reserve Factor
 
 ## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
+
+There exist mainly two approaches in the inspection of the structural components:
+1. The analytical approach to inspect the components mainly based on the principles of *the strength of materials*, *fracture mechanics*, etc.
+2. The finite element (FE) approach to inspect the components based on the numerical methods
+
+The former relies on the theoretical and experimental rules and data while 
+the later performs numerical calculations based on some primitive physical laws.
+In other words, the FE approach relies on the power of the computers
+in order to replace the complex formulation of the analytical analysis with simple definitions.
+Having a simple formulation, the FE analysis can be applied on any problem **uniformly**.
+However, the cost of the uniform analysis interface is the requirement for a large computation power.
+In other words, an inspection handled in a few miliseconds by the analytical approach may take hours by an FE solver.
+Additionally, the FE approach contains some inevitable assumptions which results with the loss of the accuracy.
+
+The **target software** aims to serve a *closed form stand-alone* solution for the analytical approach.
+This project defines the **framework** which would support the target software.
+
+Additionally, there are three terms which will be used frequently in this document:
+- **Reserve Factor (RF):** A unitless value to measure the inspection result obtained by comparing the current stiffness with the failure value
+- **Inspection:** The procedure to find the RF value of a structural component
+- **Sizing:** The procedure to determine the required properties of a structural component to have an acceptable RF
+
+The target software should be capable of pereforming both of the inspection and the sizing procedures.
 
 ## 3. Software Design: Requirements, Limitations & Assumptions <a id='sec3'></a>
 

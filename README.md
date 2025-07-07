@@ -15,6 +15,8 @@ Then, I will define the requirements, the limitations and the assumptions for th
 
 **Nomenclature**
 - **SC:** Structural Component
+- **SCT:** Structural Component Tree
+- **SCTN:** Structural Component Tree Node
 - **SA:** Structural Analysis of an SC
 - **SAA:** Structural Analysis Application
 - **SAE:** Structural Analysis Engineer (i.e. the user of the application)
@@ -113,23 +115,20 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 10. **System** executes the SAMMs with the requested dataset.
 11. **System** creates the **Result** nodes in the DAG and links them to the requested dataset.
 12. **System** updates the states of the SCs as **up-to-date**.
-13. **System** emits an event to wake up the UI.
-14. **UI** updates the RFs in the form of the active SC.
-15. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
+13. **System** emits an event to activate the UI for the states and results.
+14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
 
 ##### 4. Alternate Flows
 ###### 4a. Error: Error during FE import
-3. **System** terminates the current process.
-4. **System** logs an error and sets status to **Error**.
+3. **System** terminates the the FE Import.
+4. **System** logs an error and sets the status to **Error**.
 5. **System** emits an event to activate the UI to display the error message for the import failure.
-6. **UI** terminates the current process.
-7. **UI** displays the error message for the import failure.
+6. **UI** displays the error message for the import failure.
 
 ###### 4b. Error: Missing data (the analysis dataset is incomplete)
-9. **System** terminates the current process.
+9. **System** terminates the SAMM run.
 10. **System** emits an event to activate the UI to display the error message for the missing dataset.
-11. **UI** terminates the current process.
-12. **UI** displays the error message for the missing dataset.
+11. **UI** displays the error message for the missing dataset.
 
 ###### 4c. Error: The computation fails
 11. **System** logs an error for the erroneous SA.
@@ -147,18 +146,8 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 
 ##### 6. UML Diagram
 
-```plantuml
-@startuml UC01_RunSAs
-actor "SAE" as SAE
+![UC-01: Run SAs - Including FE Import](uml/uc_01.svg)
 
-rectangle "SAA" {
-  SAE --> (Import FE Data)
-  SAE --> (Define Structural Elements)
-  SAE --> (Run SAs)
-  (Run SAs) --> (View Analysis Results)
-}
-@enduml
-```
 
 
 
@@ -195,9 +184,8 @@ rectangle "SAA" {
 10. **System** executes the SAMMs with the requested dataset.
 11. **System** creates the **Result** nodes in the DAG and links them to the requested dataset.
 12. **System** updates the states of the SCs as **up-to-date**.
-13. **System** emits an event to wake up the UI.
-14. **UI** updates the RFs in the form of the active SC.
-15. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
+13. **System** emits an event to activate the UI for the states and results.
+14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
 
 ###### 4a. Error: Missing data (the analysis dataset is incomplete)
 9. **System** terminates the current process.

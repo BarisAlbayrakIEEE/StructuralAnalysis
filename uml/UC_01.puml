@@ -44,6 +44,4 @@ else (yes)
   stop
 endif
 
-stop
-
 @enduml

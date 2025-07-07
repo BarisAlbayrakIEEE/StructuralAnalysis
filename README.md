@@ -83,7 +83,7 @@ Hence, they would like to embed their methods into the application themselves.
 This requires a plugin based software where the development of the structural analysis methods/modules (SAMMs) is left to the customer.
 Additionally, the companies may assign a team of structural engineers instead of the software engineers for the plugin development.
 This is quite common in the industry as the engineers are equipped with some level of software development skills.
-Hence, the design of the plugins must allow fast and easy development for the SAMMs:
+Hence, the design of the plugins must allow fast and easy development for the SAMMs:\
 4. A plugin based application in terms of the SAMMs
 5. Define only the framework and leave SAMM development to the customer -> assume python for the SAMMs as it is the most well-known language
 

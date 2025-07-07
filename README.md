@@ -129,24 +129,24 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
-- **3 System** terminates the the FE Import.
-- **4 System** logs an error and sets the status to **Error**.
-- **5 System** emits an event to activate the UI to display the error message for the import failure.
-- **6 UI** displays the error message for the import failure.
+- **3. System** terminates the the FE Import.
+- **4. System** logs an error and sets the status to **Error**.
+- **5. System** emits an event to activate the UI to display the error message for the import failure.
+- **6. UI** displays the error message for the import failure.
 
 **Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
-- **9 System** terminates the SAMM run.
-- **10 System** emits an event to activate the UI to display the error message for the missing dataset.
-- **11 UI** displays the error message for the missing dataset.
+- **9. System** terminates the SAMM run.
+- **10. System** emits an event to activate the UI to display the error message for the missing dataset.
+- **11. UI** displays the error message for the missing dataset.
 
 **Alternate Flows (Errors) - 3: The computation fails**
-- **11 System** logs an error for the erroneous SA.
-- **12 System** sets status to **Error**.
-- **13 System** waits until the remainning SAs finishes.
-- **14 System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
-- **15 UI** updates the RFs in the form of the active SC if not erroneous.
-- **16 UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
-- **17 UI** displays the error message for the erroneous SA.
+- **11. System** logs an error for the erroneous SA.
+- **12. System** sets status to **Error**.
+- **13. System** waits until the remainning SAs finishes.
+- **14. System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
+- **15. UI** updates the RFs in the form of the active SC if not erroneous.
+- **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
+- **17. UI** displays the error message for the erroneous SA.
 
 #### 3.1.4. Postconditions
 - The SAR nodes for the successful SAs exist in the DAG.

@@ -13,6 +13,8 @@ This repository especially demonstrates my skills about the software design.
 In the first section, I will start by describing the problem without diving into too much detail.
 Then, I will define the requirements, the limitations and the assumptions for the requested software.
 
+Finally, I will discuss on the issues related to the design and architecture.
+
 **Nomenclature**
 - **SC:** Structural Component
 - **SCT:** Structural Component Tree

@@ -89,20 +89,27 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 
 ### 3.1. Use Case Diagram <a id='sec31'></a>
 
-#### UC-01: Run SAs - Including FE Import
-
 - **Primary Actor:** SAE
 - **Scope:** SAA
 - **Level:** User goal  
 
-##### 1. Stakeholders and Interests
+#### 3.1.1. Stakeholders and Interests
 - **SAE**: wants to inspect the SCs under the FE extracted loads.
 - **Project Manager**: needs quick feedback on the analysis status.
 
-##### 2. Preconditions
+#### 3.1.2. Preconditions
 - an existing FE data pack with a predefined format including the geometry, material and loading exists.
 
-##### 3. Scenario
+#### 3.1.3. Scenarios
+
+There are mainly two use case scenarios:
+1. Zero-to-end scenario including the FE import
+2. DAG-to-end scenario where an existing DAG is requested to run SAMMs
+
+I will demonstrate the former scenario.
+The later requires an existing DAG which is an issue related to the IO algorithms.
+
+**Main Flow**\
 1. **SAE** selects to import an FE data with a predefined format.
 2. **UI** emits an event to activate the system for the FE data extraction.
 3. **System** creates the DAG corresponding to the FE data and links the DAG to the FE.
@@ -118,19 +125,18 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 13. **System** emits an event to activate the UI for the states and results.
 14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
 
-##### 4. Alternate Flows
-###### 4a. Error: Error during FE import
+**Alternate Flows (Errors) - 1: Error during FE import**
 3. **System** terminates the the FE Import.
 4. **System** logs an error and sets the status to **Error**.
 5. **System** emits an event to activate the UI to display the error message for the import failure.
 6. **UI** displays the error message for the import failure.
 
-###### 4b. Error: Missing data (the analysis dataset is incomplete)
+**Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
 9. **System** terminates the SAMM run.
 10. **System** emits an event to activate the UI to display the error message for the missing dataset.
 11. **UI** displays the error message for the missing dataset.
 
-###### 4c. Error: The computation fails
+**Alternate Flows (Errors) - 3: The computation fails**
 11. **System** logs an error for the erroneous SA.
 12. **System** sets status to **Error**.
 13. **System** waits until the remainning SAs finishes.
@@ -139,122 +145,14 @@ Next, I will go through the use-case, the process flow and the activity diagrams
 16. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
 17. **UI** displays the error message for the erroneous SA.
 
-##### 5. Postconditions
+#### 3.1.4. Postconditions
 - The **Result** nodes for the successful SAs exist in the DAG.
 - The RF in the current user form has the latest value if not erroneous.
 - UI reflects the updated state data.
 
-##### 6. UML Diagram
+#### 3.1.5. UML Diagram
 
 ![UC-01: Run SAs - Including FE Import](./uml/UC_01.png)
-
-
-
-
-
-
-
-
-
-
-
-#### UC-02: Run SA - Existing DAG
-
-- **Primary Actor:** SAE
-- **Scope:** SAA
-- **Level:** User goal  
-
-##### 1. Stakeholders and Interests
-- **SAE**: wants to inspect the SCs already included in the existing DAG.
-- **Project Manager**: needs quick feedback on the analysis status.
-
-##### 2. Preconditions
-- an existing DAG from a saved file or DB
-
-##### 3. Scenario
-1. **SAE** selects to open a DAG from a saved file or DB.
-2. **UI** emits an event to activate the system for the DAG construction.
-3. **System** creates the DAG corresponding to the selected DAG data.
-4. **System** emits an event to initialize the user forms and the graphics.
-5. **UI** initializes the user forms and the graphics.
-6. **SAE** selects the analysis dataset (i.e. SCs, LCs and SAMMs) from the component tree.
-7. **SAE** clicks **Run Analysis** to execute the SAs for the selected analysis dataset.
-8. **UI** emits an event to activate the system for an analysis request with the selected dataset.
-9. **System** retrieves the FE data from the DAG corresponding to the requested dataset.
-10. **System** executes the SAMMs with the requested dataset.
-11. **System** creates the **Result** nodes in the DAG and links them to the requested dataset.
-12. **System** updates the states of the SCs as **up-to-date**.
-13. **System** emits an event to activate the UI for the states and results.
-14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
-
-###### 4a. Error: Missing data (the analysis dataset is incomplete)
-9. **System** terminates the current process.
-10. **System** emits an event to activate the UI to display the error message for the missing dataset.
-11. **UI** terminates the current process.
-12. **UI** displays the error message for the missing dataset.
-
-###### 4b. Error: The computation fails
-11. **System** logs an error for the erroneous SA.
-12. **System** sets status to **Error**.
-13. **System** waits until the remainning SAs finishes.
-14. **System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
-15. **UI** updates the RFs in the form of the active SC if not erroneous.
-16. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
-17. **UI** displays the error message for the erroneous SA.
-
-##### 5. Postconditions
-- The **Result** nodes for the successful SAMMs exist in the DAG.
-- The RF in the current user form has the latest value if successful.
-- UI reflects the updated state data.
-
-##### 6. UML Diagram
-
-```plantuml
-@startuml UC01_RunSAs
-actor "SAE" as SAE
-
-rectangle "SAA" {
-  SAE --> (Import FE Data)
-  SAE --> (Define Structural Elements)
-  SAE --> (Run SAs)
-  (Run SAs) --> (View Analysis Results)
-}
-@enduml
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

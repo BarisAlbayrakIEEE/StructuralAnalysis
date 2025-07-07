@@ -5,13 +5,13 @@ start
 :[UI] Call [System] for import;
 :[System] Create DAG for FE;
 
-if (Import error?) then (no)
+if (Import error?) then (yes)
   :[System] Terminate FE import;
   :[System] log;
   :[System] Call [UI] for message;
   :[UI] Show message;
   stop
-else (yes)
+else (no)
 endif
 
 :[System] Call [UI] to initialize;
@@ -21,17 +21,17 @@ endif
 :[UI] Call [System] for SAMM run;
 :[System] Get dataset from DAG;
 
-if (Dataset error?) then (no)
+if (Dataset error?) then (yes)
   :[System] Terminate SAMM run;
   :[System] Call [UI] for meassage;
   :[UI] Show message;
   stop
-else (yes)
+else (no)
 endif
 
 :[System] Execute SAMM;
 
-if (Computation error?) then (no)
+if (Computation error?) then (yes)
   :[System] log;
   :[System] Set status to Error;
   :[System] Wait end of SAMM run;
@@ -39,7 +39,7 @@ if (Computation error?) then (no)
   :[UI] Update for non-failed SAMMs;
   :[UI] Show message for failed SAMMs;
   stop
-else (yes)
+else (no)
   :[System] Create DAG nodes for "Results";
   :[System] Call [UI] to update the states and results;
   :[UI] Update states in SCT and RFs in the current form;

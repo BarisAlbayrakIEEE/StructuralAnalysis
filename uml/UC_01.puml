@@ -20,6 +20,8 @@ if (Import error?) then (no)
       :[System] Create DAG nodes for "Results";
       :[System] Call [UI] to update the states and results;
       :[UI] Update states in SCT and RFs in the current form;
+
+      stop;
     else (yes)
       :[System] log;
       :[System] Set status to Error;
@@ -27,12 +29,14 @@ if (Import error?) then (no)
       :[System] Call [UI] for update and message;
       :[UI] Update for non-failed SAMMs;
       :[UI] Show message for failed SAMMs;
+
       stop;
     endif
   else (yes)
     :[System] Terminate SAMM run;
     :[System] Call [UI] for meassage;
     :[UI] Show message;
+
     stop;
   endif
 else (yes)
@@ -40,9 +44,8 @@ else (yes)
   :[System] log;
   :[System] Call [UI] for message;
   :[UI] Show message;
+
   stop;
 endif
-
-stop;
 
 @enduml

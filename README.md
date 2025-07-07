@@ -14,17 +14,22 @@ In the first section, I will start by describing the problem without diving into
 Then, I will define the requirements, the limitations and the assumptions for the requested software.
 
 **Nomenclature**
+- **SA:** Structural Analysis
+- **SAE:** Structural Analysis Engineer (i.e. the user of the application)
+- **SAMM:** Structural Analysis Method/Module
+- **SC:** Structural Component
 - **FE:** Finite Element
 - **FEM:** Finite Element Model
 - **FEA:** Finite Element Analysis
 - **CAE:** Computer Aided Engineering
+- **FM:** Failure Mode
 - **RF:** Reserve Factor
 
 ## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
 
-There exist mainly two approaches in the inspection of the structural components:
-1. The analytical approach to inspect the components mainly based on the principles of *the strength of materials*, *fracture mechanics*, etc.
-2. The finite element (FE) approach to inspect the components based on the numerical methods
+There exist mainly two approaches in the anaysis/inspection of the structural components (SCs):
+1. The analytical approach to inspect the SCs mainly based on the principles of *the strength of materials*, *fracture mechanics*, etc.
+2. The finite element (FE) approach to inspect the SCs based on the numerical methods
 
 The former relies on the theoretical and experimental rules and data while 
 the later performs numerical calculations based on some primitive physical laws.
@@ -40,12 +45,43 @@ This project defines the **framework** which would support the target software.
 
 Additionally, there are three terms which will be used frequently in this document:
 - **Reserve Factor (RF):** A unitless value to measure the inspection result obtained by comparing the current stiffness with the failure value
-- **Inspection:** The procedure to find the RF value of a structural component
-- **Sizing:** The procedure to determine the required properties of a structural component to have an acceptable RF
+- **Inspection:** The procedure to find the RF value of an SC
+- **Sizing:** The procedure to determine the required properties of an SC to have an acceptable RF
 
 The target software should be capable of pereforming both of the inspection and the sizing procedures.
 
 ## 3. Software Design: Requirements, Limitations & Assumptions <a id='sec3'></a>
+
+**The Target Market**\
+The SAs are performed on the structural components, SCs (e.g. panel) against a number of the failure modes, FMs (e.g. buckling).
+The variaty of the SCs and the FMs depends on the industry.
+In the history, the SAs have been performed using simple tools like excel which was satisfactory for small business.
+Excel provides an efficient computation capability and traceability in such a case.
+However, excel becomes useless when the variaty and the number of the data gets large.
+Besides, the size of the engineering team is another parameter due to the role definitions.
+This application is the candidate to take place of excel in such conditions.
+In other words, the target customers is the large companies with projects containing large variaty of SCs managed by large teams of engineers.
+Hence, we can underline three points about the application before starting the software design and architecture:
+1. The application should manage large data
+2. The application should manage the configuration issues
+3. The application should manage the aspects of the multi-user model
+
+Additional to the above three, there is one more important point.
+The large companies in the industry have their own methods for the SAs and they dont want this data to be public.
+Hence, they would like to embedd their methods into the application themselves.
+This requires a plugin based software where the development of the analysis methods/modules is left to the customer.
+Additionally, the companies may assign a team of structural engineers instead of the software engineers for the plugin development.
+This is quite common in the industry as the engineers are equipped with some level of software development skills.
+Hence, the design of the plugins must allow an easy development for the structural analysis methods/modules (SAMMs):
+4. A plugin based application in terms of the SAMMs
+5. Define only the framework and leave SAMM development to the customer -> assume python for the SAMMs as it is the most well-known language
+
+**Functionality**\
+
+
+
+
+
 
 ## 4. Software Design Summary <a id='sec4'></a>
 
@@ -57,31 +93,6 @@ The target software should be capable of pereforming both of the inspection and 
 
 
 
-First of all, lets start with a discussion about the general aspects of a structural aanalysis application.
-Structural analysis is performed on the structural elements (e.g. panel and stiffener) against a number of the failure modes (e.g. materail failure and buckling).
-The variaty of the structural elements and the failure modes depends on the industry.
-In the history, these analyses have been performed using simple tools like excel which was satisfactory for small business area.
-Excel provides an efficient computation capability and traceability in such a case.
-However, excel becomes useless when the variaty and the number of the data gets large and when the team of engineers gets crowded.
-Configuration problems start such that discusssions arise about which part is updated by whom.
-This application is the candidate to take place of excel in such conditions.
-In other words, the target of this application is the large companies with projects containing large variaty of structural components produced by teams of many engineers.
-Hence, we can underline three points about this application before starting the software design and architecture:
-    1. The application should manage large data
-	2. The application should manage the configuration  issues
-	3. The application should manage the aspects of the multi-user model
-
-Additional to the above three, there is one more important point.
-The large companies in the industry have their own methods for structural analysis and they dont want to share this data.
-Hence, they would want to inject their methods into the application themselves.
-This requires a plugin based software where the development of the analysis methods/modules is left to the client.
-Additionally, the companies may or not assign a team of software engineers for this role; instead, some structural engineers may be loaded for this job.
-This is quite common in the industry as the engineers are equipped with some level of software development skills.
-Hence, the design of the plugins must allow a fast and easy module implementation yielding the 4th and the 5th underlines:
-    4. A plugin based application in terms of the analyses methods/modules
-	5. The development of the analyses methods is left to the client: use python as it is the most common language in the industry
-
-These five points will help us to design and architect the structural analysis application.
 
 
 

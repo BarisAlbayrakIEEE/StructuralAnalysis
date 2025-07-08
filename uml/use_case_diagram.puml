@@ -1,4 +1,4 @@
-@startuml UC_01
+@startuml use_case_diagram
 
 start
 :[SAE] Select FE;

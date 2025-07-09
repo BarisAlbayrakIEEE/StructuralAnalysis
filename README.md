@@ -5,16 +5,6 @@
 4. [Software Design Summary](#sec4)
 5. [Further Discussions](#sec5)
 
-## 1. About The Project <a id='sec1'></a>
-
-This project is a part of the repositories to illustrate my software engineering experience.
-This repository especially demonstrates my skills about the software design.
-
-In the first section, I will start by describing the problem without diving into too much detail.
-Then, I will define the requirements, the limitations and the assumptions for the requested software.
-
-Finally, I will discuss on the issues related to the design and architecture.
-
 **Nomenclature**
 - **SC:** Structural Component
 - **SCT:** Structural Component Tree
@@ -31,17 +21,46 @@ Finally, I will discuss on the issues related to the design and architecture.
 - **FM:** Failure Mode
 - **LC:** LoadCase
 - **RF:** Reserve Factor
+- **R&L:** Requirements and Limitations
+
+## 1. About The Project <a id='sec1'></a>
+
+This project is a part of the repositories to illustrate my software engineering experience.
+This repository especially demonstrates my skills about the software design.
+
+In the first section, I will start by describing the problem without diving into too much detail.
+Then, I will examine the requirements and limitations (R&L) for the requested software.
+Finally, I will cover the architecture and design aspects based on the those R&L.
+Although this flowchart looks straight forward,
+the process is an iterative procedure where the R&L, the architecture and the design will evolve eventually.
+Hence, I will have a number of milestones to discuss about the current state of the software as a design review.
 
 **CAUTION**\
 **This project defines only the core framework of a structural analysis application (SAA).**
-**The other components (e.g. the UI) are excluded intensionally as I am not a frontend developer.**
-**However, I was involved such a project previously and implemented the UI and graphics interface using javascript with the help of Claude AI.**
+**Only the interface (i.e. the R&L) is defined for the other components (e.g. the DB, the UI).**
 
 ## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
 
-There exist mainly two approaches in the anaysis/inspection of the structural components (SCs):
-1. The analytical approach to inspect the SCs mainly based on the principles of *the strength of materials*, *fracture mechanics*, etc.
-2. The finite element (FE) approach to inspect the SCs based on the numerical methods
+The design of structural components (SCs) includes various aspects:
+- Manufacturing R&L
+- Cost analysis
+- Effectivity issues
+- Repairability R&L
+- Ergonomy
+- etc.
+
+In addition to the above list, the structural analysis (SA) is another part of the design process
+which is crucial as it validates the safety requirements.
+The SA inspects a SC loaded by a LoadCase (LC) in order to validate if the SC can withstand the loading.
+In other words, the SA can be abstracted as an engine which runs on a given SC-LC combination and returns a measure of safety.
+Formally, the parameters of this abstraction are:
+- **Reserve Factor (RF):** A unitless value to measure the structural analysis result (SAR): the current stiffness / the critical stiffness
+- **Inspection:** The procedure to find the RF value of an SC for a given failure mode (FM)
+- **Sizing:** The procedure to determine the required properties of an SC to have an acceptable RF
+
+There exist mainly two approaches to handle an SA:
+1. The analytical approach is mainly based on the principles of *the strength of materials*, *fracture mechanics*, etc.
+2. The finite element (FE) approach is based on the numerical methods
 
 The former relies on the theoretical and experimental rules and data while 
 the later performs numerical calculations based on some primitive physical laws.
@@ -50,33 +69,201 @@ in order to replace the complex formulation of the analytical analysis with simp
 Having a simple formulation, the FE analysis can be applied on any problem **uniformly**.
 However, the cost of the uniform analysis interface is the requirement for a large computation power.
 In other words, an inspection handled in a few miliseconds by the analytical approach may take hours by an FE solver.
-Additionally, the FE approach contains some inevitable assumptions which results with the loss of the accuracy.
+Nevertheless, the FE approach contains some inevitable assumptions which results with the loss of the accuracy.
 
-The **target software** aims to serve a *closed form stand-alone* solution for the analytical approach.
-This project defines the **framework** which would support the target software.
+**The aim of the project is to design the core framework of a *closed form stand-alone* solution for the analytical approach**.
 
-Additionally, there are three terms which will be used frequently in this document:
-- **Reserve Factor (RF):** A unitless value to measure the structural analysis result (SAR): the current stiffness / the critical stiffness
-- **Inspection:** The procedure to find the RF value of an SC for a given failure mode (FM)
-- **Sizing:** The procedure to determine the required properties of an SC to have an acceptable RF
+## 3. Initial Costumer Reqquirements <a id='sec3'></a>
 
-The target software should be capable of performing both of the inspection and the sizing procedures.
+I will try to generate a set of initial customer requirements by examining the following two:
+1. An overview of the problem
+2. The target market
+3. Initial architectural decisions
 
-## 3. Software Design: Requirements, Limitations & Assumptions <a id='sec3'></a>
+### 3.1. The First Overview of the Problem <a id='sec31'></a>
 
-**The Target Market**\
-The SAs are performed on the structural components, SCs (e.g. panel) against a number of the failure modes, FMs (e.g. buckling).
+As I pointed out earlier that the SAA is an engine measuring the safety of a SC.
+This definition yields three components of an SAA: the SC, the structural analysis (SA) and the structural analysis result (SAR).
+The structural industry involves many types of SCs: panels, beams, stiffeners, trusses, brackets, etc.
+**The size of the list may go up to hundreds even thousands.**
+**The type of an SC determines its' failure modes (FMs) which yield to the 2nd and 3rd components, the SA and the SAR respectively.**
+
+The SCs withstand various kinds of loading to ensure the safety of a structure.
+For example a truss element carries only axial loading while a beam carries combined loading
+although they may have the same geometrical properies.
+Hence, the geometry is not the only parameter to define an SC.
+The 2nd parameter is **the role** of the component.
+For example, the role of a beam is to carry combined loading while the role of a stiffener is to support a panel by carring the axial loading.
+Hence, the definition of an SC would contain the followings:
+1. The geometry
+2. The material
+3. The role
+4. The FMs
+5. The structural analysis methods and modules (SAMMs)
+6. The SARs
+
+**The SAA must involve a definition for each SC type (e.g. panel).**
+Some abstractions can be defined to improve these definitions based on the properties, roles and FMs.
+For example, a plate type would support the definitions of the panels, joints and stiffener segments.
+
+A very important point about the SCs is that **the SCs are related to each other by definition**.
+A panel is defined as a rectangular plate **supported by the side stiffeners**.
+A stiffener is defined as a cross-sectional element **supported by two side panels**.
+A joint is formed by **at least two plates and a fastener**.
+
+In order to perform an SA on an SC, the applied loading must be given.
+The determination of the load distribution within a complex structural assembly **cannot be performed analytically**.
+Hence, **the SAA needs an interface with the FE softwares** in order to obtain the loading on each SC together with the geometry and material.
+The interface must contain both the input and output routines.
+Additional to the IO routines, **the SAA may contain an FE display for the visual purposes**.
+
+### 3.2. The Target Market <a id='sec32'></a>
+
+The SAs are performed on the SCs against a number of the FMs.
 The variaty of the SCs and the FMs depends on the industry.
 In the history, the SAs have been performed using simple tools like excel which was satisfactory for small business.
 Excel provides an efficient computation capability and traceability in such a case.
 However, excel becomes useless when the variaty and the number of the data gets large.
 Besides, the size of the engineering team is another parameter due to the role definitions.
 This application is the candidate to take place of excel in such conditions.
-In other words, the target customers is the large companies with projects containing large variaty of SCs managed by large teams of engineers.
-Hence, we can underline three points about the application:
-- **[Note 1]:** The application should manage large data
-- **[Note 2]:** The application should manage the configuration issues
-- **[Note 3]:** The application should manage the aspects of the multi-user model
+In other words, the target customers is the large companies:
+- managing projects with a large variaty of types,
+- having a large team of SAEs.
+
+Considering the customers, there is one more important point.
+The large companies in the industry have their own algorithms for the SAMMs and they dont want this data to be public.
+Hence, they would like to embed their methods into the application themselves.
+This requires a plugin based software where the development of the SAMMs is left to the customer.
+Additionally, the companies may assign a team of SAEs instead of the software engineers for the plugin development.
+This is quite common in the industry as the SAEs are equipped with some level of software development skills.
+
+### 3.3. Initial Decisions for the Architecture <a id='sec33'></a>
+
+I will review the following major aspects of the software architecture analyses to make some decisions:
+- Deployment model
+- User model
+- Data & Persistency
+- Performance
+
+Some other issues have already been covered in the previous sections.
+
+**Deployment Model**\
+1. Options:
+- Desktop (native)
+- Web-based (cloud)
+- Hybrid
+2. Questions:
+- How are the installation, the maintanance and the security managed?
+- How is the configuration of the SAA managed?
+- Do SAMMs run heavy computations?
+- Can the SAMMs be handled locally, or do they require scalable cloud CPUs/GPUs, or is a hybrid solution required?
+- Does the customer have HPCs?
+- Does the customer have a powerful server to satisfy the latency and bandwidth constraints?
+
+**User Model**\
+1. Options:
+- Single user (standalone)
+- Multi-user (shared data, roles, collaboration)
+2. Questions:
+- Will multiple analysts ever work on the same dataset concurrently?
+- Is there a need to define user credentials (e.g. role)?
+- Is central data sharing or report distribution a requirement?
+
+**Data & Persistency**\
+1. Options:
+- Filesystem (JSON, XML, binary)
+- Embedded DB (e.g. SQLite)
+- Client-Server DB (e.g. MySQL, NoSQL)
+2. Questions:
+- How large will the datasets grow?
+- How is it planed to store the data in the REM (discussion if a DOD approach is needed)?
+- How is it planed to save the data (on local disk or DB or PLM)?
+- Is there a need for transactions or roll-backs if a computation fails?
+- Is cross-platform file portability important?
+- Are the available resources sufficient to manage efficient transactions from/to a DB?
+
+**Performance**\
+1. Options:
+- Local CPU and GPU
+- An HPC distributed by a server
+2. Questions:
+- Are analyses instantaneous or long-running (minutes/hours)?
+- Does the UI (together with the graphics display if needed) to keep processing large data?
+- Does the graphics display need to be interactive?
+- Is there a need to scale out to handle many simultaneous jobs?
+- Is there a need for multithreading or multi-processing or both?
+
+**Concurrency**\
+The concurrency will be discussed later in detail.
+
+**In summary, I will continue with the following options considering the descussions held in the previous sections:**
+- Web-based (cloud)
+- Multi-user (shared data, roles, collaboration)
+- Embedded DB (e.g. SQLite)
+- An HPC distributed by a server
+
+### 3.4. Initial Customer Requirements <a id='sec34'></a>
+
+I will start by summarizing the discussions made in the previous sections:
+- [The 1st overview of the problem](#sec31) yields to the following requirements:
+1. The types required by the SAA are mainly grouped as SCs, FMs, SAs and SARs.
+2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+3. Each group may contain hundreds of types.
+4. There exist *dependency relationships* between the types.
+5. The SAA needs an interface with the FE software.
+- [The target market](#sec32) analysis yields to the following requirements:
+1. The company would provide sufficient resources of processors and servers.
+2. The SAA will manage and process large data.
+3. The SAA will have DBs.
+4. The SAA will define a UI form for each type.
+5. The SAA will contain a graphics display for the FE model.
+6. The SAA will manage the configuration issues.
+7. The SAA will provide a plugin style extensibality in terms of SCs, SAs, SARs and SAMMs.
+- [The initial architectural decisions](#sec33) can be summarized by the following requirements:
+1. Deployment Model: Web-based (cloud)
+2. User Model: Multi-user (shared data, roles, collaboration)
+3. Data & Persistency: Embedded DB (e.g. SQLite)
+4. Performance: An HPC distributed by a server
+
+
+
+
+8. The SAMMs will be .
+
+
+
+The above highlights should be considered together with the following questions:
+- **Question 1:** Is the SAA required to be extensible in terms of the SC, FM, SA and SAR types?
+- **Question 2:** Is the SAA required to process the large data?
+- **Question 3:** Is the SAA required to have DBs (e.g. for material)?
+- **Question 4:** How would the SAA define and manage the dependencies?
+- **Question 5:** How would the SAA manage the memory?
+- **Question 6:** Is the UI of the SAA required to contain a specialized form for each type?
+- **Question 7:** Is the UI of the SAA required to contain a graphics display for the FE model?
+- **Question 8:** If the FE display is needed, does it need to be interactive?
+
+For the Questions 7 and 8, its important to point out that the type data and the FE data are not the same.
+The elements and nodes of an FE model do not store the type information.
+The type definitions would be altered by the FE importer of the SAA.
+Hence, **the SAA must store and mange the two data (the FE and the type) if a FE display is required**.
+
+**Currently, we dont have much to make any decisions about the architecture and design yet.**
+The next topic will help with some of the questions.
+
+
+
+
+
+
+
+**Having the large companies as the target market, we can make the following decisions:**
+- **Decision 1:** The company would provide sufficient resources of processors and servers.
+- **Decision 2:** The SAA will manage and process large data.
+- **Decision 3:** The SAA will have DBs.
+- **Decision 4:** The SAA will define a form for each type.
+- **Decision 5:** The SAA will contain a graphics display for the FE model.
+- **Decision 6:** The SAA will manage the configuration issues.
+- **Decision 7:** The SAA will manage the aspects of the multi-user model.
 
 Additional to the above three, there is one more important point.
 The large companies in the industry have their own methods for the SAs and they dont want this data to be public.
@@ -85,25 +272,80 @@ This requires a plugin based software where the development of the structural an
 Additionally, the companies may assign a team of structural engineers instead of the software engineers for the plugin development.
 This is quite common in the industry as the engineers are equipped with some level of software development skills.
 Hence, the design of the plugins must allow fast and easy development for the SAMMs:
-- **[Note 4]:** A plugin based application in terms of the SAMMs
-- **[Note 5]:** Define only the framework and leave SAMMs to the customer -> assume python for the SAMMs as it is the most well-known language
+- **Decision 8:** The SAA will be extensible in terms of the SC, FM, SA and SAR types.
+- **Decision 9:** The SAA will be a plugin-based application in order to support the new types.
+- **Decision 10:** SAMMs will be developed by the customer -> assume python for the SAMMs as it is the most well-known language
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Next, I will go through the use-case, the process flow and the activity diagrams.
 
-### 3.1. Use Case Diagram <a id='sec31'></a>
+
+
+
+
+
+
+
+
+
+
+## 3. Software Architecture <a id='sec3'></a>
+
+
+
+
+
+
+
+
+
+## 4. Software Design: Requirements, Limitations & Assumptions <a id='sec4'></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4.1. Use Case Diagram <a id='sec41'></a>
 
 - **Primary Actor:** SAE
 - **Scope:** SAA
 - **Level:** User goal  
 
-#### 3.1.1. Stakeholders and Interests
+#### 4.1.1. Stakeholders and Interests
 - **SAE**: wants to inspect the SCs under the FE extracted loads.
 - **Project Manager**: needs quick feedback on the analysis status.
 
-#### 3.1.2. Preconditions
+#### 4.1.2. Preconditions
 - an existing FE data pack with a predefined format including the geometry, material and loading exists.
 
-#### 3.1.3. Scenarios
+#### 4.1.3. Scenarios
 
 There are mainly two use case scenarios:
 1. Zero-to-end scenario including the FE import
@@ -148,24 +390,18 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 - **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
 - **17. UI** displays the error message for the erroneous SA.
 
-#### 3.1.4. Postconditions
+#### 4.1.4. Postconditions
 - The SAR nodes for the successful SAs exist in the DAG.
 - The RF in the current user form has the latest value if not erroneous.
 - UI reflects the updated state data.
 
-#### 3.1.5. UML Diagram
+#### 4.1.5. UML Diagram
 
 ![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
 
 
 
 
-
-### 3.2. Process Flow Diagram <a id='sec32'></a>
-
-
-
-### 3.3. Activity Diagram <a id='sec33'></a>
 
 
 
@@ -176,115 +412,4 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 ## 4. Software Design Summary <a id='sec4'></a>
 
 ## 5. Further Discussions <a id='sec5'></a>
-
-
-
-
-
-
-
-
-
-
-A. Deployment Model
-
-1. Options:
-    - Desktop: Native
-	- Web-based: Cloud
-	- Hybrid
-2. Questions:
-    - How do you want to manage the installation, the maintanance and the security?
-	    * Do you want a plugin style application where you can extend the application for new types and analysis modules? [YES BY THE 5 ASSUMPTIONS]
-	    * Do you have an IT team to support the user problems about the installation and maintanance in case of a desktop application? [NO BY THE 5 ASSUMPTIONS]
-	    * Do you have an IT team to maintain the configuration (e.g. the version control) of the application? [NO BY THE 5 ASSUMPTIONS]
-	    * Do you have an IT team to deal with the security issues and user qualifications? [NO BY THE 5 ASSUMPTIONS]
-		* How do you plan to update the application: monthly patches or continuous delivery?
-		* etc.
-	- Do you have heavy are the computations? [YES BY THE 5 ASSUMPTIONS]
-	- Can you handle them locally, or do you need scalable cloud CPUs/GPUs?
-	- Do you have resources to perform a large computation with high performance:
-	    * HPCs with a large number of cores for multi-user connections
-		* aApowerful server to satisfy your latency and bandwidth constraints
-	- Do you need to run analyses offline (e.g. on an isolated network)?
-
-
-
-*** TODO: We selected the web-based solution for the deployment model...
-
-
-
-B. User Model
-
-1. Options:
-    - Single user (standalone)
-	- Multi-user (shared data, roles, collaboration)
-2. Questions:
-    - Will multiple analysts ever work on the same dataset concurrently?
-	- Do you need audit trails, user roles, or regulatory compliance (e.g. ISO)?
-	- Is central data sharing or report distribution a requirement?
-
-
-
-*** TODO: We selected the single user solution for the user model...
-
-
-
-C. Data & Persistency
-
-1. Options:
-	- Filesystem (JSON, XML, binary)
-	- Embedded DB (e.g. SQLite)
-	- Client-Server DB (e.g. MySQL, NoSQL)
-2. Questions:
-	- How large will your datasets grow?
-	- How do you plan to store the data in the REM (discussion if a DOD approach is needed)? [DOD APPROACH IS NEEDED BY THE 5 ASSUMPTIONS]
-	- How do you plan to save the data (on local disk or DB, or else)?
-	- Do you need transactions or roll-backs if a computation fails?
-	- Is cross-platform file portability important?
-	- Do you have enough resources to manage efficient transactions from/to a DB?
-
-
-
-*** TODO: We selected the embedded DB solution for the data management...
-
-
-
-D. Performance
-
-1. Options:
-	- Local CPU and GPU
-	- An HPC distributed by a server
-2. Questions:
-	- Are analyses instantaneous or long-running (minutes/hours)?
-	- Do you expect the UI (together with the graphics display if needed) to keep processing large data?
-	- Do you need an interactive graphics display?
-	- Will you need to scale out to handle many simultaneous jobs?
-	- Do you need multithreading or multi-processing or both?
-	- Do you plan/need to use only the CPU or CPU and GPU resources together for the computation?
-
-
-
-E. UI
-
-1. Options:
-	- Native GUI: e.g. Qt, JavaFx
-	- Web UI: e.g. React
-2. Questions:
-	- Do you expect the UI (together with the graphics display if needed) to keep processing large data?
-	- Do you need an interactive graphics display?
-
-
-
-F. Extensibility
-
-1. Options:
-	- Supplier provides the updates and extensions with new plugins (types and analysis modules) based on the client requests (requires a heavy maintanance contract) [NO BY THE 5 ASSUMPTIONS]
-	- Client takes care of the updates and extensions [YES BY THE 5 ASSUMPTIONS]
-2. Questions:
-	- Which language would you prefer to implement the type definitions (e.g. xml or C++)
-	- Which language would you prefer to implement the analysis modules? [PYTHON BY THE 5 ASSUMPTIONS]
-	- Do you have an power team to maintain the types and plugins [YES BY THE 5 ASSUMPTIONS]
-
-
-
 

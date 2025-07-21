@@ -212,7 +212,7 @@ The GPU resources need to be spared for the graphics UI.
 
 ### 3.4. Initial Customer Requirements <a id='sec34'></a>
 
-I will start by summarizing the discussions made in the previous sections:
+The summary of the three previous sections:
 - [The 1st overview of the problem](#sec31) yields to the following requirements:
 1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
 2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
@@ -233,11 +233,39 @@ I will start by summarizing the discussions made in the previous sections:
 3. Data & Persistency: Client-server MySQL
 4. Performance: An HPC distributed by a server
 
+The discussions up to here help us to make decisions about the software architecture.
+However, there remains some gaps in the architecture mostly related with the core framework.
+These will be covered in the following chapters.
+
+The concepts to satisfy some of the above requirements have already been discussed:
+1. The company would provide sufficient resources of processors and servers: **An HPC with a local server**
+2. The SAA will have DBs: **Client-server MySQL**
+3. The SAA will manage the configuration issues: **Multi-user model**
+
+
+3. The SAA will define a UI form for each type: 
+4. The SAA will contain a graphics display for the FE model.
+6. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+
+
+while some other needs more analyses.
+2. The SAA will manage and process large data: 
+
+Lets summarize the above requirements and decissions to see an initial shape of the architecture:
+- Initial customer requirements:
+1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
+2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+3. Each group may contain hundreds of types.
+4. There exist *dependency relationships* between the types.
+5. The SAA needs an interface with the FE software.
 
 
 
 
 
+The requirements provide an initial overview of the application.
+However, most of them are too general and abstract.
+I will generate the solid requirements list based on this basis considering the software architecture and design.
 
 ## 3. Software Architecture <a id='sec3'></a>
 

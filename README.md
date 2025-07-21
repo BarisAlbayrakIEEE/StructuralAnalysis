@@ -82,7 +82,7 @@ I will try to generate a set of initial customer requirements by examining the f
 
 ### 3.1. The First Overview of the Problem <a id='sec31'></a>
 
-As I pointed out earlier that the SAA is an engine measuring the safety of a SC.
+SAA is an engine measuring the safety of SCs.
 This definition yields three components of an SAA: the SC, the structural analysis (SA) and the structural analysis result (SAR).
 The structural industry involves many types of SCs: panels, beams, stiffeners, trusses, brackets, etc.
 **The size of the list may go up to hundreds even thousands.**
@@ -126,7 +126,7 @@ Excel provides an efficient computation capability and traceability in such a ca
 However, excel becomes useless when the variaty and the number of the data gets large.
 Besides, the size of the engineering team is another parameter due to the role definitions.
 This application is the candidate to take place of excel in such conditions.
-In other words, the target customers is the large companies:
+In other words, the target customers are the large companies:
 - managing projects with a large variaty of types,
 - having a large team of SAEs.
 
@@ -185,22 +185,23 @@ Some other issues have already been covered in the previous sections.
 **Performance**\
 1. Options:
 - Local CPU and GPU
-- An HPC distributed by a server
+- An HPC solver distributed by a server
 2. Questions:
 - Are analyses instantaneous or long-running (minutes/hours)?
-- Does the UI (together with the graphics display if needed) to keep processing large data?
+- Does the UI (together with the graphics display if needed) keep processing large data?
 - Does the graphics display need to be interactive?
 - Is there a need to scale out to handle many simultaneous jobs?
 - Is there a need for multithreading or multi-processing or both?
 
 **Concurrency**\
-The concurrency will be discussed later in detail.
+Some importantt aspects of the concurrency is already mentioned above.
+The details will be discussed later.
 
 **In summary, I will continue with the following options considering the descussions held in the previous sections:**
 - Web-based (cloud)
 - Multi-user (shared data, roles, collaboration)
 - Embedded DB (e.g. SQLite)
-- An HPC distributed by a server
+- An HPC solver distributed by a server in order to use the GPU resources for the graphics UI
 
 ### 3.4. Initial Customer Requirements <a id='sec34'></a>
 
@@ -218,89 +219,12 @@ I will start by summarizing the discussions made in the previous sections:
 4. The SAA will define a UI form for each type.
 5. The SAA will contain a graphics display for the FE model.
 6. The SAA will manage the configuration issues.
-7. The SAA will provide a plugin style extensibality in terms of SCs, SAs, SARs and SAMMs.
+7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - [The initial architectural decisions](#sec33) can be summarized by the following requirements:
 1. Deployment Model: Web-based (cloud)
 2. User Model: Multi-user (shared data, roles, collaboration)
 3. Data & Persistency: Embedded DB (e.g. SQLite)
 4. Performance: An HPC distributed by a server
-
-
-
-
-8. The SAMMs will be .
-
-
-
-The above highlights should be considered together with the following questions:
-- **Question 1:** Is the SAA required to be extensible in terms of the SC, FM, SA and SAR types?
-- **Question 2:** Is the SAA required to process the large data?
-- **Question 3:** Is the SAA required to have DBs (e.g. for material)?
-- **Question 4:** How would the SAA define and manage the dependencies?
-- **Question 5:** How would the SAA manage the memory?
-- **Question 6:** Is the UI of the SAA required to contain a specialized form for each type?
-- **Question 7:** Is the UI of the SAA required to contain a graphics display for the FE model?
-- **Question 8:** If the FE display is needed, does it need to be interactive?
-
-For the Questions 7 and 8, its important to point out that the type data and the FE data are not the same.
-The elements and nodes of an FE model do not store the type information.
-The type definitions would be altered by the FE importer of the SAA.
-Hence, **the SAA must store and mange the two data (the FE and the type) if a FE display is required**.
-
-**Currently, we dont have much to make any decisions about the architecture and design yet.**
-The next topic will help with some of the questions.
-
-
-
-
-
-
-
-**Having the large companies as the target market, we can make the following decisions:**
-- **Decision 1:** The company would provide sufficient resources of processors and servers.
-- **Decision 2:** The SAA will manage and process large data.
-- **Decision 3:** The SAA will have DBs.
-- **Decision 4:** The SAA will define a form for each type.
-- **Decision 5:** The SAA will contain a graphics display for the FE model.
-- **Decision 6:** The SAA will manage the configuration issues.
-- **Decision 7:** The SAA will manage the aspects of the multi-user model.
-
-Additional to the above three, there is one more important point.
-The large companies in the industry have their own methods for the SAs and they dont want this data to be public.
-Hence, they would like to embed their methods into the application themselves.
-This requires a plugin based software where the development of the structural analysis methods/modules (SAMMs) is left to the customer.
-Additionally, the companies may assign a team of structural engineers instead of the software engineers for the plugin development.
-This is quite common in the industry as the engineers are equipped with some level of software development skills.
-Hence, the design of the plugins must allow fast and easy development for the SAMMs:
-- **Decision 8:** The SAA will be extensible in terms of the SC, FM, SA and SAR types.
-- **Decision 9:** The SAA will be a plugin-based application in order to support the new types.
-- **Decision 10:** SAMMs will be developed by the customer -> assume python for the SAMMs as it is the most well-known language
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Next, I will go through the use-case, the process flow and the activity diagrams.
-
-
-
-
 
 
 

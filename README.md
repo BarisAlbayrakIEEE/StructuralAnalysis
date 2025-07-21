@@ -227,45 +227,46 @@ The summary of the three previous sections:
 5. The SAA will contain a graphics display for the FE model.
 6. The SAA will manage the configuration issues.
 7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+8. The plugins could be developed by the customer.
 - [The initial architectural decisions](#sec33) can be summarized by the following requirements:
 1. Deployment Model: Cloud application
 2. User Model: Multi-user
 3. Data & Persistency: Client-server MySQL
 4. Performance: An HPC distributed by a server
 
-The discussions up to here help us to make decisions about the software architecture.
-However, there remains some gaps in the architecture mostly related with the core framework.
-These will be covered in the following chapters.
-
+I will go over the requirements analysis in order to highlight the current decissions about the architecture.
 The concepts to satisfy some of the above requirements have already been discussed:
-1. The company would provide sufficient resources of processors and servers: **An HPC with a local server**
-2. The SAA will have DBs: **Client-server MySQL**
-3. The SAA will manage the configuration issues: **Multi-user model**
+- The company would provide sufficient resources of processors and servers: **HPC with a local server**
+- The SAA will have DBs: **Client-server MySQL**
+- The SAA will manage the configuration issues: **Cloud application with a multi-user model**
 
+This project excludes the details of the front-end development.
+However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
+Following two were the initial requirements related to the UI:
+- The SAA will define a UI form for each type.
+- The SAA will contain a graphics display for the FE model.
 
-3. The SAA will define a UI form for each type: 
-4. The SAA will contain a graphics display for the FE model.
-6. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+Based on these requirements, I will continue with **javascript/react as the front-end language** in order to make use of:
+- the great library,
+- high-performance interactive 3D visualization,
+- best start-up and runtime performance.
 
+We had a requirement related to the extensibility:
+- The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+- The plugins could be developed by the customer.
 
-while some other needs more analyses.
-2. The SAA will manage and process large data: 
+The application will be used by the structural engineers among whom Python is the most popular choice (even de-facto).
+Hence, I will continue with **Python for the plugin development**.
 
-Lets summarize the above requirements and decissions to see an initial shape of the architecture:
-- Initial customer requirements:
-1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
-2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
-3. Each group may contain hundreds of types.
-4. There exist *dependency relationships* between the types.
-5. The SAA needs an interface with the FE software.
+The discussions up to here helped us to make decisions about the software architecture.
+However, there remains some gaps in the architecture mostly related with the core framework:
+- The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
+- In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+- Each group may contain hundreds of types.
+- There exist *dependency relationships* between the types.
 
-
-
-
-
-The requirements provide an initial overview of the application.
-However, most of them are too general and abstract.
-I will generate the solid requirements list based on this basis considering the software architecture and design.
+These will be covered in the following sections by studying the following aspects of the software design:
+- 
 
 ## 3. Software Architecture <a id='sec3'></a>
 

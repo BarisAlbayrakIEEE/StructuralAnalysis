@@ -263,11 +263,16 @@ while SAMMs present the behaviours of these types.
 The application will be used by the structural engineers among whom Python is the most popular choice (even de-facto).
 Hence, I will continue with **Python for the SAMM plugin development**.
 A plugin style architecture for the SCs, SAs and SARs needs a type registration.
-**Hence, the core framework shall provide the registration.**
+**Hence, the core framework shall provide the type registration.**
 Additionally, each new type would need a UI form.
+**Hence, if required a plugin may involve a UI form implementation with js as well.**
 
-
-The SAA installation needs to unpack **some sample SAMM plugins** to show how the plugins should be embedded.
+The SAA installation needs to unpack **some sample plugins** including the following items:
+- Plugin descriptor json file
+- Type module with type registry (e.g. panel.py including register_panel function)
+- SAMM module with analysis registry (e.g. panel_buckling.py including register_panel_buckling function)
+- Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
+- **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
 
 **Remainings:**\
 The discussions up to here helped us to make decisions about the software architecture.

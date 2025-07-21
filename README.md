@@ -197,17 +197,24 @@ Some other issues have already been covered in the previous sections.
 Some importantt aspects of the concurrency is already mentioned above.
 The details will be discussed later.
 
-**In summary, I will continue with the following options considering the descussions held in the previous sections:**
-- Web-based (cloud)
-- Multi-user (shared data, roles, collaboration)
-- Embedded DB (e.g. SQLite)
-- An HPC solver distributed by a server in order to use the GPU resources for the graphics UI
+**In summary, suppose we have the following customer requirements considering the descussions held in the previous sections:**
+- A web-based (cloud) application supported by a local company server
+- Multi-user model considering the follwing issues: shared data, roles and collaboration
+- A client-Server DB: MySQL
+- An HPC solver distributed by a powerful server
+
+The first two requirements above are obvious by the discussions held in the previous sections.
+The third requirement is to support an efficient multi-user concurrent access on the large data.
+A NoSQL DB could be prefered to deal with the graph data more efficiently.
+However, the SAA is not a low-latency application and it needs to employ the graph algorithms itself.
+The last requirement is to perform the heavy computations of structural analysis.
+The GPU resources need to be spared for the graphics UI.
 
 ### 3.4. Initial Customer Requirements <a id='sec34'></a>
 
 I will start by summarizing the discussions made in the previous sections:
 - [The 1st overview of the problem](#sec31) yields to the following requirements:
-1. The types required by the SAA are mainly grouped as SCs, FMs, SAs and SARs.
+1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
 2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
 3. Each group may contain hundreds of types.
 4. There exist *dependency relationships* between the types.
@@ -221,9 +228,9 @@ I will start by summarizing the discussions made in the previous sections:
 6. The SAA will manage the configuration issues.
 7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - [The initial architectural decisions](#sec33) can be summarized by the following requirements:
-1. Deployment Model: Web-based (cloud)
-2. User Model: Multi-user (shared data, roles, collaboration)
-3. Data & Persistency: Embedded DB (e.g. SQLite)
+1. Deployment Model: Cloud application
+2. User Model: Multi-user
+3. Data & Persistency: Client-server MySQL
 4. Performance: An HPC distributed by a server
 
 

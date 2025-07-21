@@ -210,7 +210,7 @@ However, the SAA is not a low-latency application and it needs to employ the gra
 The last requirement is to perform the heavy computations of structural analysis.
 The GPU resources need to be spared for the graphics UI.
 
-### 3.4. Initial Customer Requirements <a id='sec34'></a>
+### 3.4. Initial Customer Requirements and the Corresponding Architecture <a id='sec34'></a>
 
 The summary of the three previous sections:
 - [The 1st overview of the problem](#sec31) yields to the following requirements:
@@ -234,12 +234,14 @@ The summary of the three previous sections:
 3. Data & Persistency: Client-server MySQL
 4. Performance: An HPC distributed by a server
 
+**Currently:**\
 I will go over the requirements analysis in order to highlight the current decissions about the architecture.
 The concepts to satisfy some of the above requirements have already been discussed:
 - The company would provide sufficient resources of processors and servers: **HPC with a local server**
 - The SAA will have DBs: **Client-server MySQL**
 - The SAA will manage the configuration issues: **Cloud application with a multi-user model**
 
+**Frontend:**\
 This project excludes the details of the front-end development.
 However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
 Following two were the initial requirements related to the UI:
@@ -248,16 +250,26 @@ Following two were the initial requirements related to the UI:
 
 Based on these requirements, I will continue with **javascript/react as the front-end language** in order to make use of:
 - the great library,
-- high-performance interactive 3D visualization,
+- high-performance interactive 3D visualization (e.g. vtk),
 - best start-up and runtime performance.
 
+**Plugins:**\
 We had a requirement related to the extensibility:
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
 
+The SCs, SAs and SARs are the objects of the application which need type definitions
+while SAMMs present the behaviours of these types.
 The application will be used by the structural engineers among whom Python is the most popular choice (even de-facto).
-Hence, I will continue with **Python for the plugin development**.
+Hence, I will continue with **Python for the SAMM plugin development**.
+A plugin style architecture for the SCs, SAs and SARs needs a type registration.
+**Hence, the core framework shall provide the registration.**
+Additionally, each new type would need a UI form.
 
+
+The SAA installation needs to unpack **some sample SAMM plugins** to show how the plugins should be embedded.
+
+**Remainings:**\
 The discussions up to here helped us to make decisions about the software architecture.
 However, there remains some gaps in the architecture mostly related with the core framework:
 - The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
@@ -265,32 +277,12 @@ However, there remains some gaps in the architecture mostly related with the cor
 - Each group may contain hundreds of types.
 - There exist *dependency relationships* between the types.
 
-These will be covered in the following sections by studying the following aspects of the software design:
-- 
+These will be covered in the following sections by studying the aspects of the software design.
 
-## 3. Software Architecture <a id='sec3'></a>
+## 4. Software Design <a id='sec4'></a>
 
-
-
-
-
-
-
-
-
-## 4. Software Design: Requirements, Limitations & Assumptions <a id='sec4'></a>
-
-
-
-
-
-
-
-
-
-
-
-
+In this chapter, I will start by a use case diagram in order to have a view of the execution flow of the SAA.
+Then, I will discuss the issues related to the software design in detail.
 
 ### 4.1. Use Case Diagram <a id='sec41'></a>
 

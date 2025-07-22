@@ -75,12 +75,12 @@ Nevertheless, the FE approach contains some inevitable assumptions which results
 
 ## 3. Initial Costumer Requirements <a id='sec3'></a>
 
-I will try to generate a set of initial customer requirements by examining the following two:
+I will try to generate a set of initial customer requirements by examining the followings:
 1. An overview of the problem
 2. The target market
 3. Initial architectural decisions
 
-### 3.1. The First Overview of the Problem <a id='sec31'></a>
+### 3.1. An Overview of the Problem <a id='sec31'></a>
 
 SAA is an engine measuring the safety of SCs.
 This definition yields three components of an SAA: the SC, the structural analysis (SA) and the structural analysis result (SAR).

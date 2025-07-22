@@ -71,10 +71,9 @@ Nevertheless, the FE approach contains some inevitable assumptions which results
 
 ## 3. Software Architecture <a id='sec3'></a>
 
-I will try to generate a set of initial customer requirements by examining the followings:
+I will try to generate a set of initial customer requirements by examining the following two:
 1. An overview of the problem
 2. The target market
-3. Initial architectural decisions
 
 ### 3.1. An Overview of the Problem <a id='sec31'></a>
 

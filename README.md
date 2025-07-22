@@ -139,14 +139,29 @@ This is quite common in the industry as the SAEs are equipped with some level of
 
 ### 3.3. The Architecture: The 1st Overview <a id='sec33'></a>
 
+Firstly, I will summarize the previous two sections as a requirement list:
+- [An overview of the problem](#sec31) yields to the following requirements:
+1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
+2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+3. Each group may contain hundreds of types.
+4. There exist *dependency relationships* between the types.
+5. The SAA needs an interface with the FE software.
+- [The target market](#sec32) analysis yields to the following requirements:
+1. The company would provide sufficient resources of processors and servers.
+2. The SAA will manage and process large data.
+3. The SAA will have DBs.
+4. The SAA will define a UI form for each type.
+5. The SAA will contain a graphics display for the FE model.
+6. The SAA will manage the configuration issues.
+7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+8. The plugins could be developed by the customer.
+
 I will review the following major aspects of the software architecture to make some decisions:
 - Deployment model
 - User model
 - Data & Persistency
 - Performance
 - Concurrency
-
-Some other issues have already been covered in the previous sections.
 
 #### 3.3.1. Deployment Model
 
@@ -216,29 +231,39 @@ Considering the descussions held in the previous sections, the first overview of
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 
-The first two requirements above are obvious by the discussions held in the previous sections.
+The first two requirements above are obvious by the requirements achieved by the target market analysis.
 The third requirement is to support an efficient multi-user concurrent access on the large data.
 A NoSQL DB could be prefered to deal with the graph data more efficiently.
 However, the SAA is not a low-latency application and it needs to employ the graph algorithms itself.
 The last requirement is to perform the heavy computations of structural analysis.
 The GPU resources need to be spared for the FE graphics display.
 
+Lets review the requirements listed at the beginning after the 1st overview:
+- [An overview of the problem](#sec31) yields to the following requirements:
+1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
+2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+3. Each group may contain hundreds of types.
+4. There exist *dependency relationships* between the types.
+5. The SAA needs an interface with the FE software.
+- [The target market](#sec32) analysis yields to the following requirements:
+1. ~~The company would provide sufficient resources of processors and servers.~~
+2. ~~The SAA will manage and process large data.~~
+3. ~~The SAA will have DBs.~~
+4. The SAA will define a UI form for each type.
+5. The SAA will contain a graphics display for the FE model.
+6. ~~The SAA will manage the configuration issues.~~
+7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+8. The plugins could be developed by the customer.
+
 ### 3.4. The Architecture: The 2nd Overview <a id='sec34'></a>
 
-On top of :
-- Deployment model
-- User model
-- Data & Persistency
-- Performance
-- Concurrency
-
-Some other issues have already been covered in the previous sections.
-
-Here, I will
+In this section, I will discuss about the two important compoonents of the SAA:
+- Frontend
+- Plugins
 
 #### 3.4.1. Frontend
 
-This project excludes the details of the front-end development.
+This project excludes the details of the frontend development.
 However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
 Following two were the initial requirements related to the UI:
 - The SAA will define a UI form for each type.
@@ -254,13 +279,13 @@ as react executes asynchronously with the core framework.
 
 #### 3.4.2. Plugins
 
-We had a requirement related to the extensibility:
+We had two requirements related to the extensibility:
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
 
 The SCs, SAs and SARs are the objects of the application which need type definitions
 while SAMMs present the behaviours of these types.
-The application will be used by the structural engineers among whom Python is the most popular choice (even de-facto).
+The application will be used by the structural engineers among whom Python is the most popular choice (even can be considered as de-facto).
 Hence, I will continue with **Python for the SAMM plugin development**.
 A plugin style architecture for the SCs, SAs and SARs needs a type registration.
 **Hence, the core framework shall provide the type registration.**
@@ -274,16 +299,27 @@ The SAA installation needs to unpack **some sample plugins** including the follo
 - Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
 - **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
 
-#### 3.4.3. Remainings
+#### 3.4.3. Summary of the 2nd Overview of the Architecture
 
-The discussions up to here helped us to make decisions about the software architecture.
-However, there remains some gaps in the architecture mostly related with the core framework:
-- The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
-- In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
-- Each group may contain hundreds of types.
-- There exist *dependency relationships* between the types.
+Lets review the requirements listed at the beginning after the 2nd overview:
+- [An overview of the problem](#sec31) yields to the following requirements:
+1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
+2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+3. Each group may contain hundreds of types.
+4. There exist *dependency relationships* between the types.
+5. ~~The SAA needs an interface with the FE software.~~
+- [The target market](#sec32) analysis yields to the following requirements:
+1. ~~The company would provide sufficient resources of processors and servers.~~
+2. ~~The SAA will manage and process large data.~~
+3. ~~The SAA will have DBs.~~
+4. ~~The SAA will define a UI form for each type.~~
+5. ~~The SAA will contain a graphics display for the FE model.~~
+6. ~~The SAA will manage the configuration issues.~~
+7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+8. The plugins could be developed by the customer.
 
-These will be covered in the following sections by studying the aspects of the software design.
+The requirements related with the type definitions and the plugin style extensibility still remain
+which I will focus in the next section.
 
 ## 4. Software Design <a id='sec4'></a>
 

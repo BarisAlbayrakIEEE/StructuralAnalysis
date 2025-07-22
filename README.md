@@ -252,13 +252,13 @@ Lets review the requirements listed at the beginning after the 1st overview:
 
 ### 3.4. The Architecture: The 2nd Overview <a id='sec34'></a>
 
-In this section, I will discuss about the two important compoonents of the SAA:
+In this section, I will discuss about the two important components of the SAA:
 - Frontend
 - Plugins
 
 #### 3.4.1. Frontend
 
-This project excludes the details of the frontend development.
+**This project excludes the details of the frontend development.**
 However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
 Following two were the initial requirements related to the UI:
 - The SAA will define a UI form for each type.
@@ -287,12 +287,40 @@ A plugin style architecture for the SCs, SAs and SARs needs a type registration.
 Additionally, each new type would need a UI form.
 **Hence, if required a plugin may involve a UI form implementation with js as well.**
 
-The SAA installation needs to unpack **some sample plugins** including the following items:
+The requirements arised from [the overview of the problem](#sec31) underline that the application
+would need to construct a type/class hierarchy which requires a careful design study based on:
+- object oriented design (OOD),
+- function oriented design (FOD),
+- data oriented design (DOD),
+- test driven design (TDD),
+- etc.
+
+The type definitions, the class hierarchy and the design process is a crucial part of the application
+and has more workload than all other components.
+Besides, the software design needs qualified software engineers.
+A plugin approach assuming an empty framework to be extended by the client plugins
+would fail as it pushes too much pressure on the client.
+
+**A better approach is involving the software design within the SAA (i.e. the core framework).**
+The SAA should provide a generic design with some abstractions, interfaces, transformations, etc.
+Additionally, the SAA should be shipped with the plugins of the fundamental types (e.g. panel, beam, ISection, LC, isotropic material, etc.).
+In this approach, the client is mainly considered to develop the SAMMs which is crucial for the data security of the large companies.
+The SAA would still be extensible with introducing new plugins on top of these core plugins
+if the client needs a new specific type (e.g. a new fastener).
+
+A plugin shall include the following items:
 - Plugin descriptor json file
 - Type module with type registry (e.g. panel.py including register_panel function)
 - SAMM module with analysis registry (e.g. panel_buckling.py including register_panel_buckling function)
 - Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
 - **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
+
+
+
+
+
+
+
 
 #### 3.4.3. Summary of the 2nd Overview of the Architecture
 

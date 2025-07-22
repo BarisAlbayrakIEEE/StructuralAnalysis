@@ -1,12 +1,12 @@
 **Contents**
 1.   [About The Project](#sec1)
 2.   [Problem Definition: Stress Analysis of the Structural Components](#sec2)
-3.   [Software Architecture](#sec3)
-3.1. [An Overview of the Problem](#sec31)
-3.2. [The Target Market](#sec32)
-3.3. [The Architecture: The 1st Overview](#sec33)
+3.   [Software Architecture](#sec3)\
+3.1. [An Overview of the Problem](#sec31)\
+3.2. [The Target Market](#sec32)\
+3.3. [The Architecture: The 1st Overview](#sec33)\
 3.4. [The Architecture: The 2nd Overview](#sec34)
-4.   [Software Design](#sec4)
+4.   [Software Design](#sec4)\
 4.1. [Use Case Diagram](#sec41)
 
 **Nomenclature**

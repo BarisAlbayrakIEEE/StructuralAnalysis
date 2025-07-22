@@ -137,17 +137,19 @@ This requires a plugin based software where the development of the SAMMs is left
 Additionally, the companies may assign a team of SAEs instead of the software engineers for the plugin development.
 This is quite common in the industry as the SAEs are equipped with some level of software development skills.
 
-### 3.3. Initial Decisions for the Architecture <a id='sec33'></a>
+### 3.3. The Architecture: The 1st Overview <a id='sec33'></a>
 
 I will review the following major aspects of the software architecture to make some decisions:
 - Deployment model
 - User model
 - Data & Persistency
 - Performance
+- Concurrency
 
 Some other issues have already been covered in the previous sections.
 
-**Deployment Model**\
+#### 3.3.1. Deployment Model
+
 1. Options:
 - Desktop (native)
 - Web-based (cloud)
@@ -160,7 +162,8 @@ Some other issues have already been covered in the previous sections.
 - Does the customer have HPCs?
 - Does the customer have a powerful server to satisfy the latency and bandwidth constraints?
 
-**User Model**\
+#### 3.3.2. User Model
+
 1. Options:
 - Single user (standalone)
 - Multi-user (shared data, roles, collaboration)
@@ -169,7 +172,8 @@ Some other issues have already been covered in the previous sections.
 - Is there a need to define user credentials (e.g. role)?
 - Is central data sharing or report distribution a requirement?
 
-**Data & Persistency**\
+#### 3.3.3. Data & Persistency
+
 1. Options:
 - Filesystem (JSON, XML, binary)
 - Embedded DB (e.g. SQLite)
@@ -182,7 +186,8 @@ Some other issues have already been covered in the previous sections.
 - Is cross-platform file portability important?
 - Are the available resources sufficient to manage efficient transactions from/to a DB?
 
-**Performance**\
+#### 3.3.4. Performance
+
 1. Options:
 - Local CPU and GPU
 - An HPC solver distributed by a server
@@ -193,11 +198,19 @@ Some other issues have already been covered in the previous sections.
 - Is there a need to scale out to handle many simultaneous jobs?
 - Is there a need for multithreading or multi-processing or both?
 
-**Concurrency**\
-Some importantt aspects of the concurrency is already mentioned above.
-The details will be discussed later.
+#### 3.3.5. Concurrency
 
-**In summary, suppose we have the following customer requirements considering the descussions held in the previous sections:**
+The application woulld obviously need the concurrent execution in terms of:
+- Separation of responsibility (e.g. core framework and UI)
+- Parallel computation
+- Concurrent access by multiple user
+
+Previous sections already listed some arguments related to the concurrency.
+Later, I will discuss about this important issue in detail.
+
+#### 3.3.6. Summary of the 1st Overview of the Architecture
+
+Considering the descussions held in the previous sections, the first overview of the architecture would be:
 - A web-based (cloud) application supported by a local company server
 - Multi-user model considering the follwing issues: shared data, roles and collaboration
 - A client-Server DB: MySQL
@@ -208,40 +221,23 @@ The third requirement is to support an efficient multi-user concurrent access on
 A NoSQL DB could be prefered to deal with the graph data more efficiently.
 However, the SAA is not a low-latency application and it needs to employ the graph algorithms itself.
 The last requirement is to perform the heavy computations of structural analysis.
-The GPU resources need to be spared for the graphics UI.
+The GPU resources need to be spared for the FE graphics display.
 
-### 3.4. Initial Customer Requirements and the Corresponding Architecture <a id='sec34'></a>
+### 3.4. The Architecture: The 2nd Overview <a id='sec34'></a>
 
-The summary of the three previous sections:
-- [The 1st overview of the problem](#sec31) yields to the following requirements:
-1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
-2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
-3. Each group may contain hundreds of types.
-4. There exist *dependency relationships* between the types.
-5. The SAA needs an interface with the FE software.
-- [The target market](#sec32) analysis yields to the following requirements:
-1. The company would provide sufficient resources of processors and servers.
-2. The SAA will manage and process large data.
-3. The SAA will have DBs.
-4. The SAA will define a UI form for each type.
-5. The SAA will contain a graphics display for the FE model.
-6. The SAA will manage the configuration issues.
-7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
-8. The plugins could be developed by the customer.
-- [The initial architectural decisions](#sec33) can be summarized by the following requirements:
-1. Deployment Model: Cloud application
-2. User Model: Multi-user
-3. Data & Persistency: Client-server MySQL
-4. Performance: An HPC distributed by a server
+On top of :
+- Deployment model
+- User model
+- Data & Persistency
+- Performance
+- Concurrency
 
-**Currently:**\
-I will go over the requirements analysis in order to highlight the current decissions about the architecture.
-The concepts to satisfy some of the above requirements have already been discussed:
-- The company would provide sufficient resources of processors and servers: **HPC with a local server**
-- The SAA will have DBs: **Client-server MySQL**
-- The SAA will manage the configuration issues: **Cloud application with a multi-user model**
+Some other issues have already been covered in the previous sections.
 
-**Frontend:**\
+Here, I will
+
+#### 3.4.1. Frontend
+
 This project excludes the details of the front-end development.
 However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
 Following two were the initial requirements related to the UI:
@@ -253,7 +249,11 @@ Based on these requirements, I will continue with **javascript/react as the fron
 - high-performance interactive 3D visualization (e.g. vtk),
 - best start-up and runtime performance.
 
-**Plugins:**\
+Additionally, the separation of responsibility between the main framework and the UI is satisfied
+as react executes asynchronously with the core framework.
+
+#### 3.4.2. Plugins
+
 We had a requirement related to the extensibility:
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
@@ -274,7 +274,8 @@ The SAA installation needs to unpack **some sample plugins** including the follo
 - Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
 - **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
 
-**Remainings:**\
+#### 3.4.3. Remainings
+
 The discussions up to here helped us to make decisions about the software architecture.
 However, there remains some gaps in the architecture mostly related with the core framework:
 - The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.

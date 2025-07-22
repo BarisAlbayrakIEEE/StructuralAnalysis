@@ -220,7 +220,7 @@ Later, I will discuss about this important issue in detail.
 
 #### 3.3.6. Summary of the 1st Overview of the Architecture
 
-Considering the descussions held in the previous sections, the first overview of the architecture would be:
+Considering the discussions held in the previous sections, the first overview of the architecture would be:
 - A web-based (cloud) application supported by a local company server
 - Multi-user model considering the follwing issues: shared data, roles and collaboration
 - A client-Server DB: MySQL

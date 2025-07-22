@@ -33,15 +33,7 @@ This project is a part of the repositories to illustrate my software engineering
 This repository especially demonstrates my skills about the software architecture and design.
 
 In the first section, I will start by describing the problem without diving into too much detail.
-Then, I will examine the requirements and limitations (R&L) for the requested software.
-Finally, I will cover the architecture and design aspects based on the those R&L.
-Although this flowchart looks straight forward,
-the process is an iterative procedure where the R&L, the architecture and the design will evolve eventually.
-Hence, I will have a number of milestones to discuss about the current state of the software as a design review.
-
-**CAUTION**\
-**This project defines only the core framework of a structural analysis application (SAA).**
-**Only the interface (i.e. the R&L) is defined for the other components (e.g. the DB, the UI).**
+Then, I will discuss about the architecture and design of an application to serve as a solution to the given problem.
 
 ## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
 

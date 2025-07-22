@@ -26,7 +26,7 @@
 ## 1. About The Project <a id='sec1'></a>
 
 This project is a part of the repositories to illustrate my software engineering experience.
-This repository especially demonstrates my skills about the software design.
+This repository especially demonstrates my skills about the software architecture and design.
 
 In the first section, I will start by describing the problem without diving into too much detail.
 Then, I will examine the requirements and limitations (R&L) for the requested software.
@@ -289,7 +289,7 @@ These will be covered in the following sections by studying the aspects of the s
 In this chapter, I will start by a use case diagram in order to have a view of the execution flow of the SAA.
 Then, I will discuss the issues related to the software design in detail.
 
-### 4.1. Use Case Diagram <a id='sec41'></a>
+### 4.1. Use Case Diagram 1 <a id='sec41'></a>
 
 - **Primary Actor:** SAE
 - **Scope:** SAA

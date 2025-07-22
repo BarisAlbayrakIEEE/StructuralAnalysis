@@ -226,11 +226,11 @@ Considering the discussions held in the previous sections, the first overview of
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 
-The first two requirements above are obvious by the requirements achieved by the target market analysis.
-The third requirement is to support an efficient multi-user concurrent access on the large data.
+The first two decissions above are obvious by the requirements achieved by the target market analysis.
+The third one is to support an efficient multi-user concurrent access on the large data.
 A NoSQL DB could be prefered to deal with the graph data more efficiently.
 However, the SAA is not a low-latency application and it needs to employ the graph algorithms itself.
-The last requirement is to perform the heavy computations of structural analysis.
+The last one is to perform the heavy computations of structural analysis.
 The GPU resources need to be spared for the FE graphics display.
 
 Lets review the requirements listed at the beginning after the 1st overview:

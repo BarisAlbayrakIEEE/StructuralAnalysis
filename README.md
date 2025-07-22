@@ -73,7 +73,7 @@ Nevertheless, the FE approach contains some inevitable assumptions which results
 
 **The aim of the project is to design the core framework of a *closed form stand-alone* solution for the analytical approach**.
 
-## 3. Initial Costumer Reqquirements <a id='sec3'></a>
+## 3. Initial Costumer Requirements <a id='sec3'></a>
 
 I will try to generate a set of initial customer requirements by examining the following two:
 1. An overview of the problem
@@ -139,7 +139,7 @@ This is quite common in the industry as the SAEs are equipped with some level of
 
 ### 3.3. Initial Decisions for the Architecture <a id='sec33'></a>
 
-I will review the following major aspects of the software architecture analyses to make some decisions:
+I will review the following major aspects of the software architecture to make some decisions:
 - Deployment model
 - User model
 - Data & Persistency

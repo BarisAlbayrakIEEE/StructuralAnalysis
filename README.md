@@ -226,7 +226,7 @@ Considering the discussions held in the previous sections, the first overview of
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 
-The first two decissions above are obvious by the requirements achieved by the target market analysis.
+The first two decissions above serve for the requirements coming from the target market analysis.
 The third one is to support an efficient multi-user concurrent access on the large data.
 A NoSQL DB could be prefered to deal with the graph data more efficiently.
 However, the SAA is not a low-latency application and it needs to employ the graph algorithms itself.

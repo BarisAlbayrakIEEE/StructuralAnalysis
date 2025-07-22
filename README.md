@@ -1,9 +1,13 @@
 **Contents**
-1. [About The Project](#sec1)
-2. [Problem Definition: Stress Analysis of the Structural Components](#sec2)
-3. [Software Design: Requirements, Limitations & Assumptions](#sec3)
-4. [Software Design Summary](#sec4)
-5. [Further Discussions](#sec5)
+1.   [About The Project](#sec1)
+2.   [Problem Definition: Stress Analysis of the Structural Components](#sec2)
+3.   [Software Architecture](#sec3)
+3.1. [An Overview of the Problem](#sec31)
+3.2. [The Target Market](#sec32)
+3.3. [The Architecture: The 1st Overview](#sec33)
+3.4. [The Architecture: The 2nd Overview](#sec34)
+4.   [Software Design](#sec4)
+4.1. [Use Case Diagram](#sec41)
 
 **Nomenclature**
 - **SC:** Structural Component
@@ -73,7 +77,7 @@ Nevertheless, the FE approach contains some inevitable assumptions which results
 
 **The aim of the project is to design the core framework of a *closed form stand-alone* solution for the analytical approach**.
 
-## 3. Initial Costumer Requirements <a id='sec3'></a>
+## 3. Software Architecture <a id='sec3'></a>
 
 I will try to generate a set of initial customer requirements by examining the followings:
 1. An overview of the problem
@@ -326,7 +330,7 @@ which I will focus in the next section.
 In this chapter, I will start by a use case diagram in order to have a view of the execution flow of the SAA.
 Then, I will discuss the issues related to the software design in detail.
 
-### 4.1. Use Case Diagram 1 <a id='sec41'></a>
+### 4.1. Use Case Diagram <a id='sec41'></a>
 
 - **Primary Actor:** SAE
 - **Scope:** SAA
@@ -392,18 +396,4 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 #### 4.1.5. UML Diagram
 
 ![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
-
-
-
-
-
-
-
-
-
-
-
-## 4. Software Design Summary <a id='sec4'></a>
-
-## 5. Further Discussions <a id='sec5'></a>
 

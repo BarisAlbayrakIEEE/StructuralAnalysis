@@ -393,8 +393,8 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 
 There exist three use case scenarios:
 1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
-2. [Normal User] | Check-out a DCG node from the MySQL DB, inspect/size the SCs in the DCG node and commit the updates to the MySQL DB
-3. [Normal User] | Work without an FE model
+2. [Ordinary User] | Check-out a DCG node from the MySQL DB, inspect/size the SCs in the DCG node and commit the updates to the MySQL DB
+3. [Ordinary User] | Work without an FE model
 
 
 
@@ -431,7 +431,7 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 
 **Stakeholders and Interests**
 - **Master user**: wants to create a new DCG based oon an FE data.
-- **Normal users**: need the new DCG to inspect/size.
+- **Ordinary users**: need the new DCG to inspect/size.
 
 **Preconditions**
 - an existing FE data pack with a predefined format including the geometry, material and loading exists.

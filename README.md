@@ -4,8 +4,10 @@
 3.   [Software Architecture](#sec3)\
 3.1. [An Overview of the Problem](#sec31)\
 3.2. [The Target Market](#sec32)\
-3.3. [The Architecture: The 1st Overview](#sec33)\
-3.4. [The Architecture: The 2nd Overview](#sec34)
+3.3. [The Architecture: The 1st Overview: Initial](#sec33)\
+3.4. [The Architecture: The 2nd Overview: Frontend](#sec34)\
+3.5. [The Architecture: The 3rd Overview: Data](#sec35)\
+3.6. [The Architecture: Summary](#sec36)
 4.   [Software Design](#sec4)\
 4.1. [Use Case Diagram](#sec41)
 
@@ -132,7 +134,7 @@ This requires a plugin based software where the development of the SAMMs is left
 Additionally, the companies may assign a team of SAEs instead of the software engineers for the plugin development.
 This is quite common in the industry as the SAEs are equipped with some level of software development skills.
 
-### 3.3. The Architecture: The 1st Overview <a id='sec33'></a>
+### 3.3. The Architecture: The 1st Overview: Initial <a id='sec33'></a>
 
 Firstly, I will summarize the previous two sections as a requirement list:
 - [An overview of the problem](#sec31) yields to the following requirements:
@@ -246,20 +248,46 @@ Lets review the requirements listed at the beginning after the 1st overview:
 3. ~~The SAA will have DBs.~~
 4. The SAA will define a UI form for each type.
 5. The SAA will contain a graphics display for the FE model.
-6. ~~The SAA will manage the configuration issues.~~
+6. The SAA will manage the configuration issues.
 7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 8. The plugins could be developed by the customer.
 
-### 3.4. The Architecture: The 2nd Overview <a id='sec34'></a>
+### 3.4. The Architecture: The 2nd Overview: Frontend <a id='sec34'></a>
 
-In this section, I will discuss about the following issues:
-- Type definitions
-- Memory management
-- Frontend
+**This project excludes the details of the frontend development.**
+However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
+Following two were the initial requirements related to the UI:
+- The SAA will define a UI form for each type.
+- The SAA will contain a graphics display for the FE model.
 
-#### 3.4.1. Type Definitions
+Based on these requirements, I will continue with **javascript/react as the frontend language** in order to make use of:
+- the great library,
+- high-performance interactive 3D visualization (e.g. vtk),
+- best start-up and runtime performance.
 
-We had two requirements related to the extensibility:
+Additionally, the separation of responsibility between the main framework and the UI is satisfied
+as react executes asynchronously with the core framework.
+
+Lets review the requirements listed at the beginning after the 2nd overview:
+- [An overview of the problem](#sec31) yields to the following requirements:
+1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
+2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
+3. Each group may contain hundreds of types.
+4. There exist *dependency relationships* between the types.
+5. ~~The SAA needs an interface with the FE software.~~
+- [The target market](#sec32) analysis yields to the following requirements:
+1. ~~The company would provide sufficient resources of processors and servers.~~
+2. ~~The SAA will manage and process large data.~~
+3. ~~The SAA will have DBs.~~
+4. ~~The SAA will define a UI form for each type.~~
+5. ~~The SAA will contain a graphics display for the FE model.~~
+6. The SAA will manage the configuration issues.
+7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+8. The plugins could be developed by the customer.
+
+### 3.5. The Architecture: The 3rd Overview: Data <a id='sec35'></a>
+
+We had two requirements related to the extensibility from [the overview of the problem](#sec31):
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
 
@@ -280,8 +308,7 @@ would need to construct a type/class hierarchy which requires a careful design s
 - test driven design (TDD),
 - etc.
 
-The type definitions, the class hierarchy and the design process is a crucial part of the application
-and has more workload than all other components.
+The type definitions, the class hierarchy and the design process is a crucial part of the application and has a significant workload.
 Besides, the software design needs qualified software engineers.
 A plugin approach assuming an empty framework to be extended by the client plugins
 would fail as it pushes too much pressure on the client.
@@ -297,8 +324,6 @@ A plugin shall include the following items:
 - SAMM module with analysis registry (e.g. panel_buckling.py including register_panel_buckling function)
 - Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
 - **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
-
-#### 3.4.2. Memory Management
 
 [The overview of the problem](#sec31) explained the dependencies within the data.
 The dependencies/relations in the data require a link-based (i.e. pointer-based) data structure for the memory managemant.
@@ -325,33 +350,24 @@ We have different requirements and usage in case of the SAA:
 - The depth of the DCG in case of the SAA is very small: material -> panel -> panel buckling -> buckling RF.
 - No need to have a background process for the cycled or deleted nodes.
 
+Lets summarize the above discussions together with the decissions made in the previous sections:
+- Computational libraries (i.e. SAMMs) will be written in python.
+- The frontend will be written in js.
+- We need a single-thread DCG with a small depth.
 
-
-
-#### 3.4.3. Frontend
-
-**This project excludes the details of the frontend development.**
-However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
-Following two were the initial requirements related to the UI:
-- The SAA will define a UI form for each type.
-- The SAA will contain a graphics display for the FE model.
-
-Based on these requirements, I will continue with **javascript/react as the frontend language** in order to make use of:
-- the great library,
-- high-performance interactive 3D visualization (e.g. vtk),
-- best start-up and runtime performance.
-
-Additionally, the separation of responsibility between the main framework and the UI is satisfied
-as react executes asynchronously with the core framework.
-
-#### 3.4.3. Summary of the 2nd Overview of the Architecture
+There is an important point mentioned before related to the SAA.
+The SAA runs time consuming SAMMs due to the nature of the SA
+where the secondary issues such as spatial locality of the data can be neglected.
+Hence, **I will continue with Pyhton as the language of the core framework**.
+NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
+FastApi would create a bridge with the frontend.
 
 Lets review the requirements listed at the beginning after the 2nd overview:
 - [An overview of the problem](#sec31) yields to the following requirements:
 1. ~~The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.~~
 2. ~~In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).~~
 3. ~~Each group may contain hundreds of types.~~
-4. There exist *dependency relationships* between the types.
+4. ~~There exist *dependency relationships* between the types.~~
 5. ~~The SAA needs an interface with the FE software.~~
 - [The target market](#sec32) analysis yields to the following requirements:
 1. ~~The company would provide sufficient resources of processors and servers.~~
@@ -359,39 +375,143 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 3. ~~The SAA will have DBs.~~
 4. ~~The SAA will define a UI form for each type.~~
 5. ~~The SAA will contain a graphics display for the FE model.~~
-6. ~~The SAA will manage the configuration issues.~~
+6. The SAA will manage the configuration issues.
 7. ~~The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.~~
 8. ~~The plugins could be developed by the customer.~~
 
-The requirements related with the type definitions and the plugin style extensibility still remain
-which I will focus in the next section.
 
-## 4. Software Design <a id='sec4'></a>
 
-In this chapter, I will start by a use case diagram in order to have a view of the execution flow of the SAA.
-Then, I will discuss the issues related to the software design in detail.
 
-### 4.1. Use Case Diagram <a id='sec41'></a>
+
+
+
+
+
+
+
+### 3.6. The Architecture: Use Case Diagrams <a id='sec36'></a>
+
+There exist three use case scenarios:
+1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
+2. [Normal User] | Check-out a structural assembly from the MySQL DB, inspect/size the assembly and commit the updates to the MySQL DB
+3. [Normal User] | Work without an FE model
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3.6.1 Use Case scenario #1
+
+In this scenario, a master user imports a FEM.
+The core framework has IO routines for the FE data.
+The importer reads the material, load, node and element data from the FE file (e.g. a bdf file)
+and create the DCG by constructing the objects of SAA (e.g. panel and stiffener) based on this FE data.
+This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
+With the import process:
+- the importer loads the FE data to be displayed by the FE graphics window
+- the importer constructs the SAA objects (e.g. panel_11)
+
+The importer, constructs the SAA objects without the dependencies.
+In other words, the ancestor and descendant data blocks of the DCG is empty.
+For example, the side stiffeners of a panel object are not set yet.
+The master user needs to set these relations between the SAA objects from the UI.
+Each UI action of the master user is transfered to the core system to update the ancestor/descendant relations of the DCG.
+Finally, the master user commits the new DCG assigning a structural configuration ID related to the imported FEM.
+
+- **Primary Actor:** Master user
+- **Scope:** SAA
+- **Level:** User goal
+
+**Stakeholders and Interests**
+- **Master user**: wants to create a new DCG based oon an FE data.
+- **Normal users**: need the new DCG to inspect/size.
+
+**Preconditions**
+- an existing FE data pack with a predefined format including the geometry, material and loading exists.
+
+**Main Flow**
+1. **Master user** clicks **import an FE data**.
+2. **UI** emits an event to activate the system for the FE data extraction.
+3. **System** creates the DCG corresponding to the input FE data and links the DCG to the FE.
+4. **System** emits an event to initialize the user forms and the graphics.
+5. **UI** initializes the user forms and the graphics.
+6. **Master user** updates the elements of the DCG for the relations.
+7. **Master user** clicks **commit new DCG**.
+8. **UI** emits an event to commit the new DCG.
+9. **System** commits the new DCG to the MySQL DB.
+
+**Alternate Flows (Errors) - 1: Error during FE import**
+- **3. System** terminates the the FE Import.
+- **4. System** logs an error and sets the status to **Error**.
+- **5. System** emits an event to activate the UI to display the error message for the import failure.
+- **6. UI** displays the error message for the import failure.
+
+**Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
+- **9. System** terminates the SAMM run.
+- **10. System** emits an event to activate the UI to display the error message for the missing dataset.
+- **11. UI** displays the error message for the missing dataset.
+
+**Alternate Flows (Errors) - 3: The computation fails**
+- **11. System** logs an error for the erroneous SA.
+- **12. System** sets status to **Error**.
+- **13. System** waits until the remainning SAs finishes.
+- **14. System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
+- **15. UI** updates the RFs in the form of the active SC if not erroneous.
+- **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
+- **17. UI** displays the error message for the erroneous SA.
+
+**Postconditions**
+- The SAR nodes for the successful SAs exist in the DAG.
+- The RF in the current user form has the latest value if not erroneous.
+- UI reflects the updated state data.
+
+**UML Diagram**\
+![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3.6.1 Use Case scenario #1
+
+In this scenario, a master user imports a FEM.
+The core framework has IO routines for the FE data.
+The importer shall read the material, load, node and element data from the FE file (e.g. a bdf file)
+and construct the objects of SAA (e.g. panel and stiffener) based on this FE data.
+This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
+At the end of the import process:
+- the importer loads the FE data to be displayed by the FE graphics window
+- the importer constructs the objects (e.g. panel_11)
+
+The importer, constructs The objects without the dependencies.
+For example, the side stiffeners of a panel object are not set yet.
+The master user needs to set these relations between the objects.
+Finally, the master user commits the new structural assembly assigning a structural configuration related to the imported FEM.
 
 - **Primary Actor:** SAE
 - **Scope:** SAA
 - **Level:** User goal  
 
-#### 4.1.1. Stakeholders and Interests
+**Stakeholders and Interests**
 - **SAE**: wants to inspect the SCs under the FE extracted loads.
 - **Project Manager**: needs quick feedback on the analysis status.
 
-#### 4.1.2. Preconditions
+**Preconditions**
 - an existing FE data pack with a predefined format including the geometry, material and loading exists.
-
-#### 4.1.3. Scenarios
-
-There are mainly two use case scenarios:
-1. Zero-to-end scenario including the FE import
-2. DAG-to-end scenario where an existing DAG is requested to run SAMMs
-
-I will demonstrate the former scenario.
-The later requires an existing DAG which is an issue related to the IO algorithms.
 
 **Main Flow**
 1. **SAE** selects to import an FE data with a predefined format.
@@ -429,12 +549,126 @@ The later requires an existing DAG which is an issue related to the IO algorithm
 - **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
 - **17. UI** displays the error message for the erroneous SA.
 
-#### 4.1.4. Postconditions
+**Postconditions**
 - The SAR nodes for the successful SAs exist in the DAG.
 - The RF in the current user form has the latest value if not erroneous.
 - UI reflects the updated state data.
 
-#### 4.1.5. UML Diagram
-
+**UML Diagram**\
 ![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3.6.1 Use Case scenario #1
+
+In this scenario, a master user imports a FEM.
+The core framework has IO routines for the FE data.
+The importer shall read the material, load, node and element data from the FE file (e.g. a bdf file)
+and construct the objects of SAA (e.g. panel and stiffener) based on this FE data.
+This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
+At the end of the import process:
+- the importer loads the FE data to be displayed by the FE graphics window
+- the importer constructs the objects (e.g. panel_11)
+
+The importer, constructs The objects without the dependencies.
+For example, the side stiffeners of a panel object are not set yet.
+The master user needs to set these relations between the objects.
+Finally, the master user commits the new structural assembly assigning a structural configuration related to the imported FEM.
+
+- **Primary Actor:** SAE
+- **Scope:** SAA
+- **Level:** User goal  
+
+**Stakeholders and Interests**
+- **SAE**: wants to inspect the SCs under the FE extracted loads.
+- **Project Manager**: needs quick feedback on the analysis status.
+
+**Preconditions**
+- an existing FE data pack with a predefined format including the geometry, material and loading exists.
+
+**Main Flow**
+1. **SAE** selects to import an FE data with a predefined format.
+2. **UI** emits an event to activate the system for the FE data extraction.
+3. **System** creates the DAG corresponding to the FE data and links the DAG to the FE.
+4. **System** emits an event to initialize the user forms and the graphics.
+5. **UI** initializes the user forms and the graphics.
+6. **SAE** selects the analysis dataset (i.e. SCs, LCs and SAMMs) from the component tree.
+7. **SAE** clicks **Run Analysis** to execute the SAs for the selected analysis dataset.
+8. **UI** emits an event to activate the system for an analysis request with the selected dataset.
+9. **System** retrieves the FE data from the DAG corresponding to the requested dataset.
+10. **System** executes the SAMMs with the requested dataset.
+11. **System** creates the SAR nodes in the DAG and links them to the requested dataset.
+12. **System** updates the states of the SCs as **up-to-date**.
+13. **System** emits an event to activate the UI for the states and SARs.
+14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
+
+**Alternate Flows (Errors) - 1: Error during FE import**
+- **3. System** terminates the the FE Import.
+- **4. System** logs an error and sets the status to **Error**.
+- **5. System** emits an event to activate the UI to display the error message for the import failure.
+- **6. UI** displays the error message for the import failure.
+
+**Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
+- **9. System** terminates the SAMM run.
+- **10. System** emits an event to activate the UI to display the error message for the missing dataset.
+- **11. UI** displays the error message for the missing dataset.
+
+**Alternate Flows (Errors) - 3: The computation fails**
+- **11. System** logs an error for the erroneous SA.
+- **12. System** sets status to **Error**.
+- **13. System** waits until the remainning SAs finishes.
+- **14. System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
+- **15. UI** updates the RFs in the form of the active SC if not erroneous.
+- **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
+- **17. UI** displays the error message for the erroneous SA.
+
+**Postconditions**
+- The SAR nodes for the successful SAs exist in the DAG.
+- The RF in the current user form has the latest value if not erroneous.
+- UI reflects the updated state data.
+
+**UML Diagram**\
+![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
+
+
+
+
+
+
+
+
+
+### 3.7. The Architecture: Summary <a id='sec37'></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. Software Design <a id='sec4'></a>
+
+In this chapter, I will start by a use case diagram in order to have a view of the execution flow of the SAA.
+Then, I will discuss the issues related to the software design in detail.
 

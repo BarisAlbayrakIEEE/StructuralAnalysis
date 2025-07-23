@@ -1,0 +1,36 @@
+@startuml use_case_diagram_1
+
+start
+:[Master User] Select FE file;
+:[UI] Call [System] for import;
+:[System] Import FE file and create new DCG;
+
+if (Import error?) then (no)
+  :[System] Call [UI] to initialize;
+  :[UI] Initialize;
+  :[Master User] Update the data relations;
+  :[Master User] Select commit the new DCG;
+  :[UI] Call [System] to commit the new DCG;
+  :[System] Commit the new DCG;
+
+  if (DB error?) then (no)
+    :[MySQL] Store the new DCG;
+    stop;
+  else (yes)
+    :[MySQL] Return error;
+    :[System] Call [UI] for meassage;
+    :[UI] Show message;
+    :[Master User] Report the error to IT;
+
+    stop;
+  endif
+else (yes)
+  :[System] Terminate FE import;
+  :[System] log;
+  :[System] Call [UI] for message;
+  :[UI] Show message;
+
+  stop;
+endif
+
+@enduml

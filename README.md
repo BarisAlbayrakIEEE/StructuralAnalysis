@@ -393,7 +393,7 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 
 There exist three use case scenarios:
 1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
-2. [Normal User] | Check-out a structural assembly from the MySQL DB, inspect/size the assembly and commit the updates to the MySQL DB
+2. [Normal User] | Check-out a DCG node from the MySQL DB, inspect/size the SCs in the DCG node and commit the updates to the MySQL DB
 3. [Normal User] | Work without an FE model
 
 
@@ -439,41 +439,31 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 **Main Flow**
 1. **Master user** clicks **import an FE data**.
 2. **UI** emits an event to activate the system for the FE data extraction.
-3. **System** creates the DCG corresponding to the input FE data and links the DCG to the FE.
+3. **System** imports the FE file to create a new DCG linked to the input FE file.
 4. **System** emits an event to initialize the user forms and the graphics.
 5. **UI** initializes the user forms and the graphics.
 6. **Master user** updates the elements of the DCG for the relations.
 7. **Master user** clicks **commit new DCG**.
 8. **UI** emits an event to commit the new DCG.
 9. **System** commits the new DCG to the MySQL DB.
+10. **MySQL** stores the new DCG.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
-- **3. System** terminates the the FE Import.
+- **3. System** terminates the FE Import.
 - **4. System** logs an error and sets the status to **Error**.
 - **5. System** emits an event to activate the UI to display the error message for the import failure.
 - **6. UI** displays the error message for the import failure.
 
-**Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
-- **9. System** terminates the SAMM run.
-- **10. System** emits an event to activate the UI to display the error message for the missing dataset.
-- **11. UI** displays the error message for the missing dataset.
-
-**Alternate Flows (Errors) - 3: The computation fails**
-- **11. System** logs an error for the erroneous SA.
-- **12. System** sets status to **Error**.
-- **13. System** waits until the remainning SAs finishes.
-- **14. System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
-- **15. UI** updates the RFs in the form of the active SC if not erroneous.
-- **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
-- **17. UI** displays the error message for the erroneous SA.
+**Alternate Flows (Errors) - 2: Error during MySQL load**
+- **10. MySQL** returns load error.
+- **11. System** emits an event to activate the UI to display the error message for the DB load error.
+- **12. Master user** reports the DB error to the server IT.
 
 **Postconditions**
-- The SAR nodes for the successful SAs exist in the DAG.
-- The RF in the current user form has the latest value if not erroneous.
-- UI reflects the updated state data.
+- MySQL DB contains the new DCG.
 
 **UML Diagram**\
-![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
+![UCD-01: Master User FE Import](./uml/use_case_diagram_1.png)
 
 
 
@@ -486,7 +476,7 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 
 
 
-#### 3.6.1 Use Case scenario #1
+#### 3.6.2 Use Case scenario #2
 
 In this scenario, a master user imports a FEM.
 The core framework has IO routines for the FE data.

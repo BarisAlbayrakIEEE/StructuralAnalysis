@@ -252,27 +252,12 @@ Lets review the requirements listed at the beginning after the 1st overview:
 
 ### 3.4. The Architecture: The 2nd Overview <a id='sec34'></a>
 
-In this section, I will discuss about the two important components of the SAA:
+In this section, I will discuss about the following issues:
+- Type definitions
+- Memory management
 - Frontend
-- Plugins
 
-#### 3.4.1. Frontend
-
-**This project excludes the details of the frontend development.**
-However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
-Following two were the initial requirements related to the UI:
-- The SAA will define a UI form for each type.
-- The SAA will contain a graphics display for the FE model.
-
-Based on these requirements, I will continue with **javascript/react as the front-end language** in order to make use of:
-- the great library,
-- high-performance interactive 3D visualization (e.g. vtk),
-- best start-up and runtime performance.
-
-Additionally, the separation of responsibility between the main framework and the UI is satisfied
-as react executes asynchronously with the core framework.
-
-#### 3.4.2. Plugins
+#### 3.4.1. Type Definitions
 
 We had two requirements related to the extensibility:
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
@@ -300,12 +285,10 @@ and has more workload than all other components.
 Besides, the software design needs qualified software engineers.
 A plugin approach assuming an empty framework to be extended by the client plugins
 would fail as it pushes too much pressure on the client.
-
-**A better approach is involving the software design within the SAA (i.e. the core framework).**
-The SAA should provide a generic design with some abstractions, interfaces, transformations, etc.
+Thus, the SAA should provide a generic design with some abstractions, interfaces, transformations, etc.
 Additionally, the SAA should be shipped with the plugins of the fundamental types (e.g. panel, beam, ISection, LC, isotropic material, etc.).
 In this approach, the client is mainly considered to develop the SAMMs which is crucial for the data security of the large companies.
-The SAA would still be extensible with introducing new plugins on top of these core plugins
+The SAA would still be extensible with introducing new plugins on top of the compiled core plugins
 if the client needs a new specific type (e.g. a new fastener).
 
 A plugin shall include the following items:
@@ -315,20 +298,59 @@ A plugin shall include the following items:
 - Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
 - **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
 
+#### 3.4.2. Memory Management
+
+[The overview of the problem](#sec31) explained the dependencies within the data.
+The dependencies/relations in the data require a link-based (i.e. pointer-based) data structure for the memory managemant.
+The relations are not linear such that the data contains both the one-to-many and many-to-one relations.
+Semantically, there also exist ancestor/descendant relations such that a material is an ancestor of the SCs using that material.
+For example, when a material is updated, all the descendants of the material shall be visited.
+In other words, an action on an element shall be propogated through the descendants of the element.
+This could be performed using a proxy design pattern.
+However, a better/compact solution is to use a **directed graph** data structure for the memory management.
+The graph in the case of the SAA **is not acyclic** as the types have mutual dependencies (e.g. panel and stiffener).
+Hence, the core data structure of the SAA is a **directed cyclic graph (DCG)**.
+
+Consider a geometry application (e.g. Dassault's Catia).
+The application would be simulated with a directed acyclic graph (DAG).
+The DAG can be very deep in case of a geometry application
+as each geometrical element (e.g. points, curves, surfaces) would be defined using other elements.
+The DAG is acyclic as a point cannot be created from a curve which has a relation with the point somewhere in the history.
+The application may allow cycled nodes (e.g. Catia) and continue in an invalid state.
+A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
+Catia also allows removing an element without removing the decendants which requires a background thread as well.
+[The DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) examins the background thread in detail.
+
+We have different requirements and usage in case of the SAA:
+- The depth of the DCG in case of the SAA is very small: material -> panel -> panel buckling -> buckling RF.
+- No need to have a background process for the cycled or deleted nodes.
 
 
 
 
+#### 3.4.3. Frontend
 
+**This project excludes the details of the frontend development.**
+However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
+Following two were the initial requirements related to the UI:
+- The SAA will define a UI form for each type.
+- The SAA will contain a graphics display for the FE model.
 
+Based on these requirements, I will continue with **javascript/react as the frontend language** in order to make use of:
+- the great library,
+- high-performance interactive 3D visualization (e.g. vtk),
+- best start-up and runtime performance.
+
+Additionally, the separation of responsibility between the main framework and the UI is satisfied
+as react executes asynchronously with the core framework.
 
 #### 3.4.3. Summary of the 2nd Overview of the Architecture
 
 Lets review the requirements listed at the beginning after the 2nd overview:
 - [An overview of the problem](#sec31) yields to the following requirements:
-1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
-2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
-3. Each group may contain hundreds of types.
+1. ~~The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.~~
+2. ~~In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).~~
+3. ~~Each group may contain hundreds of types.~~
 4. There exist *dependency relationships* between the types.
 5. ~~The SAA needs an interface with the FE software.~~
 - [The target market](#sec32) analysis yields to the following requirements:
@@ -338,8 +360,8 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 4. ~~The SAA will define a UI form for each type.~~
 5. ~~The SAA will contain a graphics display for the FE model.~~
 6. ~~The SAA will manage the configuration issues.~~
-7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
-8. The plugins could be developed by the customer.
+7. ~~The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.~~
+8. ~~The plugins could be developed by the customer.~~
 
 The requirements related with the type definitions and the plugin style extensibility still remain
 which I will focus in the next section.

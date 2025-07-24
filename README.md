@@ -316,8 +316,7 @@ would fail as it pushes too much pressure on the client.
 Thus, the SAA should provide a generic design with some abstractions, interfaces, transformations, etc.
 Additionally, the SAA should be shipped with the plugins of the fundamental types (e.g. panel, beam, ISection, LC, isotropic material, etc.).
 In this approach, the client is mainly considered to develop the SAMMs.
-The SAA would still be extensible with introducing new plugins on top of the compiled core plugins
-if the client needs a new specific type (e.g. a new fastener).
+The SAA would still be extensible with introducing new plugins on top of the compiled core plugins.
 
 A plugin shall include the following items:
 - Plugin descriptor json file

@@ -369,7 +369,7 @@ Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 
 I will examine three use case scenarios:
-1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
+1. [Master User] | Import an FEM, create a DCG and commit it to the client-server MySQL DB
 2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and commit the updates to MySQL DB
 3. [Ordinary User] | Perform offline tradeoff
 

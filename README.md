@@ -236,7 +236,7 @@ However, the SAA is not a low-latency application and it needs to employ the gra
 The last one is to perform the heavy computations of structural analysis.
 The GPU resources need to be spared for the FE graphics display.
 
-Lets review the requirements listed at the beginning after the 1st overview:
+Lets review the requirements listed at the beginning again at the end of this section:
 - [An overview of the problem](#sec31) yields to the following requirements:
 1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
 2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
@@ -269,7 +269,7 @@ Based on these requirements, I will continue with **javascript/react as the fron
 Additionally, the separation of responsibility between the main framework and the UI is satisfied
 as react executes asynchronously with the core framework.
 
-Lets review the requirements listed at the beginning after the 2nd overview:
+Lets review the requirements listed at the beginning again at the end of this section:
 - [An overview of the problem](#sec31) yields to the following requirements:
 1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
 2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
@@ -401,7 +401,7 @@ Hence, considering that M is the number of SCs and N is the number of LCs:
 The loads and SARs dominate the SAA in terms of the memory which may cause memory problems.
 Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 
-Lets review the requirements listed at the beginning after the 2nd overview:
+Lets review the requirements listed at the beginning again at the end of this section:
 - [An overview of the problem](#sec31) yields to the following requirements:
 1. ~~The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.~~
 2. ~~In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).~~

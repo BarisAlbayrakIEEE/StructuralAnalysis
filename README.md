@@ -226,7 +226,7 @@ Later, I will discuss about this important issue in detail.
 
 Considering the discussions held in the previous sections, the first overview of the architecture would be:
 - A web-based (cloud) application supported by a local company server
-- Multi-user model considering the follwing issues: shared data, roles and collaboration
+- Multi-user model considering the following issues: shared data, roles and collaboration
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 
@@ -609,6 +609,53 @@ The DCG would make use of **the structural sharing** for the memory and performa
 
 ### 3.7. The Architecture: Summary <a id='sec37'></a>
 
+In this chapter, I discussed on some aspects of the software architecture to build an initial view of the SAA.
+In the next chapter, I will continue with the design of the SAA which may affect the decissions made in this chapter.
+Below are the current features of the SAA based on the previous sections:
+- A web-based (cloud) application supported by a local company server
+- Multi-user model considering the following issues: shared data, roles and collaboration
+- A client-Server DB: MySQL
+- An HPC solver distributed by a powerful server
+- Frontend language: js/react
+- UI contains three interactive components: product tree, user forms and FE display
+- System core language: Python
+- Core/UI bridge: FastAPI
+- Fundamental types: SC, LC, load, SAR
+- Plugin style extensibility
+- The core plugins for the fundamental types (e.g. panel) are shipped with the installation
+- The plugins contain both the type definition and the UI representation
+- Core data structure: Functionally persistent DCG
+- DBs for the standard items like material and fastener (per project)
+- DBs for the load and SAR data (per DCG)
+- DCG manages the state for each node which is visualized by the frontend
+- Asynchronous solver
+
+
+Based on these requirements, I will continue with **javascript/react as the frontend language** in order to make use of:
+
+
+**I will continue with Pyhton as the language of the core framework**.
+Hence, **the SC load data and the SARs shall be stored in the MySQL DB.**
+
+
+- **The DCG shall define and manage a state (e.g. UpToDate) for each element in the DCG.**
+- **The product tree and the FE display components of the UI shall reflect the current states of the elements (i.e. SCs and SARs).**
+- **The solver (i.e. SAMMs) shall run asynchrously.**
+- **While the solver is running (i.e. SAMMs), the UI shall switch to read-only mode allowing requests for new runs.**
+- **A solver pack shall be defined to list the SAMMs together with the versions.**
+- **The solver packs shall define the applicability (e.g. DCG type version) as well.**
+- **The DCGs shall define a configuration which contains: company policies, DCG type version and solver pack version.**
+Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of using proxy pattern.
+The DCG would make use of **the structural sharing** for the memory and performance.
+
+**The system shall define two arrays of DCGs:**
+1. The 1st array stores the functionally persistent DCGs for the online process connected to the MySQL DB.
+2. The 2nd array stores the functionally persistent DCGs for the offline process.
+
+**The SAA shall define a user profile with a role definition.**
+**The DCGs shall manage the roles by a field defined by the DCG nodes.**
+
+**The SAA shall assign MySQL DBs for the standard items (e.g. material and fastener).**
 
 
 

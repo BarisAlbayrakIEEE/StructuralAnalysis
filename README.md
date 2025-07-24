@@ -660,6 +660,7 @@ Below are the current features of the SAA based on the previous sections:
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. panel) are shipped with the installation
 - The plugins contain both the type definition and the UI representation
+- The core framework provides the type registration
 - Follow TDD approach for the core plugins
 - Core data structure: Functionally persistent DCG with structural sharing
 - Core manages two DCGs: online and offline

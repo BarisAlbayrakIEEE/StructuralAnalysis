@@ -9,10 +9,8 @@
 3.5. [Data Types & Data Structures](#sec35)\
 3.6. [Use Case Diagrams](#sec36)\
 3.7. [The Architecture: Summary](#sec37)
-4.   [Software Design](#sec4)\
-4.1. [Use Case Diagram](#sec41)
+4.   [Software Design](#sec4)
 
-### 3.6. The Architecture: Use Case Diagrams <a id='sec36'></a>
 **Nomenclature**
 - **SC:** Structural Component
 - **SCT:** Structural Component Tree

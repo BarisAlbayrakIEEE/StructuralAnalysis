@@ -379,33 +379,12 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 7. ~~The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.~~
 8. ~~The plugins could be developed by the customer.~~
 
-
-
-
-
-
-
-
-
-
-
 ### 3.6. The Architecture: Use Case Diagrams <a id='sec36'></a>
 
 There exist three use case scenarios:
 1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
-2. [Ordinary User] | Check-out a DCG node from the MySQL DB, inspect/size the SCs in the DCG node and commit the updates to the MySQL DB
+2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and commit the updates to MySQL DB
 3. [Ordinary User] | Work without an FE model
-
-
-
-
-
-
-
-
-
-
-
 
 #### 3.6.1 Use Case scenario #1
 
@@ -430,7 +409,7 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 - **Level:** User goal
 
 **Stakeholders and Interests**
-- **Master user**: wants to create a new DCG based oon an FE data.
+- **Master user**: wants to create a new DCG based on an FE data.
 - **Ordinary users**: need the new DCG to inspect/size.
 
 **Preconditions**
@@ -445,7 +424,7 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 6. **Master user** updates the elements of the DCG for the relations.
 7. **Master user** clicks **commit new DCG**.
 8. **UI** emits an event to commit the new DCG.
-9. **System** commits the new DCG to the MySQL DB.
+9. **System** commits the new DCG to MySQL DB.
 10. **MySQL** stores the new DCG.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
@@ -465,170 +444,131 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 **UML Diagram**\
 ![UCD-01: Master User FE Import](./uml/use_case_diagram_1.png)
 
-
-
-
-
-
-
-
-
-
-
-
 #### 3.6.2 Use Case scenario #2
 
-In this scenario, a master user imports a FEM.
-The core framework has IO routines for the FE data.
-The importer shall read the material, load, node and element data from the FE file (e.g. a bdf file)
-and construct the objects of SAA (e.g. panel and stiffener) based on this FE data.
-This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
-At the end of the import process:
-- the importer loads the FE data to be displayed by the FE graphics window
-- the importer constructs the objects (e.g. panel_11)
+In this scenario, an ordinary user checks out a sub-DCG from MySQL DB for inspection or sizing.
+The system loads the sub-DCG and the FEM attached to the DCG.
+Then, the system initializes the UI.
+The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has ben studied before.
+In this case, the SARs would have **UpToDate** state.
+Otherwise, SARs have null values and the states are **OutOfDate**.
+The ordinary user has two options: inspection or sizing.
+The ordinary user runs the SAMMs for each SC in case of an inspection process.
+Otherwise, the ordinary user updates the properties of the SCs (e.g. material and geometry)
+and run the SAMMs in order to get the acceptable SARs (i.e. RFs).
+After completing the inspection/sizing, the ordinary user commits the sub-DCG with the updated SARs to MySQL DB.
 
-The importer, constructs The objects without the dependencies.
-For example, the side stiffeners of a panel object are not set yet.
-The master user needs to set these relations between the objects.
-Finally, the master user commits the new structural assembly assigning a structural configuration related to the imported FEM.
+In this scenario, I will skip the inspection process.
+Although the SAA shall implement and optimization routine to automate the sizing,
+I will prepare the scenario for a manual procedure.
 
-- **Primary Actor:** SAE
+- **Primary Actor:** Ordinary user
 - **Scope:** SAA
-- **Level:** User goal  
+- **Level:** User goal
 
 **Stakeholders and Interests**
-- **SAE**: wants to inspect the SCs under the FE extracted loads.
-- **Project Manager**: needs quick feedback on the analysis status.
+- **Master user**: wants to update a sub-DCG for the SARs.
+- **Project Manager**: needs quick feedback on the analysis status of the sub-DCG.
 
 **Preconditions**
-- an existing FE data pack with a predefined format including the geometry, material and loading exists.
+- the sub-DCG shall already be loaded to MySQL DB by the master user.
 
 **Main Flow**
-1. **SAE** selects to import an FE data with a predefined format.
-2. **UI** emits an event to activate the system for the FE data extraction.
-3. **System** creates the DAG corresponding to the FE data and links the DAG to the FE.
+1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
+2. **UI** emits an event to activate the system for the DCG loading.
+3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
 4. **System** emits an event to initialize the user forms and the graphics.
-5. **UI** initializes the user forms and the graphics.
-6. **SAE** selects the analysis dataset (i.e. SCs, LCs and SAMMs) from the component tree.
-7. **SAE** clicks **Run Analysis** to execute the SAs for the selected analysis dataset.
-8. **UI** emits an event to activate the system for an analysis request with the selected dataset.
-9. **System** retrieves the FE data from the DAG corresponding to the requested dataset.
-10. **System** executes the SAMMs with the requested dataset.
-11. **System** creates the SAR nodes in the DAG and links them to the requested dataset.
-12. **System** updates the states of the SCs as **up-to-date**.
-13. **System** emits an event to activate the UI for the states and SARs.
-14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
+5. **UI** initializes the user forms and the FE graphics.
+6. **Ordinary User** reviews the SARs to detect the SCs that require sizing.
+7. **Ordinary User** updates the properties (e.g. material and geometry) of the SCs that needs sizing.
+8. **UI** emits an event to activate the system to set the state of the SARs corresponding to the updated SCs as **OutOfDate**.
+9. **System** sets the state of the SARs corresponding to the updated SCs as **OutOfDate**.
+10. **Ordinary User** runs SAMMs for the updated SCs.
+11. **UI** emits an event to activate the system to run SAMMs for the updated SCs.
+12. **System** runs SAMMs for the updated SCs.
+13. **System** updates the SARs and sets their state as **UpToDate**.
+14. **System** emits an event to activate the UI for the states and SARs.
+15. **UI** refreshes the SARs for the state and values.
+16. Repeat Steps 6 to 15 to finish sizing all SCs.
+10. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
+2. **UI** emits an event to activate the system for the sub-DCG commit.
+3. **System** commits the sub-DCG to MySQL DB.
 
-**Alternate Flows (Errors) - 1: Error during FE import**
-- **3. System** terminates the the FE Import.
-- **4. System** logs an error and sets the status to **Error**.
-- **5. System** emits an event to activate the UI to display the error message for the import failure.
-- **6. UI** displays the error message for the import failure.
-
-**Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
-- **9. System** terminates the SAMM run.
-- **10. System** emits an event to activate the UI to display the error message for the missing dataset.
-- **11. UI** displays the error message for the missing dataset.
-
-**Alternate Flows (Errors) - 3: The computation fails**
-- **11. System** logs an error for the erroneous SA.
-- **12. System** sets status to **Error**.
-- **13. System** waits until the remainning SAs finishes.
-- **14. System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
-- **15. UI** updates the RFs in the form of the active SC if not erroneous.
-- **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
-- **17. UI** displays the error message for the erroneous SA.
+**I will skip the error conditions for simplicity.**
 
 **Postconditions**
-- The SAR nodes for the successful SAs exist in the DAG.
-- The RF in the current user form has the latest value if not erroneous.
-- UI reflects the updated state data.
+- The SARs are **UpToDate** and safe.
 
 **UML Diagram**\
-![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
+![UCD-02: Ordinary User Sizing](./uml/use_case_diagram_2.png)
+
+#### 3.6.3 Use Case scenario #3
+
+In this scenario, an ordinary user performs trade-off analysis offline.
+The SAs involves complex strength analysis where the engineer would not make predictions without performing the calculations.
+For example, the effect of the panel thickness may not be linear on the result of panel buckling analysis.
+Hence, the engineer usualy needs to perform a quick analysis to see the effect of an action.
+The SAA shall offer this utility as well.
+In this case, the engineer works offline (independent of MySQL DB).
+She needs to define the SC to be examined (e.g. panel) and the auxilary objects (e.g. material, load).
+Then, she plays with the properties which she wants to examine (e.g. thickness) and runs the corresponding SAMM.
+The user would not import any FE data 
 
 
+The system loads the sub-DCG and the FEM attached to the DCG.
+Then, the system initializes the UI.
+The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has ben studied before.
+In this case, the SARs would have **UpToDate** state.
+Otherwise, SARs have null values and the states are **OutOfDate**.
+The ordinary user has two options: inspection or sizing.
+The ordinary user runs the SAMMs for each SC in case of an inspection process.
+Otherwise, the ordinary user updates the properties of the SCs (e.g. material and geometry)
+and run the SAMMs in order to get the acceptable SARs (i.e. RFs).
+After completing the inspection/sizing, the ordinary user commits the sub-DCG with the updated SARs to MySQL DB.
 
+In this scenario, I will skip the inspection process.
+Although the SAA shall implement and optimization routine to automate the sizing,
+I will prepare the scenario for a manual procedure.
 
-
-
-
-
-
-
-
-
-#### 3.6.1 Use Case scenario #1
-
-In this scenario, a master user imports a FEM.
-The core framework has IO routines for the FE data.
-The importer shall read the material, load, node and element data from the FE file (e.g. a bdf file)
-and construct the objects of SAA (e.g. panel and stiffener) based on this FE data.
-This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
-At the end of the import process:
-- the importer loads the FE data to be displayed by the FE graphics window
-- the importer constructs the objects (e.g. panel_11)
-
-The importer, constructs The objects without the dependencies.
-For example, the side stiffeners of a panel object are not set yet.
-The master user needs to set these relations between the objects.
-Finally, the master user commits the new structural assembly assigning a structural configuration related to the imported FEM.
-
-- **Primary Actor:** SAE
+- **Primary Actor:** Ordinary user
 - **Scope:** SAA
-- **Level:** User goal  
+- **Level:** User goal
 
 **Stakeholders and Interests**
-- **SAE**: wants to inspect the SCs under the FE extracted loads.
-- **Project Manager**: needs quick feedback on the analysis status.
+- **Master user**: wants to update a sub-DCG for the SARs.
+- **Project Manager**: needs quick feedback on the analysis status of the sub-DCG.
 
 **Preconditions**
-- an existing FE data pack with a predefined format including the geometry, material and loading exists.
+- the sub-DCG shall already be loaded to MySQL DB by the master user.
 
 **Main Flow**
-1. **SAE** selects to import an FE data with a predefined format.
-2. **UI** emits an event to activate the system for the FE data extraction.
-3. **System** creates the DAG corresponding to the FE data and links the DAG to the FE.
+1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
+2. **UI** emits an event to activate the system for the DCG loading.
+3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
 4. **System** emits an event to initialize the user forms and the graphics.
-5. **UI** initializes the user forms and the graphics.
-6. **SAE** selects the analysis dataset (i.e. SCs, LCs and SAMMs) from the component tree.
-7. **SAE** clicks **Run Analysis** to execute the SAs for the selected analysis dataset.
-8. **UI** emits an event to activate the system for an analysis request with the selected dataset.
-9. **System** retrieves the FE data from the DAG corresponding to the requested dataset.
-10. **System** executes the SAMMs with the requested dataset.
-11. **System** creates the SAR nodes in the DAG and links them to the requested dataset.
-12. **System** updates the states of the SCs as **up-to-date**.
-13. **System** emits an event to activate the UI for the states and SARs.
-14. **UI** refreshes the component tree for the state of the selected dataset as **up-to-date**.
+5. **UI** initializes the user forms and the FE graphics.
+6. **Ordinary User** reviews the SARs to detect the SCs that require sizing.
+7. **Ordinary User** updates the properties (e.g. material and geometry) of the SCs that needs sizing.
+8. **UI** emits an event to activate the system to set the state of the SARs corresponding to the updated SCs as **OutOfDate**.
+9. **System** sets the state of the SARs corresponding to the updated SCs as **OutOfDate**.
+10. **Ordinary User** runs SAMMs for the updated SCs.
+11. **UI** emits an event to activate the system to run SAMMs for the updated SCs.
+12. **System** runs SAMMs for the updated SCs.
+13. **System** updates the SARs and sets their state as **UpToDate**.
+14. **System** emits an event to activate the UI for the states and SARs.
+15. **UI** refreshes the SARs for the state and values.
+16. Repeat Steps 6 to 15 to finish sizing all SCs.
+10. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
+2. **UI** emits an event to activate the system for the sub-DCG commit.
+3. **System** commits the sub-DCG to MySQL DB.
 
-**Alternate Flows (Errors) - 1: Error during FE import**
-- **3. System** terminates the the FE Import.
-- **4. System** logs an error and sets the status to **Error**.
-- **5. System** emits an event to activate the UI to display the error message for the import failure.
-- **6. UI** displays the error message for the import failure.
-
-**Alternate Flows (Errors) - 2: Missing data (the analysis dataset is incomplete)**
-- **9. System** terminates the SAMM run.
-- **10. System** emits an event to activate the UI to display the error message for the missing dataset.
-- **11. UI** displays the error message for the missing dataset.
-
-**Alternate Flows (Errors) - 3: The computation fails**
-- **11. System** logs an error for the erroneous SA.
-- **12. System** sets status to **Error**.
-- **13. System** waits until the remainning SAs finishes.
-- **14. System** emits an event to activate the UI to act for the successful and failed SAs correspondingly.
-- **15. UI** updates the RFs in the form of the active SC if not erroneous.
-- **16. UI** refreshes the component tree for the state of the selected dataset as **up-to-date** and as **failed** correspondingly.
-- **17. UI** displays the error message for the erroneous SA.
+**I will skip the error conditions for simplicity.**
 
 **Postconditions**
-- The SAR nodes for the successful SAs exist in the DAG.
-- The RF in the current user form has the latest value if not erroneous.
-- UI reflects the updated state data.
+- The SARs are **UpToDate** and safe.
 
 **UML Diagram**\
-![UC-01: Run SAs - Including FE Import](./uml/use_case_diagram.png)
-
+![UCD-02: Ordinary User Free Style](./uml/use_case_diagram_3.png)
 
 
 

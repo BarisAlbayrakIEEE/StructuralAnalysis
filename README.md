@@ -4,13 +4,15 @@
 3.   [Software Architecture](#sec3)\
 3.1. [An Overview of the Problem](#sec31)\
 3.2. [The Target Market](#sec32)\
-3.3. [The Architecture: The 1st Overview: Initial](#sec33)\
-3.4. [The Architecture: The 2nd Overview: Frontend](#sec34)\
-3.5. [The Architecture: The 3rd Overview: Data](#sec35)\
-3.6. [The Architecture: Summary](#sec36)
+3.3. [The Architecture: The 1st Overview](#sec33)\
+3.4. [The Frontend](#sec34)\
+3.5. [Data Types & Data Structures](#sec35)\
+3.6. [Use Case Diagrams](#sec36)\
+3.7. [The Architecture: Summary](#sec37)
 4.   [Software Design](#sec4)\
 4.1. [Use Case Diagram](#sec41)
 
+### 3.6. The Architecture: Use Case Diagrams <a id='sec36'></a>
 **Nomenclature**
 - **SC:** Structural Component
 - **SCT:** Structural Component Tree
@@ -134,7 +136,7 @@ This requires a plugin based software where the development of the SAMMs is left
 Additionally, the companies may assign a team of SAEs instead of the software engineers for the plugin development.
 This is quite common in the industry as the SAEs are equipped with some level of software development skills.
 
-### 3.3. The Architecture: The 1st Overview: Initial <a id='sec33'></a>
+### 3.3. The Architecture: The 1st Overview <a id='sec33'></a>
 
 Firstly, I will summarize the previous two sections as a requirement list:
 - [An overview of the problem](#sec31) yields to the following requirements:
@@ -220,7 +222,7 @@ The application woulld obviously need the concurrent execution in terms of:
 Previous sections already listed some arguments related to the concurrency.
 Later, I will discuss about this important issue in detail.
 
-#### 3.3.6. Summary of the 1st Overview of the Architecture
+#### 3.3.6. Summary of the 1st Overview
 
 Considering the discussions held in the previous sections, the first overview of the architecture would be:
 - A web-based (cloud) application supported by a local company server
@@ -252,7 +254,7 @@ Lets review the requirements listed at the beginning after the 1st overview:
 7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 8. The plugins could be developed by the customer.
 
-### 3.4. The Architecture: The 2nd Overview: Frontend <a id='sec34'></a>
+### 3.4. The Frontend <a id='sec34'></a>
 
 **This project excludes the details of the frontend development.**
 However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
@@ -285,7 +287,7 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 8. The plugins could be developed by the customer.
 
-### 3.5. The Architecture: The 3rd Overview: Data <a id='sec35'></a>
+### 3.5. Data Types & Data Structures <a id='sec35'></a>
 
 We had two requirements related to the extensibility from [the overview of the problem](#sec31):
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
@@ -353,14 +355,20 @@ We have different requirements and usage in case of the SAA:
 Lets summarize the above discussions together with the decissions made in the previous sections:
 - Computational libraries (i.e. SAMMs) will be written in python.
 - The frontend will be written in js.
-- We need a single-thread DCG with a small depth.
+- We need a single-threaded DCG with a small depth.
 
-There is an important point mentioned before related to the SAA.
-The SAA runs time consuming SAMMs due to the nature of the SA
-where the secondary issues such as spatial locality of the data can be neglected.
-Hence, **I will continue with Pyhton as the language of the core framework**.
+**I will continue with Pyhton as the language of the core framework**.
 NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
 FastApi would create a bridge with the frontend.
+
+There is one last point under this heading.
+The LC and SC data multiplies in case of the SAA application as on a SC a load data is defined for each LC.
+Hence, considering that M is the number of SCs and N is the number of LCs:
+- The number of SC load data = M * N
+- The number of SARs = M * N
+
+The loads and SARs dominate the SAA in terms of the memory which may cause memory problems.
+Hence, **the SC load data and the SARs shall be stored in the MySQL DB.**
 
 Lets review the requirements listed at the beginning after the 2nd overview:
 - [An overview of the problem](#sec31) yields to the following requirements:
@@ -379,12 +387,21 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 7. ~~The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.~~
 8. ~~The plugins could be developed by the customer.~~
 
-### 3.6. The Architecture: Use Case Diagrams <a id='sec36'></a>
+### 3.6. Use Case Diagrams <a id='sec36'></a>
 
-There exist three use case scenarios:
+I will examine three use case scenarios:
 1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
 2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and commit the updates to MySQL DB
 3. [Ordinary User] | Perform offline tradeoff
+
+There exist other scenarios as well.
+For example a scenario when a master user creates another version of an SAMM.
+This requires an *applicability* field to be defined for the structural configuration.
+All SARs having the same *applicability* as the new version of SAMM becomes **OutOfDate**
+and shall be revisited by the ordinary users.
+
+I expect that these three scenarios are sufficient to have an understanding about the SAA.
+Later, I will discuss on the UML diagrams in terms of the architecture.
 
 #### 3.6.1 Use Case scenario #1
 
@@ -543,6 +560,52 @@ The constructed objects will be destructed when the user finishes her session.
 
 **UML Diagram**\
 ![UCD-03: Ordinary User Offline Tradeoff](./uml/use_case_diagram_3.png)
+
+#### 3.6.3 Review Use Case scenarios
+
+Below are some observations I realized by examining the UML diagrams of the use case scenarios:
+- FE data is managed by the UI component (i.e. js) while the DCG data is managed by the system.
+- There is a frequent request traffic between the system and UI components of the SAA.
+- Large data may be transfered betweeen the system and UI.
+- **The DCG shall define and manage a state (e.g. UpToDate) for each element in the DCG.**
+- The routines of the DCG related to the element states would be based on the ancestor/descendant relations.
+- **The product tree and the FE display components of the UI shall reflect the current states of the elements (i.e. SCs and SARs).**
+- The system needs a temporary DCG to manage the lifetime of the objects constructed in offline process.
+- The SAA needs role definitions such as: System User, Admin User, Master User and Ordinary User.
+- System Users would manage the plugins and SAMMs.
+- Admin Users would mmanage the standard parts (e.g. material and fastener).
+- Master Users wouuld manage the configuration.
+- Ordinary users would perform the analysis.
+- **The solver (i.e. SAMMs) shall run asynchrously.**
+- **While the solver is running (i.e. SAMMs), the UI shall switch to read-only mode allowing requests for new runs.**
+- **A solver pack shall be defined to list the SAMMs together with the versions.**
+- **The solver packs shall define the applicability (e.g. DCG type version) as well.**
+- **The DCGs shall define a configuration which contains: company policies, DCG type version and solver pack version.**
+
+I tested fastapi for the large heep data transfer via json between python and js.
+The results are satisfactory (i.e. some miliseconds for MBs of heep data).
+
+State management becomes quite complex in some conditions especialy for the undo/redo operations.
+Consider SC1 is a SC and SAR1 and SAR2 are the two SARs related to this SC.
+In other words, the SC has two FMs.
+Assume that, currently, SAR1 is UpToDate but SAR2 is OutOfDate.
+Assume also that an ordinary user updated a property (e.g. a thickness) of SC1.
+System would make both SAR1 and SAR2 OutOfDate due to this update.
+When the user wants to undo the update operation, SAR1 should go to UpToDate but SAR2 should remain OutOfDate.
+This is a very simple case.
+In some cases, the update may effect many nodes even recursively due to the descendant relations.
+The proxy design pattern would be too complicated and need many branches to cover different conditions.
+Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of using proxy pattern.
+The DCG would make use of **the structural sharing** for the memory and performance.
+
+**The system shall define two arrays of DCGs:**
+1. The 1st array stores the functionally persistent DCGs for the online process connected to the MySQL DB.
+2. The 2nd array stores the functionally persistent DCGs for the offline process.
+
+**The SAA shall define a user profile with a role definition.**
+**The DCGs shall manage the roles by a field defined by the DCG nodes.**
+
+**The SAA shall assign MySQL DBs for the standard items (e.g. material and fastener).**
 
 ### 3.7. The Architecture: Summary <a id='sec37'></a>
 

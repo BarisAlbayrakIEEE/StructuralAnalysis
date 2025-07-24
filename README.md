@@ -473,7 +473,7 @@ I will prepare the scenario for a manual procedure.
 **Preconditions**
 - the sub-DCG shall already be loaded to MySQL DB by the master user.
 
-**Main Flow**
+**The Flow (skip the error conditions for simplicity)**
 1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
 2. **UI** emits an event to activate the system for the DCG loading.
 3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
@@ -493,8 +493,6 @@ I will prepare the scenario for a manual procedure.
 17. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
 18. **UI** emits an event to activate the system for the sub-DCG commit.
 19. **System** commits the sub-DCG to MySQL DB.
-
-**I will skip the error conditions for simplicity.**
 
 **Postconditions**
 - The SARs are **UpToDate** and safe.
@@ -525,7 +523,7 @@ The constructed objects will be destructed when the user finishes her session.
 **Preconditions**
 - none
 
-**Main Flow**
+**The Flow (skip the error conditions for simplicity)**
 1. **Ordinary User** selects to create a SC and auxilary items required by the SC and SAMM (e.g. material and load).
 2. **UI** emits an event to activate the system to create the requested objects.
 3. **System** creates the requested objects.
@@ -539,8 +537,6 @@ The constructed objects will be destructed when the user finishes her session.
 11. **System** emits an event to activate the UI for the SARs.
 12. **UI** refreshes the SARs for the values.
 13. **Ordinary User** reviews the SARs.
-
-**I will skip the error conditions for simplicity.**
 
 **Postconditions**
 - none

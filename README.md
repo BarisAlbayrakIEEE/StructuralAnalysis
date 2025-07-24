@@ -357,8 +357,40 @@ Lets summarize the above discussions together with the decissions made in the pr
 - We need a single-threaded DCG with a small depth.
 
 **I will continue with Pyhton as the language of the core framework**.
-NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
 FastApi would create a bridge with the frontend.
+NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
+However, numpy datatypes are cumbersome such that its hard to get the stored data.
+It does not allow member access like an object (e.g. obj.member).
+Instead, the order of the stored data must be kept to read and write.
+Hence, a wrapper class is required for each numpy datatype
+which handles the interactin with the solver (i.e. SAMM) and the frontend (i.e. fastapi).
+
+'''
+import numpy as np
+panel_dt = np.dtype([
+    ('t', np.float64),   # thickness
+    ('ss1', np.int32),   # DCG node ID of the 1st side stiffener
+    ('ss2', np.int32),   # DCG node ID of the 2nd side stiffener
+    ('mat', np.int32)    # DCG node ID of the material
+])
+
+class panel_wrapper:
+  # interfacee with the solver
+  def __init__(self, p: panel_dt):
+    self.t = p[0]
+    self.ss1 = p[1]
+    self.ss2 = p[2]
+    self.mat = p[3]
+  
+  # interfacee with the frontend
+  def to_dict():
+    return {
+      't': self.t,
+      'ss1': self.ss1,
+      'ss2': self.ss2,
+      'mat': self.mat      
+    }
+'''
 
 There is one last point under this heading.
 The LC and SC data multiplies in case of the SAA application as on a SC a load data (i.e. the SCL) is defined for each LC.

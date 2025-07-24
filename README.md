@@ -365,7 +365,7 @@ Instead, the order of the stored data must be kept to read and write.
 Hence, a wrapper class is required for each numpy datatype
 which handles the interactin with the solver (i.e. SAMM) and the frontend (i.e. fastapi).
 
-'''
+```
 import numpy as np
 panel_dt = np.dtype([
     ('t', np.float64),   # thickness
@@ -375,14 +375,14 @@ panel_dt = np.dtype([
 ])
 
 class panel_wrapper:
-  # interfacee with the solver
+  # interface with the solver
   def __init__(self, p: panel_dt):
     self.t = p[0]
     self.ss1 = p[1]
     self.ss2 = p[2]
     self.mat = p[3]
   
-  # interfacee with the frontend
+  # interface with the frontend
   def to_dict():
     return {
       't': self.t,
@@ -390,7 +390,7 @@ class panel_wrapper:
       'ss2': self.ss2,
       'mat': self.mat      
     }
-'''
+```
 
 There is one last point under this heading.
 The LC and SC data multiplies in case of the SAA application as on a SC a load data (i.e. the SCL) is defined for each LC.

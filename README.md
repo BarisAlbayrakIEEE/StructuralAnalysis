@@ -655,6 +655,8 @@ Below are the current features of the SAA based on the previous sections:
 - UI contains three interactive components: SCT, user forms and FE display
 - Core/UI bridge: FastAPI
 - Fundamental types (i.e. current interfaces): SC, LC, SCL, SAR
+- Use NumPy.dtype to store the data (e.g. SCs) in contiguous memory
+- Create a wrapper for each NumPy.dtype to interact with the solver and frontend
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. panel) are shipped with the installation
 - The plugins contain both the type definition and the UI representation

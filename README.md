@@ -359,9 +359,9 @@ Lets summarize the above discussions together with the decissions made in the pr
 **I will continue with Pyhton as the language of the core framework**.
 FastApi would create a bridge with the frontend.
 NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
-However, numpy datatypes are cumbersome such that its hard to get the stored data.
+However, numpy datatypes are cumbersome such that the client side SAMM implementation gets dirty.
 It does not allow member access like an object (e.g. obj.member).
-Instead, the order of the stored data must be kept to read and write.
+In order to access an item in a numpy datatype, the order (int) or the name (str) of the item must be known.
 Hence, a wrapper class is required for each numpy datatype
 which handles the interactin with the solver (i.e. SAMM) and the frontend (i.e. fastapi).
 

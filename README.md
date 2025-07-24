@@ -400,7 +400,7 @@ All SARs having the same *applicability* as the new version of SAMM becomes **Ou
 and shall be revisited by the ordinary users.
 
 I expect that these three scenarios are sufficient to have an understanding about the SAA.
-Later, I will discuss on the UML diagrams in terms of the architecture.
+Later, I will discuss on these scenarios in terms of the architecture.
 
 #### 3.6.1 Use Case scenario #1
 

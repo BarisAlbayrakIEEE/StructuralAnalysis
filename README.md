@@ -17,6 +17,7 @@
 - **SC:** Structural Component
 - **SCT:** Structural Component Tree
 - **SCTN:** Structural Component Tree Node
+- **SCL:** Structural Component Loading
 - **SA:** Structural Analysis of an SC
 - **SAA:** Structural Analysis Application
 - **SAE:** Structural Analysis Engineer (i.e. the user of the application)
@@ -362,13 +363,13 @@ NumPy datatypes and arrays would be used to allocate contiguous memory for the d
 FastApi would create a bridge with the frontend.
 
 There is one last point under this heading.
-The LC and SC data multiplies in case of the SAA application as on a SC a load data is defined for each LC.
+The LC and SC data multiplies in case of the SAA application as on a SC a load data (i.e. the SCL) is defined for each LC.
 Hence, considering that M is the number of SCs and N is the number of LCs:
-- The number of SC load data = M * N
+- The number of SCLs = M * N
 - The number of SARs = M * N
 
 The loads and SARs dominate the SAA in terms of the memory which may cause memory problems.
-Hence, **the SC load data and the SARs shall be stored in the MySQL DB.**
+Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 
 Lets review the requirements listed at the beginning after the 2nd overview:
 - [An overview of the problem](#sec31) yields to the following requirements:
@@ -569,7 +570,7 @@ Below are some observations I realized by examining the UML diagrams of the use 
 - Large data may be transfered betweeen the system and UI.
 - **The DCG shall define and manage a state (e.g. UpToDate) for each element in the DCG.**
 - The routines of the DCG related to the element states would be based on the ancestor/descendant relations.
-- **The product tree and the FE display components of the UI shall reflect the current states of the elements (i.e. SCs and SARs).**
+- **The SCT and the FE display components of the UI shall reflect the current states of the elements (i.e. SCs and SARs).**
 - The system needs a temporary DCG to manage the lifetime of the objects constructed in offline process.
 - The SAA needs role definitions such as: System User, Admin User, Master User and Ordinary User.
 - System Users would manage the plugins and SAMMs.
@@ -616,66 +617,27 @@ Below are the current features of the SAA based on the previous sections:
 - Multi-user model considering the following issues: shared data, roles and collaboration
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
-- Frontend language: js/react
-- UI contains three interactive components: product tree, user forms and FE display
-- System core language: Python
+- A three component application: the core system, the frontend and the solver (i.e. SAMMs)
+- The solver and the frontend are asynchronous
+- The core language: Python
+- The solver language: Python
+- The frontend language: js/react
+- UI contains three interactive components: SCT, user forms and FE display
 - Core/UI bridge: FastAPI
-- Fundamental types: SC, LC, load, SAR
+- Fundamental types (i.e. current interfaces): SC, LC, SCL, SAR
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. panel) are shipped with the installation
 - The plugins contain both the type definition and the UI representation
-- Core data structure: Functionally persistent DCG
+- Follow TDD approach for the core plugins
+- Core data structure: Functionally persistent DCG with structural sharing
+- Core manages two DCGs: online and offline
+- DCG manages the state for each node which is visualized by the frontend
+- Handle undo/redo operations making use of the persistency of the DCG
+- DCG configuration field: company policy, type version and solver pack version
+- Define a solver pack with a field of applicability listing the SAMMs and versions
+- User profile with the role definition
 - DBs for the standard items like material and fastener (per project)
 - DBs for the load and SAR data (per DCG)
-- DCG manages the state for each node which is visualized by the frontend
-- Asynchronous solver
-
-
-Based on these requirements, I will continue with **javascript/react as the frontend language** in order to make use of:
-
-
-**I will continue with Pyhton as the language of the core framework**.
-Hence, **the SC load data and the SARs shall be stored in the MySQL DB.**
-
-
-- **The DCG shall define and manage a state (e.g. UpToDate) for each element in the DCG.**
-- **The product tree and the FE display components of the UI shall reflect the current states of the elements (i.e. SCs and SARs).**
-- **The solver (i.e. SAMMs) shall run asynchrously.**
-- **While the solver is running (i.e. SAMMs), the UI shall switch to read-only mode allowing requests for new runs.**
-- **A solver pack shall be defined to list the SAMMs together with the versions.**
-- **The solver packs shall define the applicability (e.g. DCG type version) as well.**
-- **The DCGs shall define a configuration which contains: company policies, DCG type version and solver pack version.**
-Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of using proxy pattern.
-The DCG would make use of **the structural sharing** for the memory and performance.
-
-**The system shall define two arrays of DCGs:**
-1. The 1st array stores the functionally persistent DCGs for the online process connected to the MySQL DB.
-2. The 2nd array stores the functionally persistent DCGs for the offline process.
-
-**The SAA shall define a user profile with a role definition.**
-**The DCGs shall manage the roles by a field defined by the DCG nodes.**
-
-**The SAA shall assign MySQL DBs for the standard items (e.g. material and fastener).**
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## 4. Software Design <a id='sec4'></a>
-
-In this chapter, I will start by a use case diagram in order to have a view of the execution flow of the SAA.
-Then, I will discuss the issues related to the software design in detail.
 

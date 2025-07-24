@@ -236,23 +236,6 @@ However, the SAA is not a low-latency application and it needs to employ the gra
 The last one is to perform the heavy computations of structural analysis.
 The GPU resources need to be spared for the FE graphics display.
 
-Lets review the requirements listed at the beginning again at the end of this section:
-- [An overview of the problem](#sec31) yields to the following requirements:
-1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
-2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
-3. Each group may contain hundreds of types.
-4. There exist *dependency relationships* between the types.
-5. The SAA needs an interface with the FE software.
-- [The target market](#sec32) analysis yields to the following requirements:
-1. ~~The company would provide sufficient resources of processors and servers.~~
-2. ~~The SAA will manage and process large data.~~
-3. ~~The SAA will have DBs.~~
-4. The SAA will define a UI form for each type.
-5. The SAA will contain a graphics display for the FE model.
-6. The SAA will manage the configuration issues.
-7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
-8. The plugins could be developed by the customer.
-
 ### 3.4. The Frontend <a id='sec34'></a>
 
 **This project excludes the details of the frontend development.**
@@ -268,23 +251,6 @@ Based on these requirements, I will continue with **javascript/react as the fron
 
 Additionally, the separation of responsibility between the main framework and the UI is satisfied
 as react executes asynchronously with the core framework.
-
-Lets review the requirements listed at the beginning again at the end of this section:
-- [An overview of the problem](#sec31) yields to the following requirements:
-1. The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.
-2. In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).
-3. Each group may contain hundreds of types.
-4. There exist *dependency relationships* between the types.
-5. ~~The SAA needs an interface with the FE software.~~
-- [The target market](#sec32) analysis yields to the following requirements:
-1. ~~The company would provide sufficient resources of processors and servers.~~
-2. ~~The SAA will manage and process large data.~~
-3. ~~The SAA will have DBs.~~
-4. ~~The SAA will define a UI form for each type.~~
-5. ~~The SAA will contain a graphics display for the FE model.~~
-6. The SAA will manage the configuration issues.
-7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
-8. The plugins could be developed by the customer.
 
 ### 3.5. Data Types & Data Structures <a id='sec35'></a>
 
@@ -399,23 +365,6 @@ Hence, considering that M is the number of SCs and N is the number of LCs:
 
 The SCLs and SARs dominate the SAA in terms of the memory which may cause memory problems.
 Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
-
-Lets review the requirements listed at the beginning again at the end of this section:
-- [An overview of the problem](#sec31) yields to the following requirements:
-1. ~~The types required by the SAA are mainly classified as SCs, FMs, SAs and SARs.~~
-2. ~~In addition to the above types, the SAA needs some auxilary data (e.g. material, geometry and loading).~~
-3. ~~Each group may contain hundreds of types.~~
-4. ~~There exist *dependency relationships* between the types.~~
-5. ~~The SAA needs an interface with the FE software.~~
-- [The target market](#sec32) analysis yields to the following requirements:
-1. ~~The company would provide sufficient resources of processors and servers.~~
-2. ~~The SAA will manage and process large data.~~
-3. ~~The SAA will have DBs.~~
-4. ~~The SAA will define a UI form for each type.~~
-5. ~~The SAA will contain a graphics display for the FE model.~~
-6. The SAA will manage the configuration issues.
-7. ~~The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.~~
-8. ~~The plugins could be developed by the customer.~~
 
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 

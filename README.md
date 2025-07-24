@@ -633,8 +633,10 @@ Below are the current features of the SAA based on the previous sections:
 - Core manages two DCGs: online and offline
 - DCG manages the state for each node which is visualized by the frontend
 - Handle undo/redo operations making use of the persistency of the DCG
-- DCG configuration field: company policy, type version and solver pack version
-- Define a solver pack with a field of applicability listing the SAMMs and versions
+- DCG configuration field: FE version (e.g. fe-v0.1), DCG version (e.g. dcg-v0.1) and applied solver pack version (e.g. sp-v0.1)
+- Solver pack: list of the SAMMs and versions
+- Solver pack version: sp-v0.1
+- Solver pack applicability: DCG type version (e.g. dcg-v0.1)
 - User profile with the role definition
 - DBs for the standard items like material and fastener (per project)
 - DBs for the load and SAR data (per DCG)

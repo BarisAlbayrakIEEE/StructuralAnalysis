@@ -384,7 +384,7 @@ Lets review the requirements listed at the beginning after the 2nd overview:
 There exist three use case scenarios:
 1. [Master User] | Import an FEM and construct the structural assembly and commit to the client-server MySQL DB
 2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and commit the updates to MySQL DB
-3. [Ordinary User] | Work without an FE model
+3. [Ordinary User] | Perform offline tradeoff
 
 #### 3.6.1 Use Case scenario #1
 
@@ -467,7 +467,7 @@ I will prepare the scenario for a manual procedure.
 - **Level:** User goal
 
 **Stakeholders and Interests**
-- **Master user**: wants to update a sub-DCG for the SARs.
+- **Ordinary user**: wants to update a sub-DCG for the SARs.
 - **Project Manager**: needs quick feedback on the analysis status of the sub-DCG.
 
 **Preconditions**
@@ -490,9 +490,9 @@ I will prepare the scenario for a manual procedure.
 14. **System** emits an event to activate the UI for the states and SARs.
 15. **UI** refreshes the SARs for the state and values.
 16. Repeat Steps 6 to 15 to finish sizing all SCs.
-10. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
-2. **UI** emits an event to activate the system for the sub-DCG commit.
-3. **System** commits the sub-DCG to MySQL DB.
+17. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
+18. **UI** emits an event to activate the system for the sub-DCG commit.
+19. **System** commits the sub-DCG to MySQL DB.
 
 **I will skip the error conditions for simplicity.**
 
@@ -504,7 +504,7 @@ I will prepare the scenario for a manual procedure.
 
 #### 3.6.3 Use Case scenario #3
 
-In this scenario, an ordinary user performs trade-off analysis offline.
+In this scenario, an ordinary user performs tradeoff analysis offline.
 The SAs involves complex strength analysis where the engineer would not make predictions without performing the calculations.
 For example, the effect of the panel thickness may not be linear on the result of panel buckling analysis.
 Hence, the engineer usualy needs to perform a quick analysis to see the effect of an action.
@@ -512,70 +512,41 @@ The SAA shall offer this utility as well.
 In this case, the engineer works offline (independent of MySQL DB).
 She needs to define the SC to be examined (e.g. panel) and the auxilary objects (e.g. material, load).
 Then, she plays with the properties which she wants to examine (e.g. thickness) and runs the corresponding SAMM.
-The user would not import any FE data 
-
-
-The system loads the sub-DCG and the FEM attached to the DCG.
-Then, the system initializes the UI.
-The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has ben studied before.
-In this case, the SARs would have **UpToDate** state.
-Otherwise, SARs have null values and the states are **OutOfDate**.
-The ordinary user has two options: inspection or sizing.
-The ordinary user runs the SAMMs for each SC in case of an inspection process.
-Otherwise, the ordinary user updates the properties of the SCs (e.g. material and geometry)
-and run the SAMMs in order to get the acceptable SARs (i.e. RFs).
-After completing the inspection/sizing, the ordinary user commits the sub-DCG with the updated SARs to MySQL DB.
-
-In this scenario, I will skip the inspection process.
-Although the SAA shall implement and optimization routine to automate the sizing,
-I will prepare the scenario for a manual procedure.
+The user neither imports an FE data nor connects to the MySQL DB for a DCG.
+The constructed objects will be destructed when the user finishes her session.
 
 - **Primary Actor:** Ordinary user
 - **Scope:** SAA
 - **Level:** User goal
 
 **Stakeholders and Interests**
-- **Master user**: wants to update a sub-DCG for the SARs.
-- **Project Manager**: needs quick feedback on the analysis status of the sub-DCG.
+- **Ordinary user**: wants to perform offline tradeoffs.
 
 **Preconditions**
-- the sub-DCG shall already be loaded to MySQL DB by the master user.
+- none
 
 **Main Flow**
-1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
-2. **UI** emits an event to activate the system for the DCG loading.
-3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
-4. **System** emits an event to initialize the user forms and the graphics.
-5. **UI** initializes the user forms and the FE graphics.
-6. **Ordinary User** reviews the SARs to detect the SCs that require sizing.
-7. **Ordinary User** updates the properties (e.g. material and geometry) of the SCs that needs sizing.
-8. **UI** emits an event to activate the system to set the state of the SARs corresponding to the updated SCs as **OutOfDate**.
-9. **System** sets the state of the SARs corresponding to the updated SCs as **OutOfDate**.
-10. **Ordinary User** runs SAMMs for the updated SCs.
-11. **UI** emits an event to activate the system to run SAMMs for the updated SCs.
-12. **System** runs SAMMs for the updated SCs.
-13. **System** updates the SARs and sets their state as **UpToDate**.
-14. **System** emits an event to activate the UI for the states and SARs.
-15. **UI** refreshes the SARs for the state and values.
-16. Repeat Steps 6 to 15 to finish sizing all SCs.
-10. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
-2. **UI** emits an event to activate the system for the sub-DCG commit.
-3. **System** commits the sub-DCG to MySQL DB.
+1. **Ordinary User** selects to create a SC and auxilary items required by the SC and SAMM (e.g. material and load).
+2. **UI** emits an event to activate the system to create the requested objects.
+3. **System** creates the requested objects.
+4. **System** emits an event to initialize the user forms.
+5. **UI** initializes the user forms.
+6. **Ordinary User** fills the fields of the objects.
+7. **Ordinary User** selects to run the requested SAMMs.
+8. **UI** emits an event to activate the system to run the requested SAMMs.
+9. **System** runs the requested SAMMs.
+10. **System** updates the SARs.
+11. **System** emits an event to activate the UI for the SARs.
+12. **UI** refreshes the SARs for the values.
+13. **Ordinary User** reviews the SARs.
 
 **I will skip the error conditions for simplicity.**
 
 **Postconditions**
-- The SARs are **UpToDate** and safe.
+- none
 
 **UML Diagram**\
-![UCD-02: Ordinary User Free Style](./uml/use_case_diagram_3.png)
-
-
-
-
-
-
-
+![UCD-03: Ordinary User Offline Tradeoff](./uml/use_case_diagram_3.png)
 
 ### 3.7. The Architecture: Summary <a id='sec37'></a>
 

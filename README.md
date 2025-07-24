@@ -624,8 +624,8 @@ System would make both SAR1 and SAR2 OutOfDate due to this update.
 When the user wants to undo the update operation, SAR1 should go to UpToDate but SAR2 should remain OutOfDate.
 This is a very simple case.
 In some cases, the update may effect many nodes even recursively due to the descendant relations.
-The proxy design pattern would be too complicated and need many branches to cover different conditions.
-Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of using proxy pattern.
+The command design pattern would be too complicated and need many branches to cover different conditions.
+Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of the command pattern.
 The DCG would make use of **the structural sharing** for the memory and performance.
 
 **The system shall define two arrays of DCGs:**

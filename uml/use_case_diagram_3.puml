@@ -1,51 +1,32 @@
-@startuml use_case_diagram
+1. **Ordinary User** selects to create a SC and auxilary items required by the SC and SAMM (e.g. material and load).
+2. **UI** emits an event to activate the system to create the requested objects.
+3. **System** creates the requested objects.
+4. **System** emits an event to initialize the user forms.
+5. **UI** initializes the user forms.
+6. **Ordinary User** fills the fields of the objects.
+7. **Ordinary User** selects to run the requested SAMMs.
+8. **UI** emits an event to activate the system to run the requested SAMMs.
+9. **System** runs the requested SAMMs.
+10. **System** updates the SARs.
+11. **System** emits an event to activate the UI for the SARs.
+12. **UI** refreshes the SARs for the values.
+13. **Ordinary User** reviews the SARs.
+
+@startuml use_case_diagram_3
 
 start
-:[SAE] Select FE;
-:[UI] Call [System] for import;
-:[System] Create DAG for FE;
-
-if (Import error?) then (no)
-  :[System] Call [UI] to initialize;
-  :[UI] Initialize;
-  :[SAE] Select SA dataset;
-  :[SAE] Click "Run SAMM";
-  :[UI] Call [System] for SAMM run;
-  :[System] Get dataset from DAG;
-
-  if (Dataset error?) then (no)
-    :[System] Execute SAMM;
-
-    if (Computation error?) then (no)
-      :[System] Create DAG nodes for SARs;
-      :[System] Call [UI] to update the states and SARs;
-      :[UI] Update states in SCT and RFs in the current form;
-
-      stop;
-    else (yes)
-      :[System] log;
-      :[System] Set status to Error;
-      :[System] Wait end of SAMM run;
-      :[System] Call [UI] for update and message;
-      :[UI] Update for non-failed SAMMs;
-      :[UI] Show message for failed SAMMs;
-
-      stop;
-    endif
-  else (yes)
-    :[System] Terminate SAMM run;
-    :[System] Call [UI] for meassage;
-    :[UI] Show message;
-
-    stop;
-  endif
-else (yes)
-  :[System] Terminate FE import;
-  :[System] log;
-  :[System] Call [UI] for message;
-  :[UI] Show message;
-
-  stop;
-endif
+:[Ordinary User] Create SC and auxillary;
+:[UI] Call [System] for object construction;
+:[System] Create the objects;
+:[System] Initialize UI;
+:[UI] Initialize the forms;
+:[Ordinary User] Enter inputs;
+:[Ordinary User] Select and run SAMM;
+:[UI] Call [System] to run SAMM;
+:[System] Run SAMM;
+:[System] Update SAR;
+:[System] Call [UI] for SAR;
+:[UI] Refresh form of SAR;
+:[Ordinary User] Review SAR;
 
 @enduml

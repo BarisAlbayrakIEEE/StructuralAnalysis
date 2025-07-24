@@ -383,12 +383,12 @@ class panel_wrapper:
     self.mat = p[3]
   
   # interface with the frontend
-  def to_dict():
+  def to_dict(p: panel_dt):
     return {
-      't': self.t,
-      'ss1': self.ss1,
-      'ss2': self.ss2,
-      'mat': self.mat      
+      't': p[0],
+      'ss1': p[1],
+      'ss2': p[2],
+      'mat': p[3]      
     }
 ```
 

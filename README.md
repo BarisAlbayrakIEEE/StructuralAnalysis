@@ -377,18 +377,18 @@ panel_dt = np.dtype([
 class panel_wrapper:
   # interface with the solver
   def __init__(self, p: panel_dt):
-    self.t = p[0]
-    self.ss1 = p[1]
-    self.ss2 = p[2]
-    self.mat = p[3]
+    self.t = p[0].item()
+    self.ss1 = p[1].item()
+    self.ss2 = p[2].item()
+    self.mat = p[3].item()
   
   # interface with the frontend
   def to_dict(p: panel_dt):
     return {
-      't': p[0],
-      'ss1': p[1],
-      'ss2': p[2],
-      'mat': p[3]      
+      't': p[0].item(),
+      'ss1': p[1].item(),
+      'ss2': p[2].item(),
+      'mat': p[3].item()      
     }
 ```
 

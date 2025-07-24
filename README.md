@@ -397,7 +397,7 @@ Hence, considering that M is the number of SCs and N is the number of LCs:
 - The number of SCLs = M * N
 - The number of SARs = M * N
 
-The loads and SARs dominate the SAA in terms of the memory which may cause memory problems.
+The SCLs and SARs dominate the SAA in terms of the memory which may cause memory problems.
 Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 
 Lets review the requirements listed at the beginning again at the end of this section:

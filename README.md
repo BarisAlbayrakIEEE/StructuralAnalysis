@@ -344,7 +344,7 @@ The DAG is acyclic as a point cannot be created from a curve which has a relatio
 The application may allow cycled nodes (e.g. Catia) and continue in an invalid state.
 A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
 Catia also allows removing an element without removing the decendants which requires a background thread as well.
-[The DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) examins the background thread in detail.
+[The DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) examines the background thread in detail.
 
 We have different requirements and usage in case of the SAA:
 - The depth of the DCG in case of the SAA is very small: material -> panel -> panel buckling -> buckling RF.

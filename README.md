@@ -373,7 +373,7 @@ Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 
 I will examine three use case scenarios:
 1. [Master User] | Import an FEM, create a DCG and insert it into the client-server MySQL DB
-2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and save the updates to MySQL DB
+2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs within the DCG node and save the updates to MySQL DB
 3. [Ordinary User] | Perform offline tradeoff
 
 There exist other scenarios as well.
@@ -387,7 +387,7 @@ Later, I will discuss on these scenarios in terms of the architecture.
 
 #### 3.6.1 Use Case scenario #1
 
-In this scenario, a master user imports a FEM.
+In this scenario, a master user imports an FEM.
 The core framework has IO routines for the FE data.
 The importer reads the material, load, node and element data from the FE file (e.g. a bdf file)
 and create the DCG by constructing the objects of SAA (e.g. panel and stiffener) based on this FE data.

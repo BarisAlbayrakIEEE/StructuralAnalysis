@@ -523,7 +523,7 @@ The constructed objects will be destructed when the user finishes her session.
 - none
 
 **The Flow (skip the error conditions for simplicity)**
-1. **Ordinary User** selects to create a SC and auxilary items required by the SC and SAMM (e.g. material and load).
+1. **Ordinary User** selects to create a SC and auxilary items required by the SC (e.g. material and load) and SAMM.
 2. **UI** emits an event to activate the system to create the requested objects.
 3. **System** creates the requested objects.
 4. **System** emits an event to initialize the user forms.
@@ -543,7 +543,7 @@ The constructed objects will be destructed when the user finishes her session.
 **UML Diagram**\
 ![UCD-03: Ordinary User Offline Tradeoff](./uml/use_case_diagram_3.png)
 
-#### 3.6.3 Review Use Case scenarios
+#### 3.6.3 A Quick Review on the Use Case scenarios
 
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
 - FE data is managed by the UI component (i.e. js) while the DCG data is managed by the system.

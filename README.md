@@ -543,7 +543,7 @@ The constructed objects will be destructed when the user finishes her session.
 **UML Diagram**\
 ![UCD-03: Ordinary User Offline Tradeoff](./uml/use_case_diagram_3.png)
 
-#### 3.6.3 A Quick Review on the Use Case scenarios
+#### 3.6.4 A Quick Review on the Use Case scenarios
 
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
 - FE data is managed by the UI component (i.e. js) while the DCG data is managed by the system.

@@ -552,14 +552,14 @@ Below are some observations I realized by examining the UML diagrams of the use 
 - **The DCG shall define and manage a state (e.g. UpToDate) for each node in the DCG.**
 - The routines of the DCG related to the node states would be based on the ancestor/descendant relations.
 - **The SCT and the FE display components of the UI shall reflect the current node states (i.e. SCs and SARs).**
-- The system needs a temporary DCG to manage the lifetime of the objects constructed in offline process.
+- The system needs a temporary DCG to manage the lifetime of the objects constructed in an offline process.
 - The SAA needs role definitions such as: System User, Admin User, Master User and Ordinary User.
 - System Users would manage the plugins and SAMMs.
 - Admin Users would manage the standard parts (e.g. material and fastener).
-- Master Users wouuld manage the configuration.
+- Master Users would manage the configuration.
 - Ordinary users would perform the analysis.
 - **The solver (i.e. SAMMs) shall run asynchrously.**
-- **While the solver is running (i.e. SAMMs), the UI shall switch to read-only mode allowing requests for new runs.**
+- **While the solver is running, the UI shall switch to read-only mode allowing requests for new runs.**
 - **A solver pack shall be defined to list the SAMMs together with the versions.**
 - **The solver packs shall define the applicability (e.g. DCG type version) as well.**
 - **The DCGs shall define a configuration which contains: company policies, DCG type version and solver pack version.**
@@ -567,7 +567,7 @@ Below are some observations I realized by examining the UML diagrams of the use 
 I tested fastapi for the large heep data transfer via json between python and js.
 The results are satisfactory (i.e. some miliseconds for MBs of heep data).
 
-State management becomes quite complex in some conditions especialy for the undo/redo operations.
+The node state management becomes quite complex in some conditions especialy for the undo/redo operations.
 Consider SC1 is a SC and SAR1 and SAR2 are the two SARs related to this SC.
 In other words, the SC has two FMs.
 Assume that, currently, SAR1 is UpToDate but SAR2 is OutOfDate.

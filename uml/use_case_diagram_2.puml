@@ -21,8 +21,8 @@ repeat
   :[Ordinary User] Review SARs for failed SCs;
 repeat while (Failed SCs exists?)
 
-:[Ordinary User] Select commit the DCG;
-:[UI] Call [System] to commit the DCG;
-:[System] Commit the DCG;
+:[Ordinary User] Select save the sub-DCG;
+:[UI] Call [System] to save the sub-DCG;
+:[System] Save the sub-DCG;
 
 @enduml

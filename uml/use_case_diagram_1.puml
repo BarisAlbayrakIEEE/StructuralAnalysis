@@ -9,9 +9,9 @@ if (Import error?) then (no)
   :[System] Call [UI] to initialize;
   :[UI] Initialize;
   :[Master User] Update the data relations;
-  :[Master User] Select commit the new DCG;
-  :[UI] Call [System] to commit the new DCG;
-  :[System] Commit the new DCG;
+  :[Master User] Select insert the new DCG;
+  :[UI] Call [System] to insert the new DCG;
+  :[System] Insert the new DCG;
 
   if (DB error?) then (no)
     :[MySQL] Store the new DCG;

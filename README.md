@@ -369,8 +369,8 @@ Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 
 I will examine three use case scenarios:
-1. [Master User] | Import an FEM, create a DCG and commit it to the client-server MySQL DB
-2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and commit the updates to MySQL DB
+1. [Master User] | Import an FEM, create a DCG and insert it into the client-server MySQL DB
+2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs in the DCG node and save the updates to MySQL DB
 3. [Ordinary User] | Perform offline tradeoff
 
 There exist other scenarios as well.
@@ -398,7 +398,7 @@ In other words, the ancestor and descendant data blocks of the DCG is empty.
 For example, the side stiffeners of a panel object are not set yet.
 The master user needs to set these relations between the SAA objects from the UI.
 Each UI action of the master user is transfered to the core system to update the ancestor/descendant relations of the DCG.
-Finally, the master user commits the new DCG assigning a structural configuration ID related to the imported FEM.
+Finally, the master user inserts the new DCG into the MySQL DB assigning a structural configuration ID related to the imported FEM.
 
 - **Primary Actor:** Master user
 - **Scope:** SAA
@@ -418,9 +418,9 @@ Finally, the master user commits the new DCG assigning a structural configuratio
 4. **System** emits an event to initialize the user forms and the graphics.
 5. **UI** initializes the user forms and the graphics.
 6. **Master user** updates the elements of the DCG for the relations.
-7. **Master user** clicks **commit new DCG**.
-8. **UI** emits an event to commit the new DCG.
-9. **System** commits the new DCG to MySQL DB.
+7. **Master user** clicks **save new DCG**.
+8. **UI** emits an event to save the new DCG.
+9. **System** saves the new DCG to MySQL DB.
 10. **MySQL** stores the new DCG.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
@@ -452,7 +452,7 @@ The ordinary user has two options: inspection or sizing.
 The ordinary user runs the SAMMs for each SC in case of an inspection process.
 Otherwise, the ordinary user updates the properties of the SCs (e.g. material and geometry)
 and run the SAMMs in order to get the acceptable SARs (i.e. RFs).
-After completing the inspection/sizing, the ordinary user commits the sub-DCG with the updated SARs to MySQL DB.
+After completing the inspection/sizing, the ordinary user saves the sub-DCG with the updated SARs to MySQL DB.
 
 In this scenario, I will skip the inspection process.
 Although the SAA shall implement and optimization routine to automate the sizing,
@@ -486,9 +486,9 @@ I will prepare the scenario for a manual procedure.
 14. **System** emits an event to activate the UI for the states and SARs.
 15. **UI** refreshes the SARs for the state and values.
 16. Repeat Steps 6 to 15 to finish sizing all SCs.
-17. **Ordinary User** selects to commit the sub-DCG to MySQL DB.
-18. **UI** emits an event to activate the system for the sub-DCG commit.
-19. **System** commits the sub-DCG to MySQL DB.
+17. **Ordinary User** selects to save the sub-DCG to MySQL DB.
+18. **UI** emits an event to activate the system for the sub-DCG save.
+19. **System** saves the sub-DCG to MySQL DB.
 
 **Postconditions**
 - The SARs are **UpToDate** and safe.

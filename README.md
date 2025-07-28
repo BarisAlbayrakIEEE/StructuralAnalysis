@@ -449,7 +449,7 @@ In this scenario, an ordinary user checks out a sub-DCG from MySQL DB for inspec
 The system loads the sub-DCG and the FEM attached to the DCG.
 Then, the system initializes the UI.
 The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has been studied before.
-In this case, the SARs would have **UpToDate** state.
+In this case, the SARs may have **UpToDate** state.
 Otherwise, SARs have null values and the states are **OutOfDate**.
 The ordinary user has two options: inspection or sizing.
 The ordinary user runs the SAMMs for each SC in case of an inspection process.

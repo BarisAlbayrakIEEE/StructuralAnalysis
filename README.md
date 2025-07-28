@@ -394,7 +394,7 @@ and create the DCG by constructing the objects of SAA (e.g. panel and stiffener)
 This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
 With the import process:
 - the importer loads the FE data to be displayed by the FE graphics window
-- the importer constructs the SAA objects (e.g. panel_11)
+- the importer creates a DCG involving the SAA objects (e.g. panel_11)
 
 The importer, constructs the SAA objects without the dependencies.
 In other words, the ancestor and descendant data blocks of the DCG is empty.

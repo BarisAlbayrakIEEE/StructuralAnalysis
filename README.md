@@ -476,12 +476,12 @@ I will prepare the scenario for a manual procedure.
 1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
 2. **UI** emits an event to activate the system for the DCG loading.
 3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
-4. **System** emits an event to initialize the user forms and the graphics.
+4. **System** emits an event to initialize the user forms and the FE graphics.
 5. **UI** initializes the user forms and the FE graphics.
-6. **Ordinary User** reviews the SARs to detect the SCs that require sizing.
+6. **Ordinary User** reviews the SARs to detect the SCs that need sizing.
 7. **Ordinary User** updates the properties (e.g. material and geometry) of the SCs that needs sizing.
-8. **UI** emits an event to activate the system to set the state of the SARs corresponding to the updated SCs as **OutOfDate**.
-9. **System** sets the state of the SARs corresponding to the updated SCs as **OutOfDate**.
+8. **UI** emits an event to activate the system for each update.
+9. **System** reflects each update to the sub-DCG and sets the state of the SARs corresponding to the updated SC as **OutOfDate**.
 10. **Ordinary User** runs SAMMs for the updated SCs.
 11. **UI** emits an event to activate the system to run SAMMs for the updated SCs.
 12. **System** runs SAMMs for the updated SCs.

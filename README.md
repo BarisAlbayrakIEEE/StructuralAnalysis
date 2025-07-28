@@ -361,7 +361,7 @@ class panel_wrapper:
 ```
 
 There is one last point under this heading.
-The LC and SC data multiplies in case of the SAA as on a SC a load data (i.e. the SCL) is defined for each LC.
+The LC and SC data multiplies in case of the SAA as on an SC a load data (i.e. the SCL) is defined for each LC.
 Hence, considering that M is the number of SCs and N is the number of LCs:
 - The number of SCLs = M * N
 - The number of SARs = M * N

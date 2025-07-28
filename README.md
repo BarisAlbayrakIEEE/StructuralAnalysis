@@ -505,7 +505,7 @@ In this scenario, an ordinary user performs tradeoff analysis offline.
 The SAs involves complex strength analysis where the engineer would not make predictions without performing the calculations.
 For example, the effect of the panel thickness may not be linear on the result of panel buckling analysis.
 Hence, the engineer usualy needs to perform a quick analysis to see the effect of an action.
-The SAA shall offer this utility as well.
+**The SAA shall offer this utility as well.**
 In this case, the engineer works offline (independent of MySQL DB).
 She needs to define the SC to be examined (e.g. panel) and the auxilary objects (e.g. material, load).
 Then, she plays with the properties which she wants to examine (e.g. thickness) and runs the corresponding SAMM.

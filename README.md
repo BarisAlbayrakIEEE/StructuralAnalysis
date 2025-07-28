@@ -262,6 +262,7 @@ The SCs, SAs and SARs are the objects of the application which need type definit
 while SAMMs present the behaviours of these types.
 The application will be used by the structural engineers among whom Python is the most popular choice (even can be considered as de-facto).
 Hence, I will continue with **Python for the SAMM plugin development**.
+
 A plugin style architecture for the SCs, SAs and SARs needs a type registration.
 **Hence, the core framework shall provide the type registration.**
 Additionally, each new type would need a UI form.
@@ -307,10 +308,11 @@ The application would be simulated with a directed acyclic graph (DAG).
 The DAG can be very deep in case of a geometry application
 as each geometrical element (e.g. points, curves, surfaces) would be defined using other elements.
 The DAG is acyclic as a point cannot be created from a curve which has a relation with the point somewhere in the history.
-The application may allow cycled nodes (e.g. Catia) and continue in an invalid state.
+The application may allow cycled nodes (e.g. Catia) and continue in an **invalid state**.
 A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
 Catia also allows removing an element without removing the decendants which requires a background thread as well.
-[The DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) examines the background thread in detail.
+[My persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) examines the background thread in detail.
+Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
 - The depth of the DCG in case of the SAA is very small: material -> panel -> panel buckling -> buckling RF.

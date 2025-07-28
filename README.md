@@ -315,15 +315,16 @@ Catia also allows removing an element without removing the decendants which requ
 Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
-- The depth of the DCG in case of the SAA is very small: material -> panel -> panel buckling -> buckling RF.
-- No need to have a background process for the cycled or deleted nodes.
+- The depth of the DCG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> buckling RF.
+- No need to have background processes for the cycled or deleted nodes.
 
 Lets summarize the above discussions together with the decissions made in the previous sections:
 - Computational libraries (i.e. SAMMs) will be written in python.
 - The frontend will be written in js.
 - We need a single-threaded DCG with a small depth.
 
-**I will continue with Pyhton as the language of the core framework**.
+**which point that Pyhton is the most reasonable language for the core framework**.
+
 FastApi would create a bridge with the frontend.
 NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
 However, numpy datatypes are cumbersome such that the client side SAMM implementation gets dirty.

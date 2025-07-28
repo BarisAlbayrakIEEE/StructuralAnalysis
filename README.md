@@ -423,18 +423,18 @@ Finally, the master user inserts the new DCG into the MySQL DB assigning a struc
 6. **Master user** updates the elements of the DCG for the relations.
 7. **Master user** clicks **save new DCG**.
 8. **UI** emits an event to save the new DCG.
-9. **System** saves the new DCG to MySQL DB.
-10. **MySQL** stores the new DCG.
+9. **System** inserts the new DCG into the MySQL DB.
+10. **MySQL** inserts the new DCG.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
 - **3. System** terminates the FE Import.
 - **4. System** logs an error and sets the status to **Error**.
-- **5. System** emits an event to activate the UI to display the error message for the import failure.
+- **5. System** emits an event to activate the UI to display the error message.
 - **6. UI** displays the error message for the import failure.
 
-**Alternate Flows (Errors) - 2: Error during MySQL load**
-- **10. MySQL** returns load error.
-- **11. System** emits an event to activate the UI to display the error message for the DB load error.
+**Alternate Flows (Errors) - 2: Error during MySQL insert**
+- **10. MySQL** returns insert error.
+- **11. System** emits an event to activate the UI to display the error message.
 - **12. Master user** reports the DB error to the server IT.
 
 **Postconditions**

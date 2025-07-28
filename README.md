@@ -623,7 +623,7 @@ Below are the current features of the SAA based on the previous sections:
 - Solver pack applicability: DCG type version (e.g. dcg-v0.1)
 - User profile with the role definition
 - DBs for the standard items like material and fastener (per project)
-- DBs for the load and SAR data (per DCG)
+- DBs for the SCL and SAR data (per DCG)
 
 ## 4. Software Design <a id='sec4'></a>
 

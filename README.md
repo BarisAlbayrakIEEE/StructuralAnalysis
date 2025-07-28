@@ -448,7 +448,7 @@ Finally, the master user inserts the new DCG into the MySQL DB assigning a struc
 In this scenario, an ordinary user checks out a sub-DCG from MySQL DB for inspection or sizing.
 The system loads the sub-DCG and the FEM attached to the DCG.
 Then, the system initializes the UI.
-The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has ben studied before.
+The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has been studied before.
 In this case, the SARs would have **UpToDate** state.
 Otherwise, SARs have null values and the states are **OutOfDate**.
 The ordinary user has two options: inspection or sizing.

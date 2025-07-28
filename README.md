@@ -322,16 +322,23 @@ Lets summarize the above discussions together with the decissions made in the pr
 - Computational libraries (i.e. SAMMs) will be written in python.
 - The frontend will be written in js.
 - We need a single-threaded DCG with a small depth.
+- Frontend does not involve complex algorithms related with the DCG structure.
+- The DCG traversal is the most complex algorithm for the system side.
 
 **which point that Pyhton is the most reasonable language for the core framework**.
 
-FastApi would create a bridge with the frontend.
-NumPy datatypes and arrays would be used to allocate contiguous memory for the data.
-However, numpy datatypes are cumbersome such that the client side SAMM implementation gets dirty.
+FastApi would create an effective bridge with the frontend.
+The DOD approach would suggest that:
+- the NumPy datatypes and arrays would be used to allocate contiguous memory and
+- the ancestor/descendant node relations of the DCG would be defined with indices.
+
+The numpy datatypes are cumbersome such that the client side SAMM implementation gets dirty.
 It does not allow member access like an object (e.g. obj.member).
 In order to access an item in a numpy datatype, the order (int) or the name (str) of the item must be known.
 Hence, a wrapper class is required for each numpy datatype
 which handles the interactin with the solver (i.e. SAMM) and the frontend (i.e. fastapi).
+
+Finally, the performance of the DCG traversal (DFS or BFS) algorithms shall be benchmarked.
 
 ```
 import numpy as np
@@ -549,6 +556,7 @@ Below are some observations I realized by examining the UML diagrams of the use 
 - FE data is managed by the UI component (i.e. js) while the DCG data is managed by the system.
 - There is a frequent request traffic between the backend and the frontend.
 - Large data may be transfered betweeen the backend and the frontend.
+- **The DCG shall follow DOD approach to store the data.**
 - **The DCG shall define and manage a state (e.g. UpToDate) for each node in the DCG.**
 - The routines of the DCG related to the node states would be based on the ancestor/descendant relations.
 - **The SCT and the FE display components of the UI shall reflect the current node states (i.e. SCs and SARs).**
@@ -606,7 +614,7 @@ Below are the current features of the SAA based on the previous sections:
 - UI contains three interactive components: SCT, user forms and FE display
 - Core/UI bridge: FastAPI
 - Fundamental types (i.e. current interfaces): SC, LC, SCL, SAR
-- Use NumPy.dtype to store the data (e.g. SCs) in contiguous memory
+- DCG follows DOD approach: indices and NumPy.dtype
 - Create a wrapper for each NumPy.dtype to interact with the solver and frontend
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. panel) are shipped with the installation

@@ -458,7 +458,7 @@ and run the SAMMs in order to get the acceptable SARs (i.e. RFs).
 After completing the inspection/sizing, the ordinary user saves the sub-DCG with the updated SARs to MySQL DB.
 
 In this scenario, I will skip the inspection process.
-Although the SAA shall implement and optimization routine to automate the sizing,
+Although the SAA shall implement an optimization routine to automate the sizing,
 I will prepare the scenario for a manual procedure.
 
 - **Primary Actor:** Ordinary user

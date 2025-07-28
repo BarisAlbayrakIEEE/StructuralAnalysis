@@ -547,8 +547,8 @@ The constructed objects will be destructed when the user finishes her session.
 
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
 - FE data is managed by the UI component (i.e. js) while the DCG data is managed by the system.
-- There is a frequent request traffic between the system and and the frontend.
-- Large data may be transfered betweeen the system and the frontend.
+- There is a frequent request traffic between the backend and the frontend.
+- Large data may be transfered betweeen the backend and the frontend.
 - **The DCG shall define and manage a state (e.g. UpToDate) for each element in the DCG.**
 - The routines of the DCG related to the element states would be based on the ancestor/descendant relations.
 - **The SCT and the FE display components of the UI shall reflect the current states of the elements (i.e. SCs and SARs).**

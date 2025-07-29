@@ -711,7 +711,7 @@ The most important feature of the DCG is that it shall follow the DOD approach w
 
 The members of the DCG would be:
 - list__enum__DCG_node_states: enum__DCG_node_states[]: the list of DCG node state enum
-- dict__list__list__DCG_node_data: { type: [args[]] }: Each type has a list of args and a list contains all data per type.
+- dict__list__list__DCG_node_data: { type: [args[]] }: Each type has a list of args and a list contains all data per type
 - list__list__descendant_DCG_node_indices: [[]]: a list of descendant DAG node indices for each DCG node
 - dict__DCG_node_names: { type: str__name }: The memoized buffer to respond to the 6th feautre of the UI in the previous section
 
@@ -765,25 +765,49 @@ class Panel(IDCG):
     return [self.side_stiffener_1, self.side_stiffener_2]
 ```
 
+**DCG node state enumeration**\
+The node state data manageent is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
+Below are the possible states for a DCG node:
+- up to date
+- out of date
+- failed by the invariant
+- failed due to the ancestors
+
+The 1st two are obvious where the 1st one is the only positive state for a DCG node.
+The 3rd one simulates the invariant of the types.
+For example, a joint would fail from the knife edge condition if the following law breaks:
+- edge distance >= 2 * D + 1 where D is the nominal diameter of the fastener.
+
+The last one simulates the ancestor/descendant relations of the DCG.
+If a DCG node fails, the descendants would fail as well.
+
+**MySQL DB**\
+The DCG has another interface with the MySQL DB.
+Consider an ordinary user checks out a sub-DCG from the MySQL DB, works on it and saves it into the MySQL DB.
+The user modifications may include some nodes but data corresponding to some other nodes may remain the same.
+Hence, the DCG needs to determine the modified nodes.
+This requires another state parameter:
+- updata_state: bool
+
+When a DCG is loaded or constructed, DCG needs to initialize an boolean array sized by the number of the nodes.
+Initially all nodes are non-updated so that the array is filled up with the default false value.
+Each user action with an update makes the update state true for the corresponding DCG node.
+Hence, the members of the DCG becomes:
+- list__DCG_node_states__update: bool[]: the list of bool values whether nodes are modified after the last save operation
+- list__DCG_node_states__enum: enum__DCG_node_states[]: the list of DCG node state enum
+- dict__list__list__DCG_node_data: { type: [args[]] }: Each type has a list of args and a list contains all data per type
+- list__list__descendant_DCG_node_indices: [[]]: a list of descendant DAG node indices for each DCG node
+- dict__DCG_node_names: { type: str__name }: The memoized buffer to respond to the 6th feautre of the UI in the previous section
+
+**Other issues**\
+The DCG is examined alot in this document.
+Besides, although written in C++, [the persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git)
+describes many aspects of the DAG data structure.
+There, offcourse, exist many significant differences in the two data structures.
+However, I think up to this point I clearified the important aspects of the issue.
+Nevertheless, I will exclude the DCG implementation in this project
+defining only the required interfaces by the system
+as it would be similar with the DAG implementation (e.g. persistency, immutable functions, DFS/BFS iterators, etc.) above.
 
 
 
-
-
-```
-class DCG:
-  member: list__list__descendant_DCG_node_indices: [[]]
-  member: list__enum__DCG_node_states: [enum__DCG_node_states]
-  member: dict__DCG_node_names: { type: str__name }
-
-
-
-
-
-```
-
-
-
-
-Although, I will inspect the DCG in detail later, at this point I need to specify that
-the DCG follows the DOD approach for the ancestor/descendant relations: use indices instead of the pointers.

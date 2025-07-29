@@ -16,7 +16,8 @@
 - **SCT:** Structural Component Tree
 - **SCTN:** Structural Component Tree Node
 - **SCL:** Structural Component Loading
-- **SA:** Structural Analysis of an SC
+- **SA:** Structural Analysis
+- **SAD:** Structural Analysis Dataset
 - **SAA:** Structural Analysis Application
 - **SAE:** Structural Analysis Engineer (i.e. the user of the application)
 - **SAMM:** Structural Analysis Method & Module
@@ -719,6 +720,12 @@ In the above listing, I used Python list data structure for simplicity.
 The lists above are actually NumPy arrays in order to use the memory more efficiently
 and improve the cache efficiency.
 
+The DCG is a functionally persistent data structure powered by structural sharing.
+It is expected to process a copy operation for each action.
+**The efficiency of the copy operation is crucial for the persistent data structures.**
+The use of the primitive types (i.e. Numpy.dtype with raw types like Numpy.int_32) and Numpy arrays ensures the **bitwise copy operation**.
+**This is one of the significant advantages of following DOD approach.**
+
 The above list contains the descendant node relations while lacking the ancestor relations
 although the DCG would obviously need the ancestor relations as well.
 There exists a problem with the ancestor relations.
@@ -732,9 +739,9 @@ class Panel:
   ...
 ```
 
-Defining ancestor relations within the DCG would duplicate the data which beaks the design rules.
+**Defining ancestor relations within the DCG would duplicate the data which beaks the design rules.**
 Hence, the DCG shall request the ancestor relations from the types.
-At this point, its obvious that the DCG needs to define an interface for the data to be stored.
+**At this point, its obvious that the DCG needs to define an interface for the data to be stored.**
 In other words, the panel definition shall be:
 
 ```
@@ -746,7 +753,7 @@ class IDCG(ABC):
   @abstractmethod
   def get_ancestor_DCG_node_indices(self) -> []:
     """Return the ancestor DCG node indices"""
-    ...
+    pass
 
 
 
@@ -768,10 +775,10 @@ class Panel(IDCG):
 **DCG node state enumeration**\
 The node state data manageent is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
 Below are the possible states for a DCG node:
-- up to date
-- out of date
-- failed by the invariant
-- failed due to the ancestors
+- up to date,
+- out of date,
+- failed by the invariant,
+- failed due to the ancestors.
 
 The 1st two are obvious where the 1st one is the only positive state for a DCG node.
 The 3rd one simulates the invariant of the types.
@@ -781,6 +788,70 @@ For example, a joint would fail from the knife edge condition if the following l
 The last one simulates the ancestor/descendant relations of the DCG.
 If a DCG node fails, the descendants would fail as well.
 
+When the state of a node is changed, the DCG shall propogate the state change through the descendants up to the leaf nodes.
+For example, consider the user updates the web thickness of a stiffener.
+The SARs connected to the stiffener would need to become out-of-date obviously.
+But, that is not all the DCG needs to do.
+Other SCs using the stiffener would also be affected by the operation such as the panels having the stiffener as the side stiffener.
+A side stiffener must satisfy a condition to support a panel.
+This is called the restrain requirement.
+In other words, a stiffener must have at least a treshold inertia to support a panel.
+The treshold inertia depends both on the panel and stiffener properties.
+If the restrain condition fails, the assumption related with the panel support (i.e. enhanced simply supported panel) fails as well.
+In other words, the restrain condition is actually one of the invariants of the panel simulating the support condition.
+In summary, an update on a node shall be propogated by the DCG inspecting the following two for each descendant node:
+- the invariant and
+- the final state.
+
+**Considering the state propogation the IDCG interface becomes:**
+
+```
+# DCG module: m_DCG.py
+
+from abc import ABC, abstractmethod
+
+class IDCG(ABC):
+  @abstractmethod
+  def get_ancestor_DCG_node_indices(self) -> []:
+    """Return the ancestor DCG node indices"""
+    pass
+
+  @abstractmethod
+  def inspect_invariant(self) -> bool:
+    """Inspect the invariant"""
+    pass
+
+  @abstractmethod
+  def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
+    """Update the state of the node due to a state change propogation"""
+    pass
+
+
+
+# Panel module: panel.py
+
+import m_DCG
+
+class Panel(IDCG):
+  def __init__(self, side_stiffener_1, side_stiffener_2, ...):
+    self.side_stiffener_1 = side_stiffener_1
+    self.side_stiffener_2 = side_stiffener_2
+    ...
+
+  def get_ancestor_DCG_node_indices(self) -> []:
+    """Return the ancestor DCG node indices"""
+    return [self.side_stiffener_1, self.side_stiffener_2]
+
+  @abstractmethod
+  def inspect_invariant(self) -> bool:
+    """Inspect the invariant: Inspect the side stiffeners and other issues"""
+    ...
+
+  def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
+    """Update the state of the node due to a state change propogation"""
+    ...
+```
+
 **MySQL DB**\
 The DCG has another interface with the MySQL DB.
 Consider an ordinary user checks out a sub-DCG from the MySQL DB, works on it and saves it into the MySQL DB.
@@ -789,11 +860,11 @@ Hence, the DCG needs to determine the modified nodes.
 This requires another state parameter:
 - updata_state: bool
 
-When a DCG is loaded or constructed, DCG needs to initialize an boolean array sized by the number of the nodes.
+When a DCG is loaded or constructed, it needs to initialize a boolean array sized by the number of the nodes.
 Initially all nodes are non-updated so that the array is filled up with the default false value.
 Each user action with an update makes the update state true for the corresponding DCG node.
 Hence, the members of the DCG becomes:
-- list__DCG_node_states__update: bool[]: the list of bool values whether nodes are modified after the last save operation
+- **list__DCG_node_states__update: bool[]: the list of bool values whether nodes are modified after the last save operation**
 - list__DCG_node_states__enum: enum__DCG_node_states[]: the list of DCG node state enum
 - dict__list__list__DCG_node_data: { type: [args[]] }: Each type has a list of args and a list contains all data per type
 - list__list__descendant_DCG_node_indices: [[]]: a list of descendant DAG node indices for each DCG node
@@ -802,12 +873,59 @@ Hence, the members of the DCG becomes:
 **Other issues**\
 The DCG is examined alot in this document.
 Besides, although written in C++, [the persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git)
-describes many aspects of the DAG data structure.
+describes many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
-However, I think up to this point I clearified the important aspects of the issue.
+However, I think, up to this point, I clearified the important aspects of the issue.
 Nevertheless, I will exclude the DCG implementation in this project
 defining only the required interfaces by the system
 as it would be similar with the DAG implementation (e.g. persistency, immutable functions, DFS/BFS iterators, etc.) above.
 
+### 4.3. The Data Types <a id='sec43'></a>
+
+Currently, we have the following fundamental types:
+- structural component (SC),
+- structural component loading (SCL),
+- structural analysis (SA),
+- structural analysis dataset (SAD) and
+- structural analysis result (SAR)
+- LC set
+
+I will review these types briefly one by one.
+
+**Load related types**\
+The loading in case of structural analysis has different shapes.
+For example, consider the two analyses applied on panels:
+- the pressure panel analysis
+- the panel buckling analysis
+
+The two analyses are performed under different load components.
+A similar situation holds for the stiffeners and beams as they carry different load components.
+
+Another point related to the loading is the level of the loading.
+A SC may have different FMs or different applicability regimes under different load levels.
+For example, under limit load level, instability would not be accepted for a stiffener
+while under ultimate loading it may depending on the compony/project policies.
+
+Hence, the definition of the loading is significant in case of the SAA.
+
+The SCL has the following members:
+- load type: pressure, 2D force flux, 2D combined loading, etc
+- load level: limit, ultimate, crash, etc.
+- load data: P for pressure, [Nxx, Nyy, Nxy] for 2D force flux, [Fxx, Fyy, Fxy, Mxx, Myy, Mxy] for 2D combined loading, etc.
+
+I already described that the data related to the loading cause memory problems so that they shall be stored by the MySQL DB.
+Hence, SCLs and SARs are stored in the MySQL DB.
+However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
+In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
+The system needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
+Hence, we would have two definitions for the SCLs and SARs:
+- a definition for the offline process and
+- a definition for the online process.
+
+The SCL definition for the offline process would have all of the three members listed above
+while the online SCL would only have a key in order to query the MySQL DB.
+The same applies to the SARs similarly.
+
+**Structural Analysis (SA)**\
 
 

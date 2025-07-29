@@ -882,15 +882,47 @@ as it would be similar with the DAG implementation (e.g. persistency, immutable 
 
 ### 4.3. The Data Types <a id='sec43'></a>
 
-Currently, we have the following fundamental types:
+Currently, we have the following interfaces:
 - structural component (SC),
 - structural component loading (SCL),
 - structural analysis (SA),
 - structural analysis dataset (SAD) and
-- structural analysis result (SAR)
-- LC set
+- structural analysis result (SAR).
 
-I will review these types briefly one by one.
+#### 4.3.1. A General Overview of the Types
+
+I will examine two important aspects of the software design: polymorphism and immutability.
+
+**Polymorphism**\
+In case of the SAA, we have a number of components (i.e. the DCG, the SCs, the SAs, the solver and the UI) which require a careful design.
+However, the types of the SAA live on the same "level" beneath this small set of interfaces.
+In other words, the types do not form complex hierarchies.
+Consider the SCs, for example.
+The SCs have some properties and FMs based on which the SCs are inspected.
+They do not need deep class hierarchies structurally or behaviourally.
+
+In summary, the domain model uses a shallow, interface-driven design where a few core interfaces is followed by dozens of direct implementations so that the plug-ins can be extended without wading through deep inheritance chains.
+Hence, the polymorhism is not one of the central issues for the design of the SAA.
+
+**Immutability**\
+As stated earlier the DCG keeps the state data for the types.
+Additionally, **the DCG is functionally persistent**.
+These two points yield that the transformations on the types can be performed using pure immutable functions.
+
+Considering the comments on the polymorphism and immutability we can make a design decission:
+- follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
+
+**The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
+Although, Python has some gaps in case of functional programming such as the lack of function overloading
+these issues can be handled by simple workarounds adding litle boilerplate code.
+
+
+
+
+
+
+
+
 
 **Load related types**\
 The loading in case of structural analysis has different shapes.
@@ -927,5 +959,6 @@ while the online SCL would only have a key in order to query the MySQL DB.
 The same applies to the SARs similarly.
 
 **Structural Analysis (SA)**\
+
 
 

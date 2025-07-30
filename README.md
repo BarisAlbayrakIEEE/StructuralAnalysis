@@ -710,37 +710,56 @@ The most important feature of the DCG is that it shall follow the DOD approach w
 - work with indices instead of the references/pointers and
 - apply struct of arrays (SoA) instead of arrays of structs (AoS).
 
-The members of the DCG would be:
-- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
-- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
-- dict__list__args__DCG_node_data: { type: list[args] }: Type object data is stored in a list
-- dict__list__str__DCG_node_names: { type: list[str] }: The memoized buffer to respond to the 6th feautre of the UI
+Lets start with an initial member list definition for the DCG:
+1. ancestor_DCG_node_indices: Stores the indices of the ancestor for all DCG nodes.
+2. descendant_DCG_node_indices: Stores the indices of the descendant for all DCG nodes.
+3. DCG_node_states: Stores the states for all DCG nodes.
+4. DCG_node_types: Stores the type codes for all DCG nodes. The type registry assigns a type code to each type. Use to access 6th and 7th members.
+5. DCG_node_locations: Stores the indices of all DCG nodes within the 6th and 7th members.
+6. DCG_node_data: Stores the data for all DCG nodes.
+7. DCG_node_names: Stores the names for all DCG nodes.
+
+Use the 4th and the 5th members to access the data in the 6th and 7th members:
+
+```
+type_code = self.DCG_node_types[DCG_node_index]
+data_container = self.DCG_node_data[type_code]
+name_container = self.DCG_node_names[type_code]
+
+location = self.DCG_node_locations[DCG_node_index]
+data_val = data_container[location]
+data_name = name_container[location]
+```
 
 The DCG is a functionally persistent data structure powered by structural sharing.
 It is expected to process a copy operation for each action.
 **The efficiency of the copy operation is crucial for the persistent data structures.**
-The use of the primitive types (i.e. Numpy.dtype with raw types like Numpy.int_32) and Numpy arrays ensures the **bitwise copy operation**.
+The use of the primitive types (i.e. np.dtype with raw types) with np.ndarray or array.array ensures the **bitwise copy operation**.
 **This is one of the significant advantages of following DOD approach.**
 I will replace the list containers in the definition of the last two members with the NumPy.ndarray and NumPy.dtype.
 Hence, the DCG members become:
-- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
-- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
-- dict__ndarray__dtype__DCG_node_data: { type: np.ndarray[dtype] }: Type data is stored in np.dtype which are stored in np.ndarray
-- dict__ndarray__str__DCG_node_names: { type: np.ndarray[str] }: The memoized buffer to respond to the 6th feautre of the UI
+1. ancestor_DCG_node_indices: array.array[array.array[int]]
+2. descendant_DCG_node_indices: array.array[array.array[int]]
+3. DCG_node_states: np.ndarray[enum__DCG_node_states]
+4. DCG_node_types: np.ndarray[byte]
+5. DCG_node_locations: np.ndarray[np.int32]
+6. DCG_node_data: dict{ byte: np.ndarray[np.dtype] }: np.dtype packs the type data.
+7. DCG_node_names: dict{ byte: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
 
-The 3rd item stores the data while the others store the state or memoized buffers.
-The NumPy arrays together with NumPy.dtype simulate SoA which allocates the memory more efficiently and improve the cache efficiency.
-However, this configuration does not make use of structural sharing such that all operations require a full copy of the above data.
+The above listing follows the SoA approach which allocates the memory more efficiently and improve the cache efficiency.
+However, this configuration does not make use of structural sharing such that all operations require a full copy.
 The structural sharing would be obtained by using a tree of arrays (i.e. [vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git)).
-The last two items are better to be defined by the VectorTree.
+The last two items are better to be defined by VectorTree.
 Hence, the DCG members become:
-- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
-- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
-- dict__ndarray__dtype__DCG_node_data: { type: np.ndarray[dtype] }: Type data is stored in np.dtype which are stored in np.ndarray
-- dict__ndarray__str__DCG_node_names: { type: np.ndarray[str] }: The memoized buffer to respond to the 6th feautre of the UI
+1. ancestor_DCG_node_indices: array.array[array.array[int]]
+2. descendant_DCG_node_indices: array.array[array.array[int]]
+3. DCG_node_states: np.ndarray[enum__DCG_node_states]
+4. DCG_node_types: np.ndarray[byte]
+5. DCG_node_locations: np.ndarray[np.int32]
+6. DCG_node_data: dict{ byte: VectorTree[np.dtype] }
+7. DCG_node_names: dict{ byte: VectorTree[str] }
 
-The above list contains the descendant node relations while lacking the ancestor relations
-although the DCG would obviously need the ancestor relations as well.
+The above list contains both the ancestor and the descendant node relations.
 There exists a problem with the ancestor relations.
 The type definitions would (have to) contain that information.
 For example, a panel type would be:
@@ -752,8 +771,16 @@ class Panel:
   ...
 ```
 
-**Defining ancestor relations within the DCG would duplicate the data which beaks the design rules.**
-Hence, the DCG shall request the ancestor relations from the types.
+**Defining the ancestor relations within the DCG would duplicate the data which breaks the design rules.**
+The DCG shall request the ancestor relations from the types.
+Hence, the DCG members become:
+1. descendant_DCG_node_indices: array.array[array.array[int]]
+2. DCG_node_states: np.ndarray[enum__DCG_node_states]
+3. DCG_node_types: np.ndarray[byte]
+4. DCG_node_locations: np.ndarray[np.int32]
+5. DCG_node_data: dict{ byte: VectorTree[np.dtype] }
+6. DCG_node_names: dict{ byte: VectorTree[str] }
+
 **At this point, its obvious that the DCG needs to define an interface for the data to be stored.**
 In other words, the panel definition shall be:
 
@@ -786,7 +813,7 @@ class Panel(IDCG):
 ```
 
 **DCG node state enumeration**\
-The node state data manageent is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
+The node state data management is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
 Below are the possible states for a DCG node:
 - up to date,
 - out of date,
@@ -866,7 +893,7 @@ class Panel(IDCG):
 ```
 
 **MySQL DB**\
-The DCG has another interface with the MySQL DB.
+The DCG has another interface which is the MySQL DB.
 Consider an ordinary user checks out a sub-DCG from the MySQL DB, works on it and saves it into the MySQL DB.
 The user modifications may include some nodes but data corresponding to some other nodes may remain the same.
 Hence, the DCG needs to determine the modified nodes.
@@ -877,11 +904,13 @@ When a DCG is loaded or constructed, it needs to initialize a boolean array size
 Initially all nodes are non-updated so that the array is filled up with the default false value.
 Each user action with an update makes the update state true for the corresponding DCG node.
 Hence, the members of the DCG becomes:
-- **list__DCG_node_states__update: bool[]: the list of bool values whether nodes are modified after the last save operation**
-- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
-- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
-- dict__ndarray__dtype__DCG_node_data: { type: np.ndarray[dtype] }: Type data is stored in np.dtype which are stored in np.ndarray
-- dict__ndarray__str__DCG_node_names: { type: np.ndarray[str] }: The memoized buffer to respond to the 6th feautre of the UI
+1. descendant_DCG_node_indices: array.array[array.array[int]]
+2. DCG_node_states__DB: np.ndarray[bool]
+3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
+4. DCG_node_types: np.ndarray[byte]
+5. DCG_node_locations: np.ndarray[np.int32]
+6. DCG_node_data: dict{ byte: VectorTree[np.dtype] }
+7. DCG_node_names: dict{ byte: VectorTree[str] }
 
 **Other issues**\
 The DCG is examined alot in this document.
@@ -932,6 +961,8 @@ these issues can be handled by simple workarounds adding litle boilerplate code.
 
 
 
+
+#### 4.3.2. Load Related Types
 
 **Load related types**\
 The loading in case of structural analysis has different shapes.

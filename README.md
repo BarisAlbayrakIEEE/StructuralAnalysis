@@ -711,20 +711,33 @@ The most important feature of the DCG is that it shall follow the DOD approach w
 - apply struct of arrays (SoA) instead of arrays of structs (AoS).
 
 The members of the DCG would be:
-- list__enum__DCG_node_states: enum__DCG_node_states[]: the list of DCG node state enum
-- dict__list__list__DCG_node_data: { type: [args[]] }: Each type has a list of args and a list contains all data per type
-- list__list__descendant_DCG_node_indices: [[]]: a list of descendant DAG node indices for each DCG node
-- dict__DCG_node_names: { type: str__name }: The memoized buffer to respond to the 6th feautre of the UI in the previous section
-
-In the above listing, I used Python list data structure for simplicity.
-The lists above are actually NumPy arrays in order to use the memory more efficiently
-and improve the cache efficiency.
+- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
+- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
+- dict__list__args__DCG_node_data: { type: list[args] }: Type object data is stored in a list
+- dict__list__str__DCG_node_names: { type: list[str] }: The memoized buffer to respond to the 6th feautre of the UI
 
 The DCG is a functionally persistent data structure powered by structural sharing.
 It is expected to process a copy operation for each action.
 **The efficiency of the copy operation is crucial for the persistent data structures.**
 The use of the primitive types (i.e. Numpy.dtype with raw types like Numpy.int_32) and Numpy arrays ensures the **bitwise copy operation**.
 **This is one of the significant advantages of following DOD approach.**
+I will replace the list containers in the definition of the last two members with the NumPy.ndarray and NumPy.dtype.
+Hence, the DCG members become:
+- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
+- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
+- dict__ndarray__dtype__DCG_node_data: { type: np.ndarray[dtype] }: Type data is stored in np.dtype which are stored in np.ndarray
+- dict__ndarray__str__DCG_node_names: { type: np.ndarray[str] }: The memoized buffer to respond to the 6th feautre of the UI
+
+The 3rd item stores the data while the others store the state or memoized buffers.
+The NumPy arrays together with NumPy.dtype simulate SoA which allocates the memory more efficiently and improve the cache efficiency.
+However, this configuration does not make use of structural sharing such that all operations require a full copy of the above data.
+The structural sharing would be obtained by using a tree of arrays (i.e. [vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git)).
+The last two items are better to be defined by the VectorTree.
+Hence, the DCG members become:
+- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
+- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
+- dict__ndarray__dtype__DCG_node_data: { type: np.ndarray[dtype] }: Type data is stored in np.dtype which are stored in np.ndarray
+- dict__ndarray__str__DCG_node_names: { type: np.ndarray[str] }: The memoized buffer to respond to the 6th feautre of the UI
 
 The above list contains the descendant node relations while lacking the ancestor relations
 although the DCG would obviously need the ancestor relations as well.
@@ -865,10 +878,10 @@ Initially all nodes are non-updated so that the array is filled up with the defa
 Each user action with an update makes the update state true for the corresponding DCG node.
 Hence, the members of the DCG becomes:
 - **list__DCG_node_states__update: bool[]: the list of bool values whether nodes are modified after the last save operation**
-- list__DCG_node_states__enum: enum__DCG_node_states[]: the list of DCG node state enum
-- dict__list__list__DCG_node_data: { type: [args[]] }: Each type has a list of args and a list contains all data per type
-- list__list__descendant_DCG_node_indices: [[]]: a list of descendant DAG node indices for each DCG node
-- dict__DCG_node_names: { type: str__name }: The memoized buffer to respond to the 6th feautre of the UI in the previous section
+- list__enum__DCG_node_states: [enum__DCG_node_states]: the list of DCG node state enum
+- list__list__int__descendant_DCG_node_indices: [[int]]: a list of descendant DAG node indices for each DCG node
+- dict__ndarray__dtype__DCG_node_data: { type: np.ndarray[dtype] }: Type data is stored in np.dtype which are stored in np.ndarray
+- dict__ndarray__str__DCG_node_names: { type: np.ndarray[str] }: The memoized buffer to respond to the 6th feautre of the UI
 
 **Other issues**\
 The DCG is examined alot in this document.
@@ -913,12 +926,8 @@ Considering the comments on the polymorphism and immutability we can make a desi
 - follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
 
 **The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
-Although, Python has some gaps in case of functional programming such as the lack of function overloading
+Although, Python has some gaps in case of functional programming such as the lack of function overloading,
 these issues can be handled by simple workarounds adding litle boilerplate code.
-
-
-
-
 
 
 

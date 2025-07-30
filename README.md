@@ -345,9 +345,9 @@ Finally, the performance of the DCG traversal (DFS or BFS) algorithms shall be b
 import numpy as np
 panel_dt = np.dtype([
     ('t', np.float64),   # thickness
-    ('ss1', np.int32),   # DCG node ID of the 1st side stiffener
-    ('ss2', np.int32),   # DCG node ID of the 2nd side stiffener
-    ('mat', np.int32)    # DCG node ID of the material
+    ('ss1', np.uint32),   # DCG node ID of the 1st side stiffener
+    ('ss2', np.uint32),   # DCG node ID of the 2nd side stiffener
+    ('mat', np.uint32)    # DCG node ID of the material
 ])
 
 class panel_wrapper:
@@ -741,10 +741,10 @@ Hence, the DCG members become:
 1. ancestor_DCG_node_indices: array.array[array.array[int]]
 2. descendant_DCG_node_indices: array.array[array.array[int]]
 3. DCG_node_states: np.ndarray[enum__DCG_node_states]
-4. DCG_node_types: np.ndarray[byte]
-5. DCG_node_locations: np.ndarray[np.int32]
-6. DCG_node_data: dict{ byte: np.ndarray[np.dtype] }: np.dtype packs the type data.
-7. DCG_node_names: dict{ byte: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
+4. DCG_node_types: np.ndarray[np.uint32]
+5. DCG_node_locations: np.ndarray[np.uint32]
+6. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data.
+7. DCG_node_names: dict{ np.uint32: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
 
 The above listing follows the SoA approach which allocates the memory more efficiently and improve the cache efficiency.
 However, this configuration does not make use of structural sharing such that all operations require a full copy.
@@ -754,10 +754,10 @@ Hence, the DCG members become:
 1. ancestor_DCG_node_indices: array.array[array.array[int]]
 2. descendant_DCG_node_indices: array.array[array.array[int]]
 3. DCG_node_states: np.ndarray[enum__DCG_node_states]
-4. DCG_node_types: np.ndarray[byte]
-5. DCG_node_locations: np.ndarray[np.int32]
-6. DCG_node_data: dict{ byte: VectorTree[np.dtype] }
-7. DCG_node_names: dict{ byte: VectorTree[str] }
+4. DCG_node_types: np.ndarray[np.uint32]
+5. DCG_node_locations: np.ndarray[np.uint32]
+6. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
+7. DCG_node_names: dict{ np.uint32: VectorTree[str] }
 
 The above list contains both the ancestor and the descendant node relations.
 There exists a problem with the ancestor relations.
@@ -776,10 +776,10 @@ The DCG shall request the ancestor relations from the types.
 Hence, the DCG members become:
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_types: np.ndarray[byte]
-4. DCG_node_locations: np.ndarray[np.int32]
-5. DCG_node_data: dict{ byte: VectorTree[np.dtype] }
-6. DCG_node_names: dict{ byte: VectorTree[str] }
+3. DCG_node_types: np.ndarray[np.uint32]
+4. DCG_node_locations: np.ndarray[np.uint32]
+5. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
+6. DCG_node_names: dict{ np.uint32: VectorTree[str] }
 
 **At this point, its obvious that the DCG needs to define an interface for the data to be stored.**
 In other words, the panel definition shall be:
@@ -905,12 +905,12 @@ Initially all nodes are non-updated so that the array is filled up with the defa
 Each user action with an update makes the update state true for the corresponding DCG node.
 Hence, the members of the DCG becomes:
 1. descendant_DCG_node_indices: array.array[array.array[int]]
-2. DCG_node_states__DB: np.ndarray[bool]
+2. DCG_node_states__DB: np.ndarray[np.bool]
 3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
-4. DCG_node_types: np.ndarray[byte]
-5. DCG_node_locations: np.ndarray[np.int32]
-6. DCG_node_data: dict{ byte: VectorTree[np.dtype] }
-7. DCG_node_names: dict{ byte: VectorTree[str] }
+4. DCG_node_types: np.ndarray[np.uint32]
+5. DCG_node_locations: np.ndarray[np.uint32]
+6. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
+7. DCG_node_names: dict{ np.uint32: VectorTree[str] }
 
 **Other issues**\
 The DCG is examined alot in this document.

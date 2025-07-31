@@ -993,10 +993,14 @@ Instead, the DCG shall keep the FE link information.
 
 
 1. EO
-1.1. Interface
+1.1. Type
 - Standard: Inherits StandardUI. get_DB gets values from DB.
 - Classified (I_section, PanelLoading, etc): Inherits ClassifiedUI.
 - Free: A UI for each Free EO
+1.2. Sizeability
+- AutoSizeable
+- ManualSizeable
+- Non-sizeable
 
 2. SCL(ClassifiedEO)
 2.1. Interface

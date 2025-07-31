@@ -675,8 +675,8 @@ When, for example, the user clicks on an element/node in the SCT, the frontend:
 
 The above process is a part of the backend/frontend interface.
 Below presents the whole interface at the backend/system side:
-- get_DCG_node_data(DCG_node_index) -> DCG_node_data_type, list__DCG_node_data[]
-- set_DCG_node_data(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
+- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, list__DCG_node_data_vals[]
+- set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
 - remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]
 - remove_DCG_nodes(list__DCG_node_indices[]) -> list__removed_DCG_node_indices[]
 - run_analysis(dict__analysis_dataset{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
@@ -719,7 +719,7 @@ A corresponding member list definition for the DCG would be:
 1. ancestor_DCG_node_indices: Stores the indices of the ancestor for all DCG nodes.
 2. descendant_DCG_node_indices: Stores the indices of the descendant for all DCG nodes.
 3. DCG_node_states: Stores the states for all DCG nodes.
-4. DCG_node_data: Stores the data for all DCG nodes.
+4. DCG_node_data_vals: Stores the data for all DCG nodes.
 5. FE_link: A descriptor for the linked FEM.
 
 The DCG would need auxilary data in order to perform some actions more efficiently.
@@ -746,7 +746,7 @@ The DCG shall request the ancestor relations from the types.
 Hence, the DCG members become:
 1. descendant_DCG_node_indices: Stores the indices of the descendant for all DCG nodes.
 2. DCG_node_states: Stores the states for all DCG nodes.
-3. DCG_node_data: Stores the data for all DCG nodes.
+3. DCG_node_data_vals: Stores the data for all DCG nodes.
 4. FE_link: A descriptor for the linked FEM.
 
 **At this point, its obvious that the DCG needs to define an interface for the data to be stored.**
@@ -784,7 +784,7 @@ class Panel(IDCG):
 The definitions for the above members would be:
 1. descendant_DCG_node_indices: list[list[int]]
 2. DCG_node_states: list[enum__DCG_node_states]
-3. DCG_node_data: list[object]
+3. DCG_node_data_vals: list[object]
 4. FE_link: str
 
 **The ordering/indexing within the 1st three list containers must be the same.**
@@ -803,30 +803,30 @@ I will replace the list containers with np.ndarray and array.array.
 Applying the DOD, we would have:
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data. np.uint32 presents the type code which will be explained soon.
+3. DCG_node_data_vals: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data. np.uint32 presents the type code which will be explained soon.
 4. FE_link: str
 
 Now, we store the data in very efficient np.ndarray and np.dtype combination as the objects of the same type are stored in a contiguous array.
 However, the indexing compatibility between the 1st two containers (lets call this as global indexing) and the 3rd one (type local indexing) has been lost.
 We need to define another containerr which will relate the global indexing to the type local indexing.
 Now we have two new containers:
-- DCG_node_types: Stores the type codes for all DCG nodes. The type registry assigns a type code to each type.
-- DCG_node_locations: Stores the type local indices of all DCG nodes.
+- DCG_node_data_types: Stores the type codes for all DCG nodes. The type registry assigns a type code to each type.
+- DCG_node_data_positions: Stores the type local indices of all DCG nodes.
 
 The members become:
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_types: np.ndarray[np.uint32]
-4. DCG_node_locations: np.ndarray[np.uint32]
-5. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }
+3. DCG_node_data_types: np.ndarray[np.uint32]
+4. DCG_node_data_positions: np.ndarray[np.uint32]
+5. DCG_node_data_vals: dict{ np.uint32: np.ndarray[np.dtype] }
 6. FE_link: str
 
 Use the 3rd and the 4th members to access the data in the 5th member:
 
 ```
-type_code = self.DCG_node_types[DCG_node_index]
-location = self.DCG_node_locations[DCG_node_index]
-data_container = self.DCG_node_data[type_code]
+type_code = self.DCG_node_data_types[DCG_node_index]
+location = self.DCG_node_data_positions[DCG_node_index]
+data_container = self.DCG_node_data_vals[type_code]
 data_val = data_container[location]
 ```
 
@@ -835,10 +835,10 @@ The 1st user scenario showed that the UI needs to access the names of all object
 A buffer would help the DCG to respond quickly to this request:
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_types: np.ndarray[np.uint32]
-4. DCG_node_locations: np.ndarray[np.uint32]
-5. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }
-6. DCG_node_names: dict{ np.uint32: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
+3. DCG_node_data_types: np.ndarray[np.uint32]
+4. DCG_node_data_positions: np.ndarray[np.uint32]
+5. DCG_node_data_vals: dict{ np.uint32: np.ndarray[np.dtype] }
+6. DCG_node_data_names: dict{ np.uint32: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
 7. FE_link: str
 
 **Structural Sharing**\
@@ -850,10 +850,10 @@ Hence, the DCG members become:
 1. ancestor_DCG_node_indices: array.array[array.array[int]]
 2. descendant_DCG_node_indices: array.array[array.array[int]]
 3. DCG_node_states: np.ndarray[enum__DCG_node_states]
-4. DCG_node_types: np.ndarray[np.uint32]
-5. DCG_node_locations: np.ndarray[np.uint32]
-6. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
-7. DCG_node_names: dict{ np.uint32: VectorTree[str] }
+4. DCG_node_data_types: np.ndarray[np.uint32]
+5. DCG_node_data_positions: np.ndarray[np.uint32]
+6. DCG_node_data_vals: dict{ np.uint32: VectorTree[np.dtype] }
+7. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
 8. FE_link: str
 
 **DCG node state enumeration**\
@@ -951,10 +951,10 @@ Hence, the members of the DCG becomes:
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states__DB: np.ndarray[np.bool]
 3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
-4. DCG_node_types: np.ndarray[np.uint32]
-5. DCG_node_locations: np.ndarray[np.uint32]
-6. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
-7. DCG_node_names: dict{ np.uint32: VectorTree[str] }
+4. DCG_node_data_types: np.ndarray[np.uint32]
+5. DCG_node_data_positions: np.ndarray[np.uint32]
+6. DCG_node_data_vals: dict{ np.uint32: VectorTree[np.dtype] }
+7. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
 8. FE_link: str
 
 **FEM**\
@@ -964,16 +964,65 @@ The system shall store this data as well.
 However, the DCG nodes do not store the SCs only.
 Hence, the FE linkage shall be defined within the SCs only.
 However, including a string field in the dtype is not a good practice.
-Instead, we can construct a large string within the DCG and access that 
+Instead, the DCG shall keep the FE link information.
+
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states__DB: np.ndarray[np.bool]
 3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
 4. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
-5. DCG_node_types: np.ndarray[np.uint32]
-6. DCG_node_locations: np.ndarray[np.uint32]
-7. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
-8. DCG_node_names: dict{ np.uint32: VectorTree[str] }
+5. DCG_node_data_types: np.ndarray[np.uint32]
+6. DCG_node_data_positions: np.ndarray[np.uint32]
+7. DCG_node_data_vals: dict{ np.uint32: VectorTree[np.dtype] }
+8. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
 9. FE_link: str
+
+
+
+
+
+
+
+
+
+
+
+1. EOs
+1.1. Interface
+- Standard: get_DB gets valuues from DB. get_values returns a dictionary. A standard UI handles all Standard EOs
+- Classified (I_section, PanelLoading, etc): For UI classification. get_values returns a dictionary. UIs are classified. Can be abstracted (section, loading, etc).
+- Free: A UI for each Free EO
+
+2. SCLs(ClassifiedEO)
+2.1. Interface
+- Classified EO
+- get_DB gets values from DB.
+
+3. SCs
+3.1. Main
+Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same name and put the thickness in the EO
+
+3.2. Interface
+- All need FE importer
+- Some need FE exporter if FE analysis applicable: e.g. non-rectangular panel
+
+4. SAs
+4.1. Interface
+- Set applicability of analysis: Ex: panel pressure is applicable if pressure
+- Select analysis type: FEA or analytical
+- Set analysis parameters: Ex: Fitting factor
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

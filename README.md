@@ -992,32 +992,32 @@ Instead, the DCG shall keep the FE link information.
 
 
 
-1. EOs
+1. EO
 1.1. Interface
 - Standard: Inherits StandardUI. get_DB gets values from DB.
 - Classified (I_section, PanelLoading, etc): Inherits ClassifiedUI.
 - Free: A UI for each Free EO
 
-2. SCLs(ClassifiedEO)
+2. SCL(ClassifiedEO)
 2.1. Interface
 - Classified EO
 - get_DB gets values from DB.
 
-3. SCs
+3. SC(StandardUI)
 3.1. Main
 Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same name and put the thickness in the EO
 
 3.2. Interface
+- Inherits StandardUI.
 - All need FE importer
 - Some need FE exporter if FE analysis applicable: e.g. non-rectangular panel
-- Standard UI
 
-4. SAs
+4. SA(StandardUI)
 4.1. Interface
+- Inherits StandardUI.
 - Set applicability of analysis: Ex: panel pressure is applicable if pressure
 - Select analysis type: FEA or analytical
 - Set analysis parameters: Ex: Fitting factor
-- Standard UI
 
 
 

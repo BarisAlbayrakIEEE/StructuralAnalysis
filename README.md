@@ -897,18 +897,18 @@ from abc import ABC, abstractmethod
 class IDCG(ABC):
   @abstractmethod
   def get_ancestor_DCG_node_indices(self) -> []:
-  """Return the ancestor DCG node indices"""
-  pass
+    """Return the ancestor DCG node indices"""
+    pass
 
   @abstractmethod
   def inspect_invariant(self) -> bool:
-  """Inspect the invariant"""
-  pass
+    """Inspect the invariant"""
+    pass
 
   @abstractmethod
   def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
-  """Update the state of the node due to a state change propogation"""
-  pass
+    """Update the state of the node due to a state change propogation"""
+    pass
 
 
 
@@ -918,22 +918,22 @@ import m_DCG
 
 class Panel(IDCG):
   def __init__(self, side_stiffener_1, side_stiffener_2, ...):
-  self.side_stiffener_1 = side_stiffener_1
-  self.side_stiffener_2 = side_stiffener_2
-  ...
+    self.side_stiffener_1 = side_stiffener_1
+    self.side_stiffener_2 = side_stiffener_2
+    ...
 
   def get_ancestor_DCG_node_indices(self) -> []:
-  """Return the ancestor DCG node indices"""
-  return [self.side_stiffener_1, self.side_stiffener_2]
+    """Return the ancestor DCG node indices"""
+    return [self.side_stiffener_1, self.side_stiffener_2]
 
   @abstractmethod
   def inspect_invariant(self) -> bool:
-  """Inspect the invariant: Inspect the side stiffeners and other issues"""
-  ...
+    """Inspect the invariant: Inspect the side stiffeners and other issues"""
+    ...
 
   def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
-  """Update the state of the node due to a state change propogation"""
-  ...
+    """Update the state of the node due to a state change propogation"""
+    ...
 ```
 
 **MySQL DB**\

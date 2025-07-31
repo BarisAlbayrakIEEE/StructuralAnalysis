@@ -344,28 +344,28 @@ Finally, the performance of the DCG traversal (DFS or BFS) algorithms shall be b
 ```
 import numpy as np
 panel_dt = np.dtype([
-    ('t', np.float64),   # thickness
-    ('ss1', np.uint32),   # DCG node ID of the 1st side stiffener
-    ('ss2', np.uint32),   # DCG node ID of the 2nd side stiffener
-    ('mat', np.uint32)    # DCG node ID of the material
+  ('t', np.float64),   # thickness
+  ('ss1', np.uint32),   # DCG node ID of the 1st side stiffener
+  ('ss2', np.uint32),   # DCG node ID of the 2nd side stiffener
+  ('mat', np.uint32)  # DCG node ID of the material
 ])
 
 class panel_wrapper:
   # interface with the solver
   def __init__(self, p: panel_dt):
-    self.t = p[0].item()
-    self.ss1 = p[1].item()
-    self.ss2 = p[2].item()
-    self.mat = p[3].item()
+  self.t = p[0].item()
+  self.ss1 = p[1].item()
+  self.ss2 = p[2].item()
+  self.mat = p[3].item()
   
   # interface with the frontend
   def to_dict(p: panel_dt):
-    return {
-      't': p[0].item(),
-      'ss1': p[1].item(),
-      'ss2': p[2].item(),
-      'mat': p[3].item()      
-    }
+  return {
+    't': p[0].item(),
+    'ss1': p[1].item(),
+    'ss2': p[2].item(),
+    'mat': p[3].item()    
+  }
 ```
 
 There is one last point under this heading.
@@ -705,47 +705,144 @@ The current one, calculate_properties, would calculate some properties such as:
 
 ### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
 
-The previous sections presented many details about the DCG.
-The most important feature of the DCG is that it shall follow the DOD approach which comes with two important features:
-- work with indices instead of the references/pointers and
-- apply struct of arrays (SoA) instead of arrays of structs (AoS).
+The architecture chapter underlined that we need two DCG definitions which are online and offline respectively.
+**I will skip the offline DCG iin order for the simplicity of the project.**
 
-Lets start with an initial member list definition for the DCG:
+**Initial Member List**\
+Lets start by recalling the data that should be stored by the DCG:
+1. ancestor and descendant relations,
+2. DCG node states,
+3. the structural data and
+4. the FE data (e.g. FE elements linked to a Panel instance).
+
+A corresponding member list definition for the DCG would be:
 1. ancestor_DCG_node_indices: Stores the indices of the ancestor for all DCG nodes.
 2. descendant_DCG_node_indices: Stores the indices of the descendant for all DCG nodes.
 3. DCG_node_states: Stores the states for all DCG nodes.
-4. DCG_node_types: Stores the type codes for all DCG nodes. The type registry assigns a type code to each type. Use to access 6th and 7th members.
-5. DCG_node_locations: Stores the indices of all DCG nodes within the 6th and 7th members.
-6. DCG_node_data: Stores the data for all DCG nodes.
-7. DCG_node_names: Stores the names for all DCG nodes.
+4. DCG_node_data: Stores the data for all DCG nodes.
+5. FE_link: A descriptor for the linked FEM.
 
-Use the 4th and the 5th members to access the data in the 6th and 7th members:
+The DCG would need auxilary data in order to perform some actions more efficiently.
+
+**Ancestor Relations**\
+The above list contains both the ancestor and the descendant node relations.
+There exists a problem with the ancestor relations.
+The type definitions would (have to) contain that information.
+For example, a panel type would be:
 
 ```
-type_code = self.DCG_node_types[DCG_node_index]
-data_container = self.DCG_node_data[type_code]
-name_container = self.DCG_node_names[type_code]
+class Panel:
+  ...
 
-location = self.DCG_node_locations[DCG_node_index]
-data_val = data_container[location]
-data_name = name_container[location]
+    def __init__(*args):
+      self.side_stiffener_1 = ...
+      self.side_stiffener_2 = ...
+  
+  ...
 ```
+
+**Defining the ancestor relations within the DCG would duplicate the data which breaks the design rules.**
+The DCG shall request the ancestor relations from the types.
+Hence, the DCG members become:
+1. descendant_DCG_node_indices: Stores the indices of the descendant for all DCG nodes.
+2. DCG_node_states: Stores the states for all DCG nodes.
+3. DCG_node_data: Stores the data for all DCG nodes.
+4. FE_link: A descriptor for the linked FEM.
+
+**At this point, its obvious that the DCG needs to define an interface for the data to be stored.**
+In other words, the panel definition shall be:
+
+```
+# ~/core/DCG.py
+
+from abc import ABC, abstractmethod
+
+class IDCG(ABC):
+  @abstractmethod
+  def get_ancestor_DCG_node_indices(self) -> []:
+  """Return the ancestor DCG node indices"""
+  pass
+
+
+
+# ~/plugins/panel_plugin/panel.py
+
+import m_DCG
+
+class Panel(IDCG):
+  def __init__(self, side_stiffener_1, side_stiffener_2, ...):
+  self.side_stiffener_1 = side_stiffener_1
+  self.side_stiffener_2 = side_stiffener_2
+  ...
+
+  def get_ancestor_DCG_node_indices(self) -> []:
+  """Return the ancestor DCG node indices"""
+  return [self.side_stiffener_1, self.side_stiffener_2]
+```
+
+**DOD**\
+The definitions for the above members would be:
+1. descendant_DCG_node_indices: list[list[int]]
+2. DCG_node_states: list[enum__DCG_node_states]
+3. DCG_node_data: list[object]
+4. FE_link: str
+
+**The ordering/indexing within the 1st three list containers must be the same.**
+
+The previous sections presented many details about the DCG.
+One of the most important point about the DCG is that it shall follow the DOD approach which comes with two important requirements:
+- work with indices instead of the references/pointers and
+- apply struct of arrays (SoA) instead of arrays of structs (AoS).
 
 The DCG is a functionally persistent data structure powered by structural sharing.
 It is expected to process a copy operation for each action.
 **The efficiency of the copy operation is crucial for the persistent data structures.**
 The use of the primitive types (i.e. np.dtype with raw types) with np.ndarray or array.array ensures the **bitwise copy operation**.
 **This is one of the significant advantages of following DOD approach.**
-I will replace the list containers in the definition of the last two members with the NumPy.ndarray and NumPy.dtype.
-Hence, the DCG members become:
-1. ancestor_DCG_node_indices: array.array[array.array[int]]
-2. descendant_DCG_node_indices: array.array[array.array[int]]
-3. DCG_node_states: np.ndarray[enum__DCG_node_states]
-4. DCG_node_types: np.ndarray[np.uint32]
-5. DCG_node_locations: np.ndarray[np.uint32]
-6. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data.
-7. DCG_node_names: dict{ np.uint32: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
+I will replace the list containers with np.ndarray and array.array.
 
+Applying the DOD, we would have:
+1. descendant_DCG_node_indices: array.array[array.array[int]]
+2. DCG_node_states: np.ndarray[enum__DCG_node_states]
+3. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data. np.uint32 presents the type code which will be explained soon.
+4. FE_link: str
+
+Now we store the data in very efficient np.ndarray and np.dtype combination as the objects of the same type are stored in a contiguous array.
+However, the indexing compatibility between the 1st two containers (lets call this as global indexing) and the 3rd one (type local indexing) has been lost.
+We need to define another containerr which will relate the global indexing to the type local indexing.
+Now we have two new containers:
+- DCG_node_types: Stores the type codes for all DCG nodes. The type registry assigns a type code to each type.
+- DCG_node_locations: Stores the type local indices of all DCG nodes.
+
+The members become:
+1. descendant_DCG_node_indices: array.array[array.array[int]]
+2. DCG_node_states: np.ndarray[enum__DCG_node_states]
+3. DCG_node_types: np.ndarray[np.uint32]
+4. DCG_node_locations: np.ndarray[np.uint32]
+5. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }
+6. FE_link: str
+
+Use the 3rd and the 4th members to access the data in the 5th member:
+
+```
+type_code = self.DCG_node_types[DCG_node_index]
+location = self.DCG_node_locations[DCG_node_index]
+data_container = self.DCG_node_data[type_code]
+data_val = data_container[location]
+```
+
+**UI**\
+The 1st user scenario showed that the UI needs to access the names of all objects of a type.
+A buffer would help the DCG to respond quickly to this request:
+1. descendant_DCG_node_indices: array.array[array.array[int]]
+2. DCG_node_states: np.ndarray[enum__DCG_node_states]
+3. DCG_node_types: np.ndarray[np.uint32]
+4. DCG_node_locations: np.ndarray[np.uint32]
+5. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }
+6. DCG_node_names: dict{ np.uint32: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
+7. FE_link: str
+
+**Structural Sharing**\
 The above listing follows the SoA approach which allocates the memory more efficiently and improve the cache efficiency.
 However, this configuration does not make use of structural sharing such that all operations require a full copy.
 The structural sharing would be obtained by using a tree of arrays (i.e. [vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git)).
@@ -758,59 +855,7 @@ Hence, the DCG members become:
 5. DCG_node_locations: np.ndarray[np.uint32]
 6. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
 7. DCG_node_names: dict{ np.uint32: VectorTree[str] }
-
-The above list contains both the ancestor and the descendant node relations.
-There exists a problem with the ancestor relations.
-The type definitions would (have to) contain that information.
-For example, a panel type would be:
-
-```
-class Panel:
-  self.side_stiffener_1: int
-  self.side_stiffener_2: int
-  ...
-```
-
-**Defining the ancestor relations within the DCG would duplicate the data which breaks the design rules.**
-The DCG shall request the ancestor relations from the types.
-Hence, the DCG members become:
-1. descendant_DCG_node_indices: array.array[array.array[int]]
-2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_types: np.ndarray[np.uint32]
-4. DCG_node_locations: np.ndarray[np.uint32]
-5. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
-6. DCG_node_names: dict{ np.uint32: VectorTree[str] }
-
-**At this point, its obvious that the DCG needs to define an interface for the data to be stored.**
-In other words, the panel definition shall be:
-
-```
-# DCG module: m_DCG.py
-
-from abc import ABC, abstractmethod
-
-class IDCG(ABC):
-  @abstractmethod
-  def get_ancestor_DCG_node_indices(self) -> []:
-    """Return the ancestor DCG node indices"""
-    pass
-
-
-
-# Panel module: panel.py
-
-import m_DCG
-
-class Panel(IDCG):
-  def __init__(self, side_stiffener_1, side_stiffener_2, ...):
-    self.side_stiffener_1 = side_stiffener_1
-    self.side_stiffener_2 = side_stiffener_2
-    ...
-
-  def get_ancestor_DCG_node_indices(self) -> []:
-    """Return the ancestor DCG node indices"""
-    return [self.side_stiffener_1, self.side_stiffener_2]
-```
+8. FE_link: str
 
 **DCG node state enumeration**\
 The node state data management is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
@@ -853,18 +898,18 @@ from abc import ABC, abstractmethod
 class IDCG(ABC):
   @abstractmethod
   def get_ancestor_DCG_node_indices(self) -> []:
-    """Return the ancestor DCG node indices"""
-    pass
+  """Return the ancestor DCG node indices"""
+  pass
 
   @abstractmethod
   def inspect_invariant(self) -> bool:
-    """Inspect the invariant"""
-    pass
+  """Inspect the invariant"""
+  pass
 
   @abstractmethod
   def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
-    """Update the state of the node due to a state change propogation"""
-    pass
+  """Update the state of the node due to a state change propogation"""
+  pass
 
 
 
@@ -874,22 +919,22 @@ import m_DCG
 
 class Panel(IDCG):
   def __init__(self, side_stiffener_1, side_stiffener_2, ...):
-    self.side_stiffener_1 = side_stiffener_1
-    self.side_stiffener_2 = side_stiffener_2
-    ...
+  self.side_stiffener_1 = side_stiffener_1
+  self.side_stiffener_2 = side_stiffener_2
+  ...
 
   def get_ancestor_DCG_node_indices(self) -> []:
-    """Return the ancestor DCG node indices"""
-    return [self.side_stiffener_1, self.side_stiffener_2]
+  """Return the ancestor DCG node indices"""
+  return [self.side_stiffener_1, self.side_stiffener_2]
 
   @abstractmethod
   def inspect_invariant(self) -> bool:
-    """Inspect the invariant: Inspect the side stiffeners and other issues"""
-    ...
+  """Inspect the invariant: Inspect the side stiffeners and other issues"""
+  ...
 
   def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
-    """Update the state of the node due to a state change propogation"""
-    ...
+  """Update the state of the node due to a state change propogation"""
+  ...
 ```
 
 **MySQL DB**\
@@ -911,6 +956,28 @@ Hence, the members of the DCG becomes:
 5. DCG_node_locations: np.ndarray[np.uint32]
 6. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
 7. DCG_node_names: dict{ np.uint32: VectorTree[str] }
+8. FE_link: str
+
+**FEM**\
+The SCs needs to keep the FE definition.
+For example, a Panel instance may be defined by the following FE elements: 1, 3, 7.
+The system shall store this data as well.
+However, the DCG nodes do not store the SCs only.
+Hence, the FE linkage shall be defined within the SCs only.
+
+1. descendant_DCG_node_indices: array.array[array.array[int]]
+2. DCG_node_states__DB: np.ndarray[np.bool]
+3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
+4. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
+5. DCG_node_types: np.ndarray[np.uint32]
+6. DCG_node_locations: np.ndarray[np.uint32]
+7. DCG_node_data: dict{ np.uint32: VectorTree[np.dtype] }
+8. DCG_node_names: dict{ np.uint32: VectorTree[str] }
+9. FE_link: str
+
+
+
+
 
 **Other issues**\
 The DCG is examined alot in this document.
@@ -921,6 +988,98 @@ However, I think, up to this point, I clearified the important aspects of the is
 Nevertheless, I will exclude the DCG implementation in this project
 defining only the required interfaces by the system
 as it would be similar with the DAG implementation (e.g. persistency, immutable functions, DFS/BFS iterators, etc.) above.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The type codes are assigned by the system plugin registration.
+
+```
+# core/registry.py
+
+type_to_code = []
+code_to_type = []
+
+class TypeRegistry:
+  """
+  Assigns a unique integer code to each registered type.
+  """
+  def __init__(self):
+    self._next_code = 1
+    self._type_codes: dict[str, int] = {}
+
+  def register_type(self, name: str) -> None:
+    """
+    Register a new type by name.
+    """
+    if name in self._type_codes:
+      raise ValueError(f"Type '{name}' is already registered")
+    
+    code = self._next_code
+    self._next_code += 1
+    self._type_codes[name] = code
+    return code
+
+  def get_code(self, name: str) -> int | None:
+    return self._type_codes.get(name)
+
+  def create(self, code: int, *args, **kwargs):
+    """
+    Instantiate an object of the given type code by calling its factory.
+    """
+    factory = self._factories.get(code)
+    if factory is None:
+      raise KeyError(f"No factory for type code {code}")
+    return factory(*args, **kwargs)
+
+# a module‐level singleton
+type_registry = TypeRegistry()
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### 4.3. The Data Types <a id='sec43'></a>
 

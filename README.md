@@ -984,12 +984,18 @@ Instead, the DCG shall keep the FE link information.
 
 
 
+0. Base
+0.1. UI
+- StandardUI: a standard UI form handles by get_members returning a dictionary
+- ClassifiedUI: set_UI(js_file_path) sets the UI. Can be abstracted (section, loading, etc).
+- FreeUI:
+
 
 
 1. EOs
 1.1. Interface
-- Standard: get_DB gets valuues from DB. get_values returns a dictionary. A standard UI handles all Standard EOs
-- Classified (I_section, PanelLoading, etc): For UI classification. get_values returns a dictionary. UIs are classified. Can be abstracted (section, loading, etc).
+- Standard: Inherits StandardUI. get_DB gets values from DB.
+- Classified (I_section, PanelLoading, etc): Inherits ClassifiedUI.
 - Free: A UI for each Free EO
 
 2. SCLs(ClassifiedEO)
@@ -1004,13 +1010,14 @@ Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same nam
 3.2. Interface
 - All need FE importer
 - Some need FE exporter if FE analysis applicable: e.g. non-rectangular panel
+- Standard UI
 
 4. SAs
 4.1. Interface
 - Set applicability of analysis: Ex: panel pressure is applicable if pressure
 - Select analysis type: FEA or analytical
 - Set analysis parameters: Ex: Fitting factor
-
+- Standard UI
 
 
 

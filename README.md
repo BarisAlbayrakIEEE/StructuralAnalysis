@@ -706,7 +706,7 @@ The current one, calculate_properties, would calculate some properties such as:
 ### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
 
 The architecture chapter underlined that we need two DCG definitions which are online and offline respectively.
-**I will skip the offline DCG iin order for the simplicity of the project.**
+**I will skip the offline DCG in order for the simplicity of the project.**
 
 **Initial Member List**\
 Lets start by recalling the data that should be stored by the DCG:
@@ -760,8 +760,8 @@ from abc import ABC, abstractmethod
 class IDCG(ABC):
   @abstractmethod
   def get_ancestor_DCG_node_indices(self) -> []:
-  """Return the ancestor DCG node indices"""
-  pass
+    """Return the ancestor DCG node indices"""
+    pass
 
 
 
@@ -771,13 +771,13 @@ import m_DCG
 
 class Panel(IDCG):
   def __init__(self, side_stiffener_1, side_stiffener_2, ...):
-  self.side_stiffener_1 = side_stiffener_1
-  self.side_stiffener_2 = side_stiffener_2
-  ...
+    self.side_stiffener_1 = side_stiffener_1
+    self.side_stiffener_2 = side_stiffener_2
+    ...
 
   def get_ancestor_DCG_node_indices(self) -> []:
-  """Return the ancestor DCG node indices"""
-  return [self.side_stiffener_1, self.side_stiffener_2]
+    """Return the ancestor DCG node indices"""
+    return [self.side_stiffener_1, self.side_stiffener_2]
 ```
 
 **DOD**\
@@ -798,7 +798,6 @@ The DCG is a functionally persistent data structure powered by structural sharin
 It is expected to process a copy operation for each action.
 **The efficiency of the copy operation is crucial for the persistent data structures.**
 The use of the primitive types (i.e. np.dtype with raw types) with np.ndarray or array.array ensures the **bitwise copy operation**.
-**This is one of the significant advantages of following DOD approach.**
 I will replace the list containers with np.ndarray and array.array.
 
 Applying the DOD, we would have:
@@ -807,7 +806,7 @@ Applying the DOD, we would have:
 3. DCG_node_data: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data. np.uint32 presents the type code which will be explained soon.
 4. FE_link: str
 
-Now we store the data in very efficient np.ndarray and np.dtype combination as the objects of the same type are stored in a contiguous array.
+Now, we store the data in very efficient np.ndarray and np.dtype combination as the objects of the same type are stored in a contiguous array.
 However, the indexing compatibility between the 1st two containers (lets call this as global indexing) and the 3rd one (type local indexing) has been lost.
 We need to define another containerr which will relate the global indexing to the type local indexing.
 Now we have two new containers:
@@ -964,7 +963,8 @@ For example, a Panel instance may be defined by the following FE elements: 1, 3,
 The system shall store this data as well.
 However, the DCG nodes do not store the SCs only.
 Hence, the FE linkage shall be defined within the SCs only.
-
+However, including a string field in the dtype is not a good practice.
+Instead, we can construct a large string within the DCG and access that 
 1. descendant_DCG_node_indices: array.array[array.array[int]]
 2. DCG_node_states__DB: np.ndarray[np.bool]
 3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]

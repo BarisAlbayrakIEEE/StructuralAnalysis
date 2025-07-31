@@ -1011,6 +1011,7 @@ Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same nam
 - Inherits StandardUI.
 - All need FE importer
 - Some need FE exporter if FE analysis applicable: e.g. non-rectangular panel
+- get_FE_elements returns the FE element list
 
 4. SA(StandardUI)
 4.1. Interface

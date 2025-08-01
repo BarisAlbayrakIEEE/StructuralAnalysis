@@ -1044,14 +1044,12 @@ Instead, the DCG shall keep the FE link information.
 - ancestor_updatable: update_DCG_state calls: **inspect_ancestors()**
 - invariant_updatable: update_DCG_state calls: **inspect_ancestors() and inspect_invariant()**
 
-**IUI**
-1. Interface
-- register_UI(js_file_name) sets the UI.
+**UI**
+1. Types
+- Standard_UI: registers the UI as the standard_UI.js.
+- INonstandard_UI: requires register_UI(js_file_name).
 
-2. Types
-- standard_UI: register_UI sets the standard_UI.js as the UI form.
-
-**IFEM**
+**FEM**
 1. Types
 - IFE_Importable: importFE()
 - IFE_Exportable: export_FE()
@@ -1059,13 +1057,16 @@ Instead, the DCG shall keep the FE link information.
 
 **ISizeable**
 1. Interface
-- requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state
-- sizing_improved() -> bool: returns if the last sizing has improved the RF.
+- set_read_write_state(): sets the read_write_state based on the user_state, config_state and DB_state.
 
 2. Types
-- auto_sizeable: read_write_state depends on user_state, config_state and DB_state. implements requires_sizing and sizing_improved. member: previous_SAR
-- manual_sizeable: read_write_state depends on user_state, config_state and DB_state. implements requires_sizing. member: previous_SAR
-- non_sizeable: read_write_state = false. **Does not inherit ISizeable.**
+- Auto_Sizeable: set_read_write_state based on the user_state, config_state and DB_state. Needs requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on the user_state, config_state and DB_state. Needs requires_sizing. member: previous_SAR.
+- Non_Sizeable: set_read_write_state makes: read_write_state = false.
+
+3. Definitions of requires_sizing and sizing_improved
+- requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state.
+- sizing_improved() -> bool: returns if the last sizing has improved the RF.
 
 **EO**
 - Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.

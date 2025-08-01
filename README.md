@@ -1052,14 +1052,10 @@ Instead, the DCG shall keep the FE link information.
 - standard_UI: register_UI sets the standard_UI.js as the UI form.
 
 **IFEM**
-1. Interface
-- import_FE()
-- export_FE()
-
-2. Types
-- FE_Importable: implements importFE(). export_FE() throws exception.
-- FE_Exportable: implements export_FE(). importFE() throws exception.
-- FE_ImportableExportable: implements importFE() and export_FE()
+1. Types
+- IFE_Importable: importFE()
+- IFE_Exportable: export_FE()
+- IFE_ImportableExportable: importFE() and export_FE()
 
 **ISizeable**
 1. Interface
@@ -1069,7 +1065,7 @@ Instead, the DCG shall keep the FE link information.
 2. Types
 - auto_sizeable: read_write_state depends on user_state, config_state and DB_state. implements requires_sizing and sizing_improved. member: previous_SAR
 - manual_sizeable: read_write_state depends on user_state, config_state and DB_state. implements requires_sizing. member: previous_SAR
-- non_sizeable: read_write_state = false. requires_sizing and sizing_improved pass.
+- non_sizeable: read_write_state = false. **Does not inherit ISizeable.**
 
 **EO**
 - Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.

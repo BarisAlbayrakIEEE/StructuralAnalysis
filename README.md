@@ -1050,9 +1050,10 @@ Instead, the DCG shall keep the FE link information.
 - update_DCG_node_state
 
 2. Types
-- Non_Updatable: no update. Does not inherit
-- ancestor_updatable: update_DCG_node_state calls: **inspect_ancestors()**
-- invariant_updatable: update_DCG_node_state calls: **inspect_ancestors() and inspect_invariant()**
+- Non_Updatable: no update. update_DCG_node_state pass
+- Abstract_Ancestor_Updatable: Inherits IUpdatable. implements **inspect_ancestors()**
+- Ancestor_Updatable: Inherits Abstract_Ancestor_Updatable. update_DCG_node_state calls: **inspect_ancestors()**
+- Abstract_Invariant_Updatable: Inherits Abstract_Ancestor_Updatable. implements **inspect_invariant()**. update_DCG_node_state calls: **inspect_ancestors() and inspect_invariant()**
 
 **DCG**
 - FE link
@@ -1073,7 +1074,7 @@ Instead, the DCG shall keep the FE link information.
 **UI**
 1. Types
 - Standard_UI: registers the UI as the standard_UI.js.
-- INonstandard_UI: requires register_UI(js_file_name).
+- INonstandard_UI: register_UI(js_file_name).
 
 **FE**
 1. Types
@@ -1098,14 +1099,21 @@ Instead, the DCG shall keep the FE link information.
 
 
 **IDCG**
-**DCG**
-**DCG_Node**
-**UI**
-**FE**
-**ISizeable**
+**IDOD_Container**
+- Non_Updatable: no update. update_DCG_node_state pass
+- Ancestor_Updatable: Inherits Abstract_Ancestor_Updatable. update_DCG_node_state calls: **inspect_ancestors()**
+- Abstract_Invariant_Updatable: Inherits Abstract_Ancestor_Updatable. implements **inspect_invariant()**. update_DCG_node_state calls: **inspect_ancestors
+- Standard_UI: registers the UI as the standard_UI.js.
+- INonstandard_UI: requires register_UI(js_file_name).
+- IFE_Importable: importFE()
+- IFE_Exportable: export_FE()
+- IFE_ImportableExportable: importFE() and export_FE()
+- Auto_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing. member: previous_SAR.
+- Non_Sizeable: set_read_write_state makes: read_write_state = false.
 
 
-**EO(IDCG)**
+**EO(IDCG, IDOD_Container)**
 
 
 - Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.

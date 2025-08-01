@@ -994,9 +994,15 @@ Instead, the DCG shall keep the FE link information.
 
 
 **States**
+- user_state
 - config_state
 - DB_state
 - DCG_state
+- read_write_state
+
+**user_state**
+- user_state__owner: Read-write
+- user_state__viewer: Read-only
 
 **config_state**
 - config_state__design: Read-only
@@ -1014,18 +1020,34 @@ Instead, the DCG shall keep the FE link information.
 - DCG_state__invariant_fail
 
 **read_write_state**
-- bool: determined by config_state, DB_state and sizeability
+- bool: determined by user_state, config_state, DB_state and sizeability
 
-**Updatable**
-- non_updatable: no update. update_DCG_state pass
-- ancestor_updatable: update_DCG_state calls: inspect_ancestors()
-- invariant_updatable: update_DCG_state calls: inspect_ancestors(), inspect_invariant()
+**IDOD_Container**
+- DOD style container interface
+- get_values(index) -> dict{ member_name: member_val }
+- set_values(index, dict{ member_name: member_val }) -> IDOD_Container: pure by persistency
+- add(dict{ member_name: member_val }) -> IDOD_Container: pure by persistency
+- remove(index) -> [IDOD_Container, modified_indexs]: pure by persistency. apply swap-andd-pop
 
-**DCG**
+**IDCG**
+1. Interface
 - get_ancestor_DCG_nodes
-- calls update_DCG_state in propogate_DCG_state_change()
+- update_DCG_state
+- create_DOD_container: DCG calls this method to add the DOD_Container.
 
-**UI**
+2. Types
+- non_updatable: no update. update_DCG_state pass. get_ancestor_DCG_nodes pass?
+- ancestor_updatable: update_DCG_state calls: inspect_ancestors()
+- invariant_updatable: update_DCG_state calls: inspect_ancestors() and inspect_invariant()
+
+**IUI**
+1. Interface
+- register_UI(js_file_name)
+- get_members() -> dict{ member_name: member_val }
+- set_member(member_name, member_val)
+- set_members(dict{ member_name: member_val })
+
+2. Types
 - StandardUI: set_UI sets the standardUI.js as the UI form. get_members returns a dictionary
 - PredefinedUI: set_UI(js_file_path) sets the UI. Can be abstracted like structural (mat+geo+load), section, loading, etc.
 - IrregularUI: set_UI(js_file_path) sets the UI. User needs to prepare the js file
@@ -1036,8 +1058,8 @@ Instead, the DCG shall keep the FE link information.
 - FEImportableExportable: importFE() imports FE. exportFE() exports FE
 
 **Sizeability**
-- auto_sizeable: read_write_state depends on config_state and DB_state
-- manual_sizeable: read_write_state depends on config_state and DB_state
+- auto_sizeable: read_write_state depends on user_state, config_state and DB_state
+- manual_sizeable: read_write_state depends on user_state, config_state and DB_state
 - non_sizeable: read_write_state = false
 
 **EO**

@@ -981,46 +981,76 @@ Instead, the DCG shall keep the FE link information.
 
 
 
+  @abstractmethod
+  def inspect_invariant(self) -> bool:
+    """Inspect the invariant"""
+    pass
+
+  @abstractmethod
+  def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
+    """Update the state of the node due to a state change propogation"""
+    pass
 
 
 
-0. Base
-0.1. UI
-- StandardUI: a standard UI form handles by get_members returning a dictionary
-- ClassifiedUI: set_UI(js_file_path) sets the UI. Can be abstracted (section, loading, etc).
-- FreeUI:
+**States**
+- DB_state
+- config_state
+- DCG_state
 
+**Updatable**
+- non_updatable: no update. update_DCG_state pass
+- ancestor_updatable: update_DCG_state calls: inspect_ancestors()
+- invariant_updatable: update_DCG_state calls: inspect_ancestors(), inspect_invariant()
 
+**DCG**
+- get_ancestor_DCG_nodes
+- calls update_DCG_state in propogate_DCG_state_change()
 
-1. EO
-1.1. Type
-- Standard: Inherits StandardUI. get_DB gets values from DB.
-- Classified (I_section, PanelLoading, etc): Inherits ClassifiedUI.
-- Free: A UI for each Free EO
-1.2. Sizeability
+**UI**
+- StandardUI: set_UI sets the standardUI.js as the UI form. get_members returns a dictionary
+- PredefinedUI: set_UI(js_file_path) sets the UI. Can be abstracted like structural (mat+geo+load), section, loading, etc.
+- IrregularUI: set_UI(js_file_path) sets the UI. A UI for each IrregularUI
+
+**FEM**
+- FEImportable
+- FEImportableExportable
+
+**State**
+- Design: Read-only
+- Sizing: Read-write
+- Inspection: Read-only
+- Frozen: Read-only
+
+**Sizeability**
 - AutoSizeable
 - ManualSizeable
 - Non-sizeable
 
-2. SCL(ClassifiedEO)
-2.1. Interface
+**EO**
+- Standard: Contains the DB key as a member. Inherits StandardUI. Read-only. get_DB gets values from DB.
+- DB: Contains the DB key as a member. Inherits PredefinedUI. get_DB gets DB data. set_DB sets DB data.
+- Structural: mat/geo/loading. Inherits structural PredefinedUI. get_mat, get_geo, get_loading
+- Irregular: Inherits IrregularUI.
+
+**SCL(ClassifiedEO)**
+1. Interface
 - Classified EO
 - get_DB gets values from DB.
 
-3. SC(StandardUI)
-3.1. Main
-Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same name and put the thickness in the EO
+**SC(StandardUI)**
+1. Main
+Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same name and put the thickness in the EO.
 
-3.2. Interface
+2. Interface
 - Inherits StandardUI.
-- All need FE importer
-- Some need FE exporter if FE analysis applicable: e.g. non-rectangular panel
+- All need FE importer. Hence, must inherit FEImportable or FEImportableExportable
 - get_FE_elements returns the FE element list
 
-4. SA(StandardUI)
-4.1. Interface
+**SA(StandardUI)**
+1. Interface
 - Inherits StandardUI.
-- Set applicability of analysis: Ex: panel pressure is applicable if pressure
+- Set applicability of analysis: Ex: panel pressure is applicable if pressure is applied
 - Select analysis type: FEA or analytical
 - Set analysis parameters: Ex: Fitting factor
 

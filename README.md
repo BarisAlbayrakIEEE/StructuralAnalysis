@@ -999,6 +999,7 @@ Instead, the DCG shall keep the FE link information.
 - DB_state
 - DCG_state
 - read_write_state
+- structural_state
 
 **user_state**
 - user_state__owner: Read-write
@@ -1022,6 +1023,9 @@ Instead, the DCG shall keep the FE link information.
 **read_write_state**
 - bool: determined by user_state, config_state, DB_state and sizeability
 
+**structural_state**
+- bool: if the item is structurally safe based on the RF.
+
 **IDOD_Container**
 - DOD style container interface
 - get_values(index) -> dict{ member_name: member_val }
@@ -1037,30 +1041,35 @@ Instead, the DCG shall keep the FE link information.
 
 2. Types
 - non_updatable: no update. update_DCG_state pass. get_ancestor_DCG_nodes pass?
-- ancestor_updatable: update_DCG_state calls: inspect_ancestors()
-- invariant_updatable: update_DCG_state calls: inspect_ancestors() and inspect_invariant()
+- ancestor_updatable: update_DCG_state calls: **inspect_ancestors()**
+- invariant_updatable: update_DCG_state calls: **inspect_ancestors() and inspect_invariant()**
 
 **IUI**
 1. Interface
-- register_UI(js_file_name)
-- get_members() -> dict{ member_name: member_val }
-- set_member(member_name, member_val)
-- set_members(dict{ member_name: member_val })
+- register_UI(js_file_name) sets the UI.
 
 2. Types
-- StandardUI: set_UI sets the standardUI.js as the UI form. get_members returns a dictionary
-- PredefinedUI: set_UI(js_file_path) sets the UI. Can be abstracted like structural (mat+geo+load), section, loading, etc.
-- IrregularUI: set_UI(js_file_path) sets the UI. User needs to prepare the js file
+- standard_UI: register_UI sets the standard_UI.js as the UI form.
 
-**FEM**
-- FEImportable: importFE() imports FE
-- FEExportable: exportFE() exports FE
-- FEImportableExportable: importFE() imports FE. exportFE() exports FE
+**IFEM**
+1. Interface
+- import_FE()
+- export_FE()
 
-**Sizeability**
-- auto_sizeable: read_write_state depends on user_state, config_state and DB_state
-- manual_sizeable: read_write_state depends on user_state, config_state and DB_state
-- non_sizeable: read_write_state = false
+2. Types
+- FE_Importable: implements importFE(). export_FE() throws exception.
+- FE_Exportable: implements export_FE(). importFE() throws exception.
+- FE_ImportableExportable: implements importFE() and export_FE()
+
+**ISizeable**
+1. Interface
+- requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state
+- sizing_improved() -> bool: returns if the last sizing has improved the RF.
+
+2. Types
+- auto_sizeable: read_write_state depends on user_state, config_state and DB_state. implements requires_sizing and sizing_improved. member: previous_SAR
+- manual_sizeable: read_write_state depends on user_state, config_state and DB_state. implements requires_sizing. member: previous_SAR
+- non_sizeable: read_write_state = false. requires_sizing and sizing_improved pass.
 
 **EO**
 - Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.

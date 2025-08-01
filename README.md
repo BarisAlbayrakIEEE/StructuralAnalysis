@@ -1030,21 +1030,27 @@ Instead, the DCG shall keep the FE link information.
 **structural_state**
 - bool: if the item is structurally safe based on the RF.
 
-**IDOD_Container**
+**DOD_Container**
 - DOD style container interface
 - get_values(index) -> dict{ member_name: member_val }
-- set_values(index, dict{ member_name: member_val }) -> IDOD_Container: pure by persistency
-- add(dict{ member_name: member_val }) -> IDOD_Container: pure by persistency
-- remove(index) -> [IDOD_Container, modified_indexs]: pure by persistency. apply swap-andd-pop
+- set_values(index, dict{ member_name: member_val }) -> DOD_Container: pure by persistency
+- add(dict{ member_name: member_val }) -> DOD_Container: pure by persistency
+- remove(index) -> [DOD_Container, modified_indexs]: pure by persistency. apply swap-andd-pop
 
 **IDCG**
 1. Interface
 - get_ancestor_DCG_nodes
+
+**IDOD_Container**
+1. Interface
+- create_DOD_container: DCG calls this method to add a DOD_Container.
+
+**IUpdatable**
+1. Interface
 - update_DCG_node_state
-- create_DOD_container: DCG calls this method to add the DOD_Container.
 
 2. Types
-- non_updatable: no update. update_DCG_node_state pass. get_ancestor_DCG_nodes pass?
+- Non_Updatable: no update. Does not inherit
 - ancestor_updatable: update_DCG_node_state calls: **inspect_ancestors()**
 - invariant_updatable: update_DCG_node_state calls: **inspect_ancestors() and inspect_invariant()**
 
@@ -1069,7 +1075,7 @@ Instead, the DCG shall keep the FE link information.
 - Standard_UI: registers the UI as the standard_UI.js.
 - INonstandard_UI: requires register_UI(js_file_name).
 
-**FEM**
+**FE**
 1. Types
 - IFE_Importable: importFE()
 - IFE_Exportable: export_FE()
@@ -1088,18 +1094,20 @@ Instead, the DCG shall keep the FE link information.
 - requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state.
 - sizing_improved() -> bool: returns if the last sizing has improved the RF.
 
-**BaseObject**
-- UUID
-- name
-- owner
-- author
-- user_state
-- config_state
-- DB_state
-- DCG_node_state
-- read_write_state
 
-**EO**
+
+
+**IDCG**
+**DCG**
+**DCG_Node**
+**UI**
+**FE**
+**ISizeable**
+
+
+**EO(IDCG)**
+
+
 - Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.
 - DB: Contains the DB key as a member. Inherits PredefinedUI. config_state = config_state__inspection. get_DB gets DB data. set_DB sets DB data.
 - Structural: mat/geo/loading. Inherits PredefinedUI. get_mat, get_geo, get_loading

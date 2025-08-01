@@ -994,34 +994,38 @@ Instead, the DCG shall keep the FE link information.
 
 
 **States**
+- DCG_state
 - user_state
 - config_state
 - DB_state
-- DCG_state
+- DCG_node_state
 - read_write_state
 - structural_state
 
+**DCG_state**
+- DCG_state__RO: Read-only
+- DCG_state__RW: Read-write
+
 **user_state**
-- user_state__owner: Read-write
-- user_state__viewer: Read-only
+- bool: if the inspector is the owner read-write otherwise read-only
 
 **config_state**
 - config_state__design: Read-only
 - config_state__sizing: Read-write
-- config_state__inspection: Read-only
+- config_state__inspection: All Read-only accept for SAR being read-write
 - config_state__frozen: Read-only
 
 **DB_state**
-- bool
+- bool: if DB true otherwise false
 
-**DCG_state**
-- DCG_state__uptodate
-- DCG_state__outofdate
-- DCG_state__ancestor_fail
-- DCG_state__invariant_fail
+**DCG_node_state**
+- DCG_node_state__uptodate
+- DCG_node_state__outofdate
+- DCG_node_state__ancestor_fail
+- DCG_node_state__invariant_fail
 
 **read_write_state**
-- bool: determined by user_state, config_state, DB_state and sizeability
+- bool: determined by DCG_state, user_state, config_state, DB_state and sizeability
 
 **structural_state**
 - bool: if the item is structurally safe based on the RF.
@@ -1036,13 +1040,29 @@ Instead, the DCG shall keep the FE link information.
 **IDCG**
 1. Interface
 - get_ancestor_DCG_nodes
-- update_DCG_state
+- update_DCG_node_state
 - create_DOD_container: DCG calls this method to add the DOD_Container.
 
 2. Types
-- non_updatable: no update. update_DCG_state pass. get_ancestor_DCG_nodes pass?
-- ancestor_updatable: update_DCG_state calls: **inspect_ancestors()**
-- invariant_updatable: update_DCG_state calls: **inspect_ancestors() and inspect_invariant()**
+- non_updatable: no update. update_DCG_node_state pass. get_ancestor_DCG_nodes pass?
+- ancestor_updatable: update_DCG_node_state calls: **inspect_ancestors()**
+- invariant_updatable: update_DCG_node_state calls: **inspect_ancestors() and inspect_invariant()**
+
+**DCG**
+- FE link
+- DB adress
+- owner
+- inspector
+- DCG_state
+- user_state
+
+**DCG_Node**
+- UUID
+- name
+- config_state
+- DB_state
+- DCG_node_state
+- read_write_state
 
 **UI**
 1. Types
@@ -1057,16 +1077,27 @@ Instead, the DCG shall keep the FE link information.
 
 **ISizeable**
 1. Interface
-- set_read_write_state(): sets the read_write_state based on the user_state, config_state and DB_state.
+- set_read_write_state(): sets the read_write_state based on the DCG_state, user_state, config_state and DB_state.
 
 2. Types
-- Auto_Sizeable: set_read_write_state based on the user_state, config_state and DB_state. Needs requires_sizing and sizing_improved. member: previous_SAR.
-- Manual_Sizeable: set_read_write_state based on the user_state, config_state and DB_state. Needs requires_sizing. member: previous_SAR.
+- Auto_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing. member: previous_SAR.
 - Non_Sizeable: set_read_write_state makes: read_write_state = false.
 
 3. Definitions of requires_sizing and sizing_improved
 - requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state.
 - sizing_improved() -> bool: returns if the last sizing has improved the RF.
+
+**BaseObject**
+- UUID
+- name
+- owner
+- author
+- user_state
+- config_state
+- DB_state
+- DCG_node_state
+- read_write_state
 
 **EO**
 - Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.
@@ -1081,6 +1112,7 @@ Instead, the DCG shall keep the FE link information.
 
 **SC(StandardUI)**
 1. Main
+- structural_state
 Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same name and put the thickness in the EO.
 
 2. Interface

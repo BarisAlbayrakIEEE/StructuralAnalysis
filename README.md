@@ -994,9 +994,27 @@ Instead, the DCG shall keep the FE link information.
 
 
 **States**
-- DB_state
 - config_state
+- DB_state
 - DCG_state
+
+**config_state**
+- config_state__design: Read-only
+- config_state__sizing: Read-write
+- config_state__inspection: Read-only
+- config_state__frozen: Read-only
+
+**DB_state**
+- bool
+
+**DCG_state**
+- DCG_state__uptodate
+- DCG_state__outofdate
+- DCG_state__ancestor_fail
+- DCG_state__invariant_fail
+
+**read_write_state**
+- bool: determined by config_state, DB_state and sizeability
 
 **Updatable**
 - non_updatable: no update. update_DCG_state pass
@@ -1010,27 +1028,22 @@ Instead, the DCG shall keep the FE link information.
 **UI**
 - StandardUI: set_UI sets the standardUI.js as the UI form. get_members returns a dictionary
 - PredefinedUI: set_UI(js_file_path) sets the UI. Can be abstracted like structural (mat+geo+load), section, loading, etc.
-- IrregularUI: set_UI(js_file_path) sets the UI. A UI for each IrregularUI
+- IrregularUI: set_UI(js_file_path) sets the UI. User needs to prepare the js file
 
 **FEM**
-- FEImportable
-- FEImportableExportable
-
-**State**
-- Design: Read-only
-- Sizing: Read-write
-- Inspection: Read-only
-- Frozen: Read-only
+- FEImportable: importFE() imports FE
+- FEExportable: exportFE() exports FE
+- FEImportableExportable: importFE() imports FE. exportFE() exports FE
 
 **Sizeability**
-- AutoSizeable
-- ManualSizeable
-- Non-sizeable
+- auto_sizeable: read_write_state depends on config_state and DB_state
+- manual_sizeable: read_write_state depends on config_state and DB_state
+- non_sizeable: read_write_state = false
 
 **EO**
-- Standard: Contains the DB key as a member. Inherits StandardUI. Read-only. get_DB gets values from DB.
-- DB: Contains the DB key as a member. Inherits PredefinedUI. get_DB gets DB data. set_DB sets DB data.
-- Structural: mat/geo/loading. Inherits structural PredefinedUI. get_mat, get_geo, get_loading
+- Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.
+- DB: Contains the DB key as a member. Inherits PredefinedUI. config_state = config_state__inspection. get_DB gets DB data. set_DB sets DB data.
+- Structural: mat/geo/loading. Inherits PredefinedUI. get_mat, get_geo, get_loading
 - Irregular: Inherits IrregularUI.
 
 **SCL(ClassifiedEO)**

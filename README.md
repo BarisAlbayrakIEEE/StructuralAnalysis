@@ -997,7 +997,6 @@ Instead, the DCG shall keep the FE link information.
 - DCG_state
 - user_state
 - config_state
-- DB_state
 - DCG_node_state
 - read_write_state
 - structural_state
@@ -1015,9 +1014,6 @@ Instead, the DCG shall keep the FE link information.
 - config_state__inspection: All Read-only accept for SAR being read-write
 - config_state__frozen: Read-only
 
-**DB_state**
-- bool: if DB true otherwise false
-
 **DCG_node_state**
 - DCG_node_state__uptodate
 - DCG_node_state__outofdate
@@ -1025,7 +1021,7 @@ Instead, the DCG shall keep the FE link information.
 - DCG_node_state__invariant_fail
 
 **read_write_state**
-- bool: determined by DCG_state, user_state, config_state, DB_state and sizeability
+- bool: determined by DCG_state, user_state, config_state and sizeability
 
 **structural_state**
 - bool: if the item is structurally safe based on the RF.
@@ -1067,7 +1063,6 @@ Instead, the DCG shall keep the FE link information.
 - UUID
 - name
 - config_state
-- DB_state
 - DCG_node_state
 - read_write_state
 
@@ -1082,13 +1077,26 @@ Instead, the DCG shall keep the FE link information.
 - IFE_Exportable: export_FE()
 - IFE_ImportableExportable: importFE() and export_FE()
 
-**ISizeable**
+**IMutable**
 1. Interface
-- set_read_write_state(): sets the read_write_state based on the DCG_state, user_state, config_state and DB_state.
+- set_read_write_state__mutable(): sets the read_write_state based on the state data.
 
 2. Types
-- Auto_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing and sizing_improved. member: previous_SAR.
-- Manual_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing. member: previous_SAR.
+- Auto_Sizeable: set_read_write_state based on state data. requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on the state data. requires_sizing. member: previous_SAR.
+- Non_Sizeable: set_read_write_state makes: read_write_state = false.
+
+3. Definitions of requires_sizing and sizing_improved
+- requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state.
+- sizing_improved() -> bool: returns if the last sizing has improved the RF.
+
+**ISizeable (For SCs only)**
+1. Interface
+- set_read_write_state__sizable(): sets the read_write_state based on the state data.
+
+2. Types
+- Auto_Sizeable: set_read_write_state based on the state data. requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on the state data. requires_sizing. member: previous_SAR.
 - Non_Sizeable: set_read_write_state makes: read_write_state = false.
 
 3. Definitions of requires_sizing and sizing_improved
@@ -1108,9 +1116,29 @@ Instead, the DCG shall keep the FE link information.
 - IFE_Importable: importFE()
 - IFE_Exportable: export_FE()
 - IFE_ImportableExportable: importFE() and export_FE()
-- Auto_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing and sizing_improved. member: previous_SAR.
-- Manual_Sizeable: set_read_write_state based on DCG_state, user_state, config_state and DB_state. requires_sizing. member: previous_SAR.
+- Auto_Sizeable: set_read_write_state based on the state data. requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on the state data. requires_sizing. member: previous_SAR.
 - Non_Sizeable: set_read_write_state makes: read_write_state = false.
+
+**Enum_DB_data_types**
+- _0D
+- _1D
+- _2D
+- _3D
+
+**DB_Object(IDCG, IDOD_Container)**
+- members: Standard_UI, Non_Sizeable, data type (Enum_DB_data_types) and DB key
+- get_DB_data() -> dict{ member_name: member_val }
+- get_ancestor_DCG_nodes returns empty list
+- create_DOD_container creates DOD_container containing data type and DB key
+
+**Abstract_Material(IFE_ImportableExportable)**
+- member: DB_Object
+- Abstract as not implementing IFE_ImportableExportable. Concrete classes will imlement.
+
+**Abstract_SCL(IFE_ImportableExportable)**
+- member: DB_Object
+- Abstract as not implementing IFE_ImportableExportable. Concrete classes will imlement.
 
 
 **EO(IDCG, IDOD_Container)**
@@ -1120,11 +1148,6 @@ Instead, the DCG shall keep the FE link information.
 - DB: Contains the DB key as a member. Inherits PredefinedUI. config_state = config_state__inspection. get_DB gets DB data. set_DB sets DB data.
 - Structural: mat/geo/loading. Inherits PredefinedUI. get_mat, get_geo, get_loading
 - Irregular: Inherits IrregularUI.
-
-**SCL(ClassifiedEO)**
-1. Interface
-- Classified EO
-- get_DB gets values from DB.
 
 **SC(StandardUI)**
 1. Main

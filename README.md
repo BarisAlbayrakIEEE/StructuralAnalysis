@@ -672,9 +672,8 @@ When, for example, the user clicks on an OETVN, the frontend:
 - presents the retreived data via the user form corresponding to the retreived type.
 
 The above process is a part of the backend/frontend interface.
-**Below presents the whole interface at the backend/system side:**
-- register_UI()
-- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, list__DCG_node_data_vals[]
+**Below presents the whole interface required by the frontend at the backend/system side:**
+- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
 - set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
 - remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]
 - remove_DCG_nodes(list__DCG_node_indices[]) -> list__removed_DCG_node_indices[]
@@ -701,6 +700,58 @@ The current one, calculate_properties, would calculate some properties such as:
 - section properties of a stiffener,
 - ABD matrix of a composite laminate,
 - buckling coefficient of a panel, etc.
+
+The DCG is a functionally persistent data structure where each action creates a new DCG.
+The core system manages the DCGs based on the undo/redo limitation.
+At runtime, the UI shall define which DCG is active currently and presented by the UI.
+The DCG definition can be done within the OETV.
+Hence, the requests by the UI contains actually two inputs: DCG_index, DCG_node_index.
+
+The UI shall respond to the requests coming from the core system as well.
+For example, when the user requests removing an object (i.e. a node from the DCG),
+other nodes would also be affected due to the swap-and-pop idiom.
+Hence, a node will be removed and the index of another node will be updated.
+If the node to be removed has descendants, the DCG would ask for removal of the descendants as well.
+Hence, the interface between the backend and frontend may include the following:
+- the node(s) created,
+- the node(s) updated and
+- the node(s) removed.
+
+The UI shall respond to each case efficiently.
+Hence, a generic intterface function within the frontend would be:
+- update_UI(nodes_created, nodes_updated, nodes_removed, states_created, states_updated)
+
+I will not go through the details of the UI as I mentioned earlier.
+
+**Summary**\
+The core system shall define the following interface in order to satisfy the UI requirements:
+- register_UI()
+
+The DCG shall define the following interface which will be executed by the core system in order to respond the requests by the UI:
+- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
+- set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
+- remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]
+- remove_DCG_nodes(list__DCG_node_indices[]) -> list__removed_DCG_node_indices[]
+- run_analysis(dict__analysis_dataset{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
+- get_DCG_node_indices_for_data_type(type: data_type) -> list__DCG_node_indices[] and/or list__data_names[]
+- calculate_properties(DCG_node_index) -> dict__properties{}
+
+The UI shall define the following interface in order to respond the requests by the core system:
+- update_UI()
+
+### 4.2. The Solver Pack <a id='sec42'></a>
+
+The DCG is a functionally persistent data structure designed by following the DOD approach (mostly the indexing and SoA).
+In other words, the DCG is meant to store the data within the collections of the raw data types (e.g. int and float).
+This is a result of FOD and DOD approaches.
+On the other hand, the solver pack (i.e. the SAMMs) is asssumed to be defined by the client.
+The features of OOP (e.g. member access with dot notation) would provide an easy development procedure.
+Hence, the types of the SAA (e.g. Panel, Joint, etc.) shall be defined within the solver pack.
+
+**Below presents the interface required by the solver pack at the core system side whicch is already included within the UI requirements:**
+- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
+
+
 
 ### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
 

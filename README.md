@@ -28,6 +28,8 @@
 - **LC:** LoadCase
 - **RF:** Reserve Factor
 - **R&L:** Requirements and Limitations
+- **CS:** Core System
+- **SP:** Solver Pack
 - **OETV:** Object Explorer Tree View
 - **OETVN:** Object Explorer Tree View Node
 
@@ -320,11 +322,11 @@ We have different requirements and usage in case of the SAA:
 - No need to have background processes for the cycled or deleted nodes.
 
 Lets summarize the above discussions together with the decissions made in the previous sections:
-- Computational libraries (i.e. SAMMs) will be written in python.
+- The solver pack (SP) will be written in python.
 - The frontend will be written in js.
 - We need a single-threaded DCG with a small depth.
 - Frontend does not involve complex algorithms related with the DCG structure.
-- The DCG traversal is the most complex algorithm for the system side.
+- The DCG traversal is the most complex algorithm for the CS side.
 
 **which point that Pyhton is the most reasonable language for the core framework**.
 
@@ -408,7 +410,7 @@ The importer, constructs the SAA objects without the dependencies.
 In other words, the ancestor and descendant data blocks of the DCG is empty.
 For example, the side stiffeners of a panel object are not set yet.
 The master user needs to set these relations between the SAA objects from the UI.
-Each UI action of the master user is transfered to the core system to update the ancestor/descendant relations of the DCG.
+Each UI action of the master user is transfered to the core system (CS) to update the ancestor/descendant relations of the DCG.
 Finally, the master user inserts the new DCG into the MySQL DB assigning a structural configuration ID related to the imported FEM.
 
 - **Primary Actor:** Master user
@@ -424,7 +426,7 @@ Finally, the master user inserts the new DCG into the MySQL DB assigning a struc
 
 **Main Flow**
 1. **Master user** clicks **import an FE data**.
-2. **UI** emits an event to activate the system for the FE data extraction.
+2. **UI** emits an event to activate the CS for the FE data extraction.
 3. **System** imports the FE file to create a new DCG linked to the input FE file.
 4. **System** emits an event to initialize the user forms and the graphics.
 5. **UI** initializes the user forms and the graphics.
@@ -454,8 +456,8 @@ Finally, the master user inserts the new DCG into the MySQL DB assigning a struc
 #### 3.6.2 Use Case scenario #2
 
 In this scenario, an ordinary user checks out a sub-DCG from MySQL DB for inspection or sizing.
-The system loads the sub-DCG and the FEM attached to the DCG.
-Then, the system initializes the UI.
+The CS loads the sub-DCG and the FEM attached to the DCG.
+Then, the CS initializes the UI.
 The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has been studied before.
 In this case, the SARs may have **UpToDate** state.
 Otherwise, SARs have null values and the states are **OutOfDate**.
@@ -482,23 +484,23 @@ I will prepare the scenario for a manual procedure.
 
 **The Flow (skip the error conditions for simplicity)**
 1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
-2. **UI** emits an event to activate the system for the DCG loading.
+2. **UI** emits an event to activate the CS for the DCG loading.
 3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
 4. **System** emits an event to initialize the user forms and the FE graphics.
 5. **UI** initializes the user forms and the FE graphics.
 6. **Ordinary User** reviews the SARs to detect the SCs that need sizing.
 7. **Ordinary User** updates the properties (e.g. material and geometry) of the SCs that needs sizing.
-8. **UI** emits an event to activate the system for each update.
+8. **UI** emits an event to activate the CS for each update.
 9. **System** reflects each update to the sub-DCG and sets the state of the SARs corresponding to each updated SC as **OutOfDate**.
 10. **Ordinary User** runs SAMMs for the updated SCs.
-11. **UI** emits an event to activate the system to run SAMMs for the updated SCs.
+11. **UI** emits an event to activate the CS to run SAMMs for the updated SCs.
 12. **System** runs SAMMs for the updated SCs.
 13. **System** updates the SARs and sets their state as **UpToDate**.
 14. **System** emits an event to activate the UI for the states and SARs.
 15. **UI** refreshes the SARs for the state and values.
 16. Repeat Steps 6 to 15 to finish sizing all SCs.
 17. **Ordinary User** selects to save the sub-DCG to MySQL DB.
-18. **UI** emits an event to activate the system for the sub-DCG save.
+18. **UI** emits an event to activate the CS for the sub-DCG save.
 19. **System** saves the sub-DCG to MySQL DB.
 
 **Postconditions**
@@ -532,13 +534,13 @@ The constructed objects will be destructed when the user finishes her session.
 
 **The Flow (skip the error conditions for simplicity)**
 1. **Ordinary User** selects to create a SC and auxilary items required by the SC (e.g. material and load) and SAMM.
-2. **UI** emits an event to activate the system to create the requested objects.
+2. **UI** emits an event to activate the CS to create the requested objects.
 3. **System** creates the requested objects.
 4. **System** emits an event to initialize the user forms.
 5. **UI** initializes the user forms.
 6. **Ordinary User** fills the fields of the objects.
 7. **Ordinary User** selects to run the requested SAMMs.
-8. **UI** emits an event to activate the system to run the requested SAMMs.
+8. **UI** emits an event to activate the CS to run the requested SAMMs.
 9. **System** runs the requested SAMMs.
 10. **System** updates the SARs.
 11. **System** emits an event to activate the UI for the SARs.
@@ -554,24 +556,24 @@ The constructed objects will be destructed when the user finishes her session.
 #### 3.6.4 A Quick Review on the Use Case scenarios
 
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
-- FE data is managed by the UI component (i.e. js) while the DCG data is managed by the system.
+- FE data is managed by the UI component (i.e. js) while the DCG data is managed by the CS.
 - There is a frequent request traffic between the backend and the frontend.
 - Large data may be transfered betweeen the backend and the frontend.
 - **The DCG shall follow DOD approach to store the data.**
 - **The DCG shall define and manage a state (e.g. UpToDate) for each node in the DCG.**
 - The routines of the DCG related to the node states would be based on the ancestor/descendant relations.
 - **The OETV and the FE display components of the UI shall reflect the current node states (i.e. SCs and SARs).**
-- The system needs a temporary DCG to manage the lifetime of the objects constructed in an offline process.
+- The CS needs a temporary DCG to manage the lifetime of the objects constructed in an offline process.
 - The SAA needs role definitions such as: System User, Admin User, Master User and Ordinary User.
 - System Users would manage the plugins and SAMMs.
 - Admin Users would manage the standard parts (e.g. material and fastener).
 - Master Users would manage the configuration.
 - Ordinary users would perform the analysis.
-- **The solver (i.e. SAMMs) shall run asynchrously.**
+- **The SP shall run asynchrously.**
 - **While the solver is running, the UI shall switch to read-only mode allowing requests for new runs.**
-- **A solver pack shall be defined to list the SAMMs together with the versions.**
-- **The solver packs shall define the applicability (e.g. DCG type version) as well.**
-- **The DCGs shall define a configuration which contains: company policies, DCG type version and solver pack version.**
+- **The SP shall be defined to list the SAMMs together with the versions.**
+- **The SPs shall define the applicability (e.g. DCG type version) as well.**
+- **The DCGs shall define a configuration which contains: company policies, DCG type version and the SP version.**
 
 I tested fastapi for the large heep data transfer via json between python and js.
 The results are satisfactory (i.e. some miliseconds for MBs of heep data).
@@ -589,7 +591,7 @@ The command design pattern would be too complicated and need many branches to co
 Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of the command pattern.
 The DCG would make use of **the structural sharing** for the memory and performance.
 
-**The system shall define two arrays of DCGs:**
+**The CS shall define two arrays of DCGs:**
 1. The 1st array stores the functionally persistent DCGs for the online process connected to the MySQL DB.
 2. The 2nd array stores the functionally persistent DCGs for the offline process.
 
@@ -607,7 +609,7 @@ Below are the current features of the SAA based on the previous sections:
 - Multi-user model considering the following issues: shared data, roles and collaboration
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
-- A three component application: the core system, the frontend and the solver (i.e. SAMMs)
+- A three component application: the CS, the frontend and the SP
 - The solver and the frontend are asynchronous
 - The core language: Python
 - The solver language: Python
@@ -626,7 +628,7 @@ Below are the current features of the SAA based on the previous sections:
 - Core manages two DCGs: online and offline
 - DCG manages the state for each node which is visualized by the frontend
 - Handle undo/redo operations making use of the persistency of the DCG
-- DCG configuration field: FE version (e.g. fe-v0.1), DCG version (e.g. dcg-v0.1) and applied solver pack version (e.g. sp-v0.1)
+- DCG configuration field: the FE version (e.g. fe-v0.1), the DCG version (e.g. dcg-v0.1) and the SP version (e.g. sp-v0.1)
 - Solver pack: list of the SAMMs and versions
 - Solver pack version: sp-v0.1
 - Solver pack applicability: DCG type version (e.g. dcg-v0.1)
@@ -636,10 +638,10 @@ Below are the current features of the SAA based on the previous sections:
 
 ## 4. Software Design <a id='sec4'></a>
 
-The architecture section defines three components for the SAA: the core system, the solver and the UI.
-The solver is formed by a pack of modules (i.e. SAMMs).
-The UI is composed of three sub-components: the tree, the forms and the FE display.
-The system is responsible from the memory and state management, MySQL DB interactions, frontend-backend interactions, etc.
+The architecture section defines three components for the SAA: the CS, the solver and the UI.
+1. The SP handles the structural analyses computations.
+2. The UI is composed of three sub-components: the tree, the forms and the FE display.
+3. The CS is responsible from the memory and state management, MySQL DB interactions, frontend-backend interactions, etc.
 
 ### 4.1. The UI <a id='sec41'></a>
 
@@ -654,32 +656,36 @@ The system is responsible from the memory and state management, MySQL DB interac
 - Run SAs.
 
 First of all, the frontend shall define a user form for each type of the SAA (e.g. panel or stiffener).
-In other words, each type defined by the core system shall register a UI form (i.e. a js file).
-**Hence, the plugins shall include the UI form registration.**
+In other words, each new type shall register a UI form (i.e. a js file).
+The next section explains that the types are considered to be a part of the SP.
+**The SP shall define the UI form registeration procedure:**
+- **register_UI_form(type_tag, UI_form):** The registration procedure for the SP types.
+
+**The plugins shall register the UI forms:**
+- register_UI(type_tag, extract_T)
 
 The SAA manages all data via the DCG and the MySQL DB accept for the FE data which is stored by the UI.
 Hence, almost every action of the user is handled by the following flow:
 - the user makes request,
-- the UI emits a corresponding system request,
-- the system executes the action,
-- the system returns the outputs (if exists) to the UI,
+- the UI emits a corresponding CS request,
+- the CS executes the action,
+- the CS returns the outputs (if exists) to the UI,
 - the UI presents the outputs (if exists).
 
 The UI needs to store the DCG node indices within the OETVNs.
 When, for example, the user clicks on an OETVN, the frontend:
 - gets the DCG node index from the OETVN,
-- emits a request from the system to retrieve the type (e.g. panel) and data (e.g. thickness and width) belonging to the DCG node and
+- emits a request from the CS to retrieve the type (e.g. panel) and data (e.g. thickness and width) belonging to the DCG node and
 - presents the retreived data via the user form corresponding to the retreived type.
 
-The above process is a part of the backend/frontend interface.
-**Below presents the whole interface required by the frontend at the backend/system side:**
-- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
-- set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
-- remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]
-- remove_DCG_nodes(list__DCG_node_indices[]) -> list__removed_DCG_node_indices[]
-- run_analysis(dict__analysis_dataset{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
-- get_DCG_node_indices_for_data_type(type: data_type) -> list__DCG_node_indices[] and/or list__data_names[]
-- calculate_properties(DCG_node_index) -> dict__properties{}
+**The CS and the DCG shall define the below interface in order to handle the above process:**
+- get_DCG_node_data_vals(DCG_node_index)
+- set_DCG_node_data_vals(DCG_node_index, dict__args{})
+- remove_DCG_node(DCG_node_index)
+- remove_DCG_nodes(list__DCG_node_indices[])
+- run_analysis(DCG_node_index)
+- get_DCG_node_indices_for_data_type(type_tag)
+- calculate_properties(DCG_node_index)
 
 All items in the above list are obvious or have already been discussed accept for the last two functions.
 The 6th function is required during the 1st scenario inspected before when
@@ -691,7 +697,7 @@ She has the panels and stiffeners generated by the importer.
 She would click on a panel from the OETV and set the side stiffeners.
 At this point, two combobox widgets shall exist allowing her to select the side stiffeners.
 Each combobox widget shall list all of the stiffeners generated by the importer.
-Hence, the UI requests the list of the stiffeners from the system.
+Hence, the UI requests the list of the stiffeners from the CS.
 
 The last function, calculate_properties, applies to some of the SCs those having a behaviour.
 In other words, this function represents a behavioural design pattern.
@@ -702,12 +708,12 @@ The current one, calculate_properties, would calculate some properties such as:
 - buckling coefficient of a panel, etc.
 
 The DCG is a functionally persistent data structure where each action creates a new DCG.
-The core system manages the DCGs based on the undo/redo limitation.
+The CS manages the DCGs based on the undo/redo limitation.
 At runtime, the UI shall define which DCG is active currently and presented by the UI.
 The DCG definition can be done within the OETV.
 Hence, the requests by the UI contains actually two inputs: DCG_index, DCG_node_index.
 
-The UI shall respond to the requests coming from the core system as well.
+The UI shall respond to the requests coming from the CS as well.
 For example, when the user requests removing an object (i.e. a node from the DCG),
 other nodes would also be affected due to the swap-and-pop idiom.
 Hence, a node will be removed and the index of another node will be updated.
@@ -721,37 +727,63 @@ The UI shall respond to each case efficiently.
 Hence, a generic intterface function within the frontend would be:
 - update_UI(nodes_created, nodes_updated, nodes_removed, states_created, states_updated)
 
-I will not go through the details of the UI as I mentioned earlier.
+The SAA contains many standard items such as materail and fastener.
+The UI representation of the standard items can be handled by simple forms listing the values.
+For example, an isotropic material has a number of members/properties such as E1, E2, etc.
+Similarly, the SCL 2D data where the loading (e.g. Fxx, Fyy, etc.) is defined per LC.
+The frontend library shall provvide simple solutions for the UI form representation of these standard items.
+Actually, many SAA types can be visualized by standard UI forms.
+In some cases, an additional picture can be added to support the table view.
+
+
+
+
 
 **Summary**\
-The core system shall define the following interface in order to satisfy the UI requirements:
+The CS shall define the following interface in order to satisfy the UI requirements:
 - register_UI()
 
-The DCG shall define the following interface which will be executed by the core system in order to respond the requests by the UI:
+The DCG shall define the following interface which will be executed by the CS in order to respond the requests by the UI:
 - get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
 - set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
 - remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]
 - remove_DCG_nodes(list__DCG_node_indices[]) -> list__removed_DCG_node_indices[]
 - run_analysis(dict__analysis_dataset{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
-- get_DCG_node_indices_for_data_type(type: data_type) -> list__DCG_node_indices[] and/or list__data_names[]
+- get_DCG_node_indices_for_data_type(type_tag) -> list__DCG_node_indices[] and/or list__data_names[]
 - calculate_properties(DCG_node_index) -> dict__properties{}
 
-The UI shall define the following interface in order to respond the requests by the core system:
+The UI shall define the following interface in order to respond the requests by the CS:
 - update_UI()
 
-### 4.2. The Solver Pack <a id='sec42'></a>
+### 4.2. The Solver Pack (SP) <a id='sec42'></a>
 
 The DCG is a functionally persistent data structure designed by following the DOD approach (mostly the indexing and SoA).
 In other words, the DCG is meant to store the data within the collections of the raw data types (e.g. int and float).
-This is a result of FOD and DOD approaches.
-On the other hand, the solver pack (i.e. the SAMMs) is asssumed to be defined by the client.
-The features of OOP (e.g. member access with dot notation) would provide an easy development procedure.
-Hence, the types of the SAA (e.g. Panel, Joint, etc.) shall be defined within the solver pack.
+On the other hand, the SP is asssumed to be defined by the client.
+The features of the OOP (e.g. member access with dot notation) would provide an easy development procedure.
+Hence, the types of the SAA (e.g. Panel, Joint, etc.) are belong to the SP.
 
-**Below presents the interface required by the solver pack at the core system side whicch is already included within the UI requirements:**
-- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
+The procedure to run an SA is as follows:
+- the CS requests an analysis from the SP,
+- the SP constructs SP objects from the DCG raw data,
+- the SP runs the SAMMs with the constructed objects,
+- the SP gets raw data from the SARs and
+- the SP returns the raw data to the CS.
 
+**In order to handle the above procedure, the SP shall define the following interface:**
+- **run_analysis(SC):** The interface for the analysis execution.
+- **DCG_to_SP(type_tag, DCG_node_index):** The factory pattern high level function to create SP objects from DCG raw data.
+- **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
+- **register_DCG_to_SP(type_tag, method_for_DCG_to_SP):** The registration procedure for the factory methods.
+- **register_SP_to_DCG(type_tag, method_for_SP_to_DCG):** The registration procedure for the inverse factory methods.
 
+SP shall call get_DCG_node_data_vals to get the DCG raw data for the input DCG_node_index.
+
+**The plugins shall define the factory and the inverse factory methods as well as the registers:**
+- create_T(DCG_node_index): Creates a SP object of type T. called by DCG_to_SP.
+- extract_T(t): Extract DCG raw data from t object of type T. called by SP_to_DCG.
+- register_SP_factory_method(type_tag, create_T)
+- register_SP_inverse_factory_method(type_tag, extract_T)
 
 ### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
 
@@ -1010,7 +1042,7 @@ Hence, the members of the DCG becomes:
 **FEM**\
 The SCs needs to keep the FE definition.
 For example, a Panel instance may be defined by the following FE elements: 1, 3, 7.
-The system shall store this data as well.
+The CS shall store this data as well.
 However, the DCG nodes do not store the SCs only.
 Hence, the FE linkage shall be defined within the SCs only.
 However, including a string field in the dtype is not a good practice.
@@ -1238,7 +1270,7 @@ describes many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
 However, I think, up to this point, I clearified the important aspects of the issue.
 Nevertheless, I will exclude the DCG implementation in this project
-defining only the required interfaces by the system
+defining only the required interfaces by the CS
 as it would be similar with the DAG implementation (e.g. persistency, immutable functions, DFS/BFS iterators, etc.) above.
 
 
@@ -1265,7 +1297,7 @@ as it would be similar with the DAG implementation (e.g. persistency, immutable 
 
 
 
-The type codes are assigned by the system plugin registration.
+The type codes are assigned by the plugin registration.
 
 ```
 # core/registry.py
@@ -1400,7 +1432,7 @@ I already described that the data related to the loading cause memory problems s
 Hence, SCLs and SARs are stored in the MySQL DB.
 However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
 In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
-The system needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
+The CS needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
 Hence, we would have two definitions for the SCLs and SARs:
 - a definition for the offline process and
 - a definition for the online process.

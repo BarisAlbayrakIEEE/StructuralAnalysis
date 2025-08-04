@@ -653,6 +653,10 @@ The system is responsible from the memory and state management, MySQL DB interac
 - Modify the FE mapping stored in the DCG (e.g. elements of a SC) via the FE display.
 - Run SAs.
 
+First of all, the frontend shall define a user form for each type of the SAA (e.g. panel or stiffener).
+In other words, each type defined by the core system shall register a UI form (i.e. a js file).
+**Hence, the plugins shall include the UI form registration.**
+
 The SAA manages all data via the DCG and the MySQL DB accept for the FE data which is stored by the UI.
 Hence, almost every action of the user is handled by the following flow:
 - the user makes request,

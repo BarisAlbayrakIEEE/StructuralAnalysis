@@ -641,7 +641,7 @@ The solver is formed by a pack of modules (i.e. SAMMs).
 The UI is composed of three sub-components: the tree, the forms and the FE display.
 The system is responsible from the memory and state management, MySQL DB interactions, frontend-backend interactions, etc.
 
-### 4.1. The Required Features for the UI <a id='sec41'></a>
+### 4.1. The UI <a id='sec41'></a>
 
 [Use Case Diagrams](#sec36) section inspects three scenarios from which we can deduce the expected functionality for the UI:
 - Present the current shape of the DCG via the OETV.
@@ -672,7 +672,8 @@ When, for example, the user clicks on an OETVN, the frontend:
 - presents the retreived data via the user form corresponding to the retreived type.
 
 The above process is a part of the backend/frontend interface.
-Below presents the whole interface at the backend/system side:
+**Below presents the whole interface at the backend/system side:**
+- register_UI()
 - get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, list__DCG_node_data_vals[]
 - set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
 - remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]

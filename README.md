@@ -658,11 +658,11 @@ The architecture section defines three components for the SAA: the CS, the solve
 First of all, the frontend shall define a user form for each type of the SAA (e.g. panel or stiffener).
 In other words, each new type shall register a UI form (i.e. a js file).
 The next section explains that the types are considered to be a part of the SP.
-**The SP shall define the UI form registeration procedure:**
-- **register_UI_form(type_tag, UI_form):** The registration procedure for the SP types.
+**The SP shall define the high level registration function for the UI form of the SP types:**
+- **register_UI_forms(type_tag, UI_form):** The SP registration function for the SP types.
 
-**The plugins shall register the UI forms:**
-- register_UI(type_tag, extract_T)
+**The plugins shall register the low level registration function for the UI form of the type defined in the plugin:**
+- **register_UI_form(type_tag, UI_form):** The plugin registration function for the SP types.
 
 The SAA manages all data via the DCG and the MySQL DB accept for the FE data which is stored by the UI.
 Hence, almost every action of the user is handled by the following flow:
@@ -735,26 +735,6 @@ The frontend library shall provvide simple solutions for the UI form representat
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.
 
-
-
-
-
-**Summary**\
-The CS shall define the following interface in order to satisfy the UI requirements:
-- register_UI()
-
-The DCG shall define the following interface which will be executed by the CS in order to respond the requests by the UI:
-- get_DCG_node_data_vals(DCG_node_index) -> DCG_node_data_type, dict__DCG_node_data_vals{ data_name: data val }
-- set_DCG_node_data_vals(DCG_node_index, dict__args{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
-- remove_DCG_node(DCG_node_index) -> removed_DCG_node_indices[]
-- remove_DCG_nodes(list__DCG_node_indices[]) -> list__removed_DCG_node_indices[]
-- run_analysis(dict__analysis_dataset{}) -> dict__modified_DCG_node_states{ DCG_node_index: enum__DCG_node_states }
-- get_DCG_node_indices_for_data_type(type_tag) -> list__DCG_node_indices[] and/or list__data_names[]
-- calculate_properties(DCG_node_index) -> dict__properties{}
-
-The UI shall define the following interface in order to respond the requests by the CS:
-- update_UI()
-
 ### 4.2. The Solver Pack (SP) <a id='sec42'></a>
 
 The DCG is a functionally persistent data structure designed by following the DOD approach (mostly the indexing and SoA).
@@ -774,16 +754,16 @@ The procedure to run an SA is as follows:
 - **run_analysis(SC):** The interface for the analysis execution.
 - **DCG_to_SP(type_tag, DCG_node_index):** The factory pattern high level function to create SP objects from DCG raw data.
 - **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
-- **register_DCG_to_SP(type_tag, method_for_DCG_to_SP):** The registration procedure for the factory methods.
-- **register_SP_to_DCG(type_tag, method_for_SP_to_DCG):** The registration procedure for the inverse factory methods.
+- **register_DCG_to_SP(type_tag, method_for_DCG_to_SP):** The high level registration function for the factory methods.
+- **register_SP_to_DCG(type_tag, method_for_SP_to_DCG):** The high level registration function for the inverse factory methods.
 
 SP shall call get_DCG_node_data_vals to get the DCG raw data for the input DCG_node_index.
 
 **The plugins shall define the factory and the inverse factory methods as well as the registers:**
-- create_T(DCG_node_index): Creates a SP object of type T. called by DCG_to_SP.
-- extract_T(t): Extract DCG raw data from t object of type T. called by SP_to_DCG.
-- register_SP_factory_method(type_tag, create_T)
-- register_SP_inverse_factory_method(type_tag, extract_T)
+- **create_T(DCG_node_index):** Creates a SP object of type T. called by DCG_to_SP.
+- **extract_T(t):** Extract DCG raw data from t object of type T. called by SP_to_DCG.
+- **register_SP_factory_method(type_tag, create_T):** The low level registration function for the factory method.
+- **register_SP_inverse_factory_method(type_tag, extract_T):** The low level registration function for the inverse factory method.
 
 ### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
 

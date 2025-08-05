@@ -257,14 +257,14 @@ as react executes asynchronously with the core framework.
 
 ### 3.5. Data Types & Data Structures <a id='sec35'></a>
 
-We had three requirements related to the extensibility from [the overview of the problem](#sec31):
+We had two requirements related to the extensibility from [the overview of the problem](#sec31):
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
-- There may exist hundreds even thousands of types and correspondingly too many objects may need to be managed.
 
 The SCs, SAs and SARs are the objects of the application which need type definitions
 while SAMMs present the behaviours of these types.
 **The application will be used by the structural engineers among whom Python is the most popular choice (even can be considered as de-facto).**
+Hence, I will continue with **Python for the SAMM plugin development**.
 
 A plugin style architecture for the SCs, SAs and SARs needs a type registration.
 **Hence, the core framework shall provide the type registration.**
@@ -279,7 +279,7 @@ would need to construct a type/class hierarchy which requires a careful design s
 - test driven design (TDD),
 - etc.
 
-The type definitions and the class hierarchy (i.e. the design) have a significant workload.
+The type definitions, the class hierarchy and the design process is a crucial part of the application and has a significant workload.
 Besides, the software design needs qualified software engineers.
 A plugin approach assuming an empty framework to be extended by the client plugins
 would fail as it pushes too much pressure on the client.
@@ -293,7 +293,7 @@ A plugin shall include the following items:
 - Type module with type registry (e.g. panel.py including register_panel function)
 - SAMM module with analysis registry (e.g. panel_buckling.py including register_panel_buckling function)
 - Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
-- **Core API shall provide the registry routines which shall be executed by the registry functions of the plugins.**
+- **Core API shall provide the registry routines which shall be executed by the python and js registry functions.**
 
 [The overview of the problem](#sec31) explained the dependencies within the data.
 The dependencies/relations in the data require a link-based (i.e. pointer-based) data structure for the memory managemant.
@@ -303,7 +303,7 @@ For example, when a material is updated, all the descendants of the material sha
 In other words, an action on an element shall be propogated through the descendants of the element.
 This could be performed using a proxy design pattern.
 However, a better/compact solution is to use a **directed graph** data structure for the memory management.
-The graph in the case of the SAA **is not acyclic** as the types have mutual dependencies by definition (e.g. panel and stiffener).
+The graph in the case of the SAA **is not acyclic** as the types have mutual dependencies (e.g. panel and stiffener).
 Hence, the core data structure of the SAA is a **directed cyclic graph (DCG)**.
 
 Consider a geometry application (e.g. Dassault's Catia).
@@ -320,68 +320,6 @@ Please see the Readme file for a detailed discussion.
 We have different requirements and usage in case of the SAA:
 - The depth of the DCG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> buckling RF.
 - No need to have background processes for the cycled or deleted nodes.
-
-**The above two points show that the DCG shall be single-threaded.**
-
-The memory management is crucial in case of the SAA as it may contain large data caused by thousands of the user types.
-The memory management is related to the efficiency of the memory access patterns affecting both the read and write operations.
-The memory management policy of Python is based on the heap memory excluding the contiguous arrays.
-NumPy library provides this facility for the raw types only.
-This is an important opportunity and deserves attention.
-Consider designing the CS based on the np.ndarray of raw types following the DOD approach.
-A container can be defined for each type (e.g. Panel) which separates the fields using np.ndarray:
-
-```
-import numpy as np
-
-class Panel_Container:
-  def __init__():
-    self.ts = np.zeros(dtype=np.float32)
-    self.side_stiffeners_1 = np.zeros(dtype=np.uint32)
-    self.side_stiffeners_2 = np.zeros(dtype=np.uint32)
-    ...
-```
-
-The above approach would serve very well for the memory management performed by the CS.
-The solver pack (SP), on the other hand, would need the actual type definitions in order to make use of the OOP capabilities.
-The SP would need to define the types based on many aspects of the software design: structure, behaviour, construction, etc.
-Hence, it would create the class hierarchies as well.
-
-```
-class Panel(SC):
-  def __init__(t, side_stiffener_1, side_stiffener_2):
-    self.t = t
-    self.side_stiffener_1 = side_stiffener_1
-    self.side_stiffener_2 = side_stiffener_2
-    ...
-  
-  def calculate_buckling_coefficient():
-    ...
-  
-  def inspect_side_stiffener_restraint():
-    ...
-  
-  def run_analysis():
-    ...
-```
-
-In summary, this approach distributes the memory management and the design to the CS and SP respectively
-by assuming that the CS can work with the raw data and would not need the OOP facilities (i.e. the behaviours of the types).
-However, the assumption actually is not correct.
-Below list presents a couple of the reasons why the assumption fails:
-1. Types have a structural and behavioural hierarchy: EngineeringObject (e.g. material), SC, SA, etc.
-2. Types follow additional behavioral patterns: Ex: A sizeability interface
-3. The DCG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
-4. FE import requires an interface: import_FE() and export_FE()
-
-The 3rd reason is especially important as it means that
-a traversal through the DCG would require the construction of temporary SP objects (e.g. Panel)
-if the CS involves only the raw data.
-Actually, all of the operations would require the temporary SP objects.
-Another solution is to apply the FOD approach to every problem but it will cause an explode in the boilerplate code and kill the traceability.
-
-
-
 
 Lets summarize the above discussions together with the decissions made in the previous sections:
 - The solver pack (SP) will be written in python.

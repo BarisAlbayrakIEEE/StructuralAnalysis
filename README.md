@@ -372,13 +372,32 @@ Below list presents a couple of the reasons why the assumption fails:
 1. Types have a structural and behavioural hierarchy: EngineeringObject (e.g. material), SC, SA, etc.
 2. Types follow additional behavioral patterns: Ex: A sizeability interface
 3. The DCG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
-4. FE import requires an interface: import_FE() and export_FE()
+4. Write operations would need temporary SP object creation in order to inspect the type invariants.
+5. The UI would need an interface for the FE: import_FE() and export_FE()
+6. The UI would need an interface for the mutability and sizeability: the state management and size()
 
+I will discuss on these issues later in [the software design section](#sec4).
 The 3rd reason is especially important as it means that
 a traversal through the DCG would require the construction of temporary SP objects (e.g. Panel)
 if the CS involves only the raw data.
 Actually, all of the operations would require the temporary SP objects.
 Another solution is to apply the FOD approach to every problem but it will cause an explode in the boilerplate code and kill the traceability.
+
+**Hence, python usage with NumPy data types is not reasonable.**
+**The heap memory must be considered if the CS is implemented in python.**
+In summary, we have three choices for the CS:
+1. use Python with the heap memory or
+2. use Cython for the CS type definitions or
+3. use one of C++, rust and java.
+
+The 1st solution is already discussed but I want to add one more point.
+Later I will review the DCG in detail and select functionally persistent DCG to manage the memory.
+The persistent solution would require frequent copy operations for which the heap memory usage is a significant problem.
+Every action of the user may take considarable time for large DCGs if the data is spread out of the heap memory.
+
+I will eliminate the 2nd solution as its no better than the 3rd one.
+I also eliminate the rust solution as I dont have any experience with the rust development.
+Hence, there remains only C++ and java solutions.
 
 
 

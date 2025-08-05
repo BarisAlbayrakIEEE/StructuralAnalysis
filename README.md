@@ -754,16 +754,16 @@ The procedure to run an SA is as follows:
 - **run_analysis(SC):** The interface for the analysis execution.
 - **DCG_to_SP(type_tag, DCG_node_index):** The factory pattern high level function to create SP objects from DCG raw data.
 - **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
-- **register_DCG_to_SP(type_tag, method_for_DCG_to_SP):** The high level registration function for the factory methods.
-- **register_SP_to_DCG(type_tag, method_for_SP_to_DCG):** The high level registration function for the inverse factory methods.
+- **register_DCG_to_SPs(type_tag, method_for_DCG_to_SP):** The high level function registration for the factory methods.
+- **register_SP_to_DCGs(type_tag, method_for_SP_to_DCG):** The high level function registration for the inverse factory methods.
 
-SP shall call get_DCG_node_data_vals to get the DCG raw data for the input DCG_node_index.
+DCG_to_SP function shall call get_DCG_node_data_vals to get the DCG raw data for the input DCG_node_index.
 
 **The plugins shall define the factory and the inverse factory methods as well as the registers:**
 - **create_T(DCG_node_index):** Creates a SP object of type T. called by DCG_to_SP.
 - **extract_T(t):** Extract DCG raw data from t object of type T. called by SP_to_DCG.
-- **register_SP_factory_method(type_tag, create_T):** The low level registration function for the factory method.
-- **register_SP_inverse_factory_method(type_tag, extract_T):** The low level registration function for the inverse factory method.
+- **register_DCG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
+- **register_SP_to_DCG(type_tag, extract_T):** The low level function registration for the inverse factory method.
 
 ### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
 

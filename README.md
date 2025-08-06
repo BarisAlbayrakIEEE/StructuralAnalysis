@@ -386,7 +386,7 @@ it will cause an explosion in the type tags and the boilerplate code which will 
 
 **Hence, a design with the CS handling DOD style raw data and the SP defining the whole class hierarchy is not reasonable.**
 **The CS shall be responsible from the memory while defining a class hierarchy.**
-Python would allocate the heap memory in order to store the user defined types.
+In that case, Python would allocate the heap memory in order to store the user defined types.
 In summary, we have three choices for the CS:
 1. use Python with the heap memory or
 2. use Cython for the CS type definitions or
@@ -401,57 +401,91 @@ I will eliminate the 2nd solution as its no better than the 3rd one.
 I also eliminate the rust solution as I dont have any experience with the rust development.
 Hence, there remains only C++ and java solutions.
 
+In order for the DCG to manage the memory it must store the whole data.
+The objects need to be contained by the DCG in contiguous allocations.
+C++ provides variadic templates for varying type lists.
+Java handles the problem applying the type erasure which loses the compile-time static definition capability.
 
-
-
-Lets summarize the above discussions together with the decissions made in the previous sections:
-- The solver pack (SP) will be written in python.
-- The frontend will be written in js.
-- We need a single-threaded DCG with a small depth.
-- Frontend does not involve complex algorithms related with the DCG structure.
-- The DCG traversal is the most complex algorithm for the CS side.
-
-**which point that Pyhton is the most reasonable language for the core framework**.
-
-FastApi would create an effective bridge with the frontend.
-The DOD approach would suggest that:
-- the NumPy datatypes and arrays would be used to allocate contiguous memory and
-- the ancestor/descendant node relations of the DCG would be defined with indices.
-
-The numpy datatypes are cumbersome such that the client side SAMM implementation gets dirty.
-It does not allow member access like an object (e.g. obj.member).
-In order to access an item in a numpy datatype, the order (int) or the name (str) of the item must be known.
-Hence, a wrapper class is required for each numpy datatype
-which handles the interactin with the solver (i.e. SAMM) and the frontend (i.e. fastapi).
-
-Finally, the performance of the DCG traversal (DFS or BFS) algorithms shall be benchmarked.
+C++ solution for the DCG would look like:
 
 ```
-import numpy as np
-panel_dt = np.dtype([
-  ('t', np.float64),   # thickness
-  ('ss1', np.uint32),   # DCG node ID of the 1st side stiffener
-  ('ss2', np.uint32),   # DCG node ID of the 2nd side stiffener
-  ('mat', np.uint32)  # DCG node ID of the material
-])
-
-class panel_wrapper:
-  # interface with the solver
-  def __init__(self, p: panel_dt):
-  self.t = p[0].item()
-  self.ss1 = p[1].item()
-  self.ss2 = p[2].item()
-  self.mat = p[3].item()
-  
-  # interface with the frontend
-  def to_dict(p: panel_dt):
-  return {
-    't': p[0].item(),
-    'ss1': p[1].item(),
-    'ss2': p[2].item(),
-    'mat': p[3].item()    
-  }
+template<typename... Ts>
+class DCG {
+  private:
+    std::tuple<std::vector<Ts>...> containers;
+  ...
 ```
+
+C++ provides a powerful type traits library in order to handle type transformations statically.
+For example, the Nth type T within the typelist Ts would anyway be required by the CS:
+
+```
+// The base template to extract the Nth type from a type list
+template<std::size_t N, typename TList>
+struct TypeAt;
+
+// The 1st template specialization of TypeAt defining the variadic parameters
+template<std::size_t N, typename T, typename... Ts>
+struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
+
+// The 2nd template specialization of TypeAt which is the boundary of the recursion
+template<typename T, typename... Ts>
+struct TypeAt<0, TypeList<T, Ts...>> {
+  using type = T;
+};
+
+// Define a type list
+template<typename... Ts>
+struct Types{};
+struct Foo{};
+struct Bar{};
+using TypeList = Types<Foo, Bar>;
+
+// Get and use the 0th type from the type list
+static constexpr TypeAt<0, TypeList> obj{};
+```
+
+On the other hand, with java, the type containers of the DCG must be defined manually:
+
+```
+import java.util.ArrayList;
+
+class DCG{
+  private ArrayList<Panel> panels;
+  private ArrayList<Stiffener> stiffeners;
+  ...
+};
+```
+
+However, the SAA is designed to be extensible by adding new plugins defining new types.
+Hence, for each new plugin, the CS (i.e. the DCG and maybe some others) needs to be updated manually in case of java.
+Making the client responsible from the CS is not a good design practice.
+
+**The discussions up to here concludes that C++ is the best choice for the CS side.**
+
+The SP can still be implemented using python.
+Actually, it should be.
+**A wrapper class (i.e. cython, boost.Python, swig, pybind11) for each type forms a bridge between C++ and python.**
+**I would prefer pybind11 as it is very elegant in sharing C++ objects considering the reference counting.**
+This approach requires an additional wrapper class definition for each new type.
+However, the SP is a library for the behaviours rather than the types.
+Consider, for example, the panel type.
+A panel has many FMs and corresponding SAMMs:
+- the panel pressure analysis,
+- the panel buckling analysis,
+- the snap-through buckling analysis,
+- the fracture analyses (contains more than 2 FMs),
+- etc.
+
+A company may have many other FMs defined for a panel element.
+In summary, corresponding to a CS type, there may exist many SAMMs in the SP side.
+In other words, the additional wrapper class would be defined once and only for the types, not for the SAMMs.
+Hence, this approach adds boilerplate code into the CS which the client is mostly not involved.
+
+Later, I will explain that I will use React for the frontend development.
+The C++ backend needs to communicate with the React frontend.
+The REST API would serve very well in case of the SAA.
+If required, WebSocket would be utilized later to allow bacckend pushes or enhance the real-time communication.
 
 There is one last point under this heading.
 The LC and SC data multiplies in case of the SAA as on an SC a load data (i.e. the SCL) is defined for each LC.

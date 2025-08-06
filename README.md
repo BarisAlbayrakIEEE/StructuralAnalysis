@@ -692,8 +692,8 @@ Below are some observations I realized by examining the UML diagrams of the use 
 - **The SPs shall define the applicability (e.g. DCG type version) as well.**
 - **The DCGs shall define a configuration which contains: company policies, DCG type version and the SP version.**
 
-I tested fastapi for the large heep data transfer via json between python and js.
-The results are satisfactory (i.e. some miliseconds for MBs of heep data).
+I tested Crow for the large data transfer from C++ to js.
+The results are satisfactory (i.e. some miliseconds for MBs of data).
 
 The node state management becomes quite complex in some conditions especialy for the undo/redo operations.
 Consider SC1 is a SC and SAR1 and SAR2 are the two SARs related to this SC.
@@ -726,29 +726,27 @@ Below are the current features of the SAA based on the previous sections:
 - Multi-user model considering the following issues: shared data, roles and collaboration
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
-- A three component application: the CS, the frontend and the SP
-- The solver and the frontend are asynchronous
-- The core language: Python
-- The solver language: Python
+- A three component application: the CS, the SP and the frontend
+- The CS language: C++
+- The SP language: Python
 - The frontend language: js/react
 - UI contains three interactive components: OETV, user forms and FE display
-- Core/UI bridge: FastAPI
-- Fundamental types (i.e. current interfaces): SC, LC, SCL, SAR
-- DCG follows DOD approach: indices and NumPy.dtype
-- Create a wrapper for each NumPy.dtype to interact with the solver and frontend
+- Backend/frontend communication | backend: Crow
+- Backend/frontend communication | frontend: HTTP or WebSocket
+- The CS base types (i.e. current interfaces): SC, LC, SCL, SAR
+- Create a wrapper for each CS type to support the SP
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. panel) are shipped with the installation
-- The plugins contain both the type definition and the UI representation
 - The core framework provides the type registration
 - Follow TDD approach for the core plugins
-- Core data structure: Functionally persistent DCG with structural sharing
+- The CS data structure: Functionally persistent DCG with structural sharing
 - Core manages two DCGs: online and offline
-- DCG manages the state for each node which is visualized by the frontend
+- The DCG manages the state for each node which is visualized by the frontend
 - Handle undo/redo operations making use of the persistency of the DCG
 - DCG configuration field: the FE version (e.g. fe-v0.1), the DCG version (e.g. dcg-v0.1) and the SP version (e.g. sp-v0.1)
-- Solver pack: list of the SAMMs and versions
-- Solver pack version: sp-v0.1
-- Solver pack applicability: DCG type version (e.g. dcg-v0.1)
+- The SP keeps the SAMMs and their versions
+- The SP version: sp-v0.1
+- The SP applicability: DCG type version (e.g. dcg-v0.1)
 - User profile with the role definition
 - DBs for the standard items like material and fastener (per project)
 - DBs for the SCL and SAR data (per DCG)

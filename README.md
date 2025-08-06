@@ -264,7 +264,7 @@ We had three requirements related to the extensibility from [the overview of the
 
 The SCs, SAs and SARs are the objects of the application which need type definitions
 while SAMMs present the behaviours of these types.
-**The application will be used by the structural engineers among whom Python is the most popular choice (even can be considered as de-facto).**
+**The SAA will be used by the SAEs among whom Python is the most popular choice (even can be considered as de-facto).**
 
 A plugin style architecture for the SCs, SAs and SARs needs a type registration.
 **Hence, the core framework shall provide the type registration.**
@@ -323,7 +323,7 @@ We have different requirements and usage in case of the SAA:
 
 **The above two points show that the DCG shall be single-threaded.**
 
-The memory management is crucial in case of the SAA as it may contain large data caused by thousands of the user types.
+The memory management is crucial in case of the SAA as it may contain large data caused by hundreds of the user types.
 The memory management is related to the efficiency of the memory access patterns affecting both the read and write operations.
 The memory management policy of Python is based on the heap memory excluding the contiguous arrays.
 NumPy library provides this facility for the raw types only.
@@ -346,6 +346,7 @@ The above approach would serve very well for the memory management performed by 
 The solver pack (SP), on the other hand, would need the actual type definitions in order to make use of the OOP capabilities.
 The SP would need to define the types based on many aspects of the software design: structure, behaviour, construction, etc.
 Hence, it would create the class hierarchies as well.
+A prototype for the Panel type of the SP would be:
 
 ```
 class Panel(SC):
@@ -366,31 +367,32 @@ class Panel(SC):
 ```
 
 In summary, this approach distributes the memory management and the design to the CS and SP respectively
-by assuming that the CS can work with the raw data and would not need the OOP facilities (i.e. the behaviours of the types).
+by assuming that the CS can work with the raw data and would not need to know about the design (i.e. the class hierarchy).
 However, the assumption actually is not correct.
 Below list presents a couple of the reasons why the assumption fails:
-1. Types have a structural and behavioural hierarchy: EngineeringObject (e.g. material), SC, SA, etc.
-2. Types follow additional behavioral patterns: Ex: A sizeability interface
-3. The DCG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
-4. Write operations would need temporary SP object creation in order to inspect the type invariants.
-5. The UI would need an interface for the FE: import_FE() and export_FE()
-6. The UI would need an interface for the mutability and sizeability: the state management and size()
+1. The DCG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
+2. Write operations would need temporary SP object creation in order to inspect the type invariants.
+3. The UI would need an interface for the FE: import_FE() and export_FE()
+4. The UI would need an interface for the mutability and sizeability: the state management and size()
+5. Extensibility fails for the user operations as designing new behaviours is cumbersome: Ex: get_all_materials() function would envolve too many branches.
 
-I will discuss on these issues later in [the software design section](#sec4).
-The 3rd reason is especially important as it means that
-a traversal through the DCG would require the construction of temporary SP objects (e.g. Panel)
+I will discuss on these issues later in [the software design](#sec4) section.
+The 1st reason is especially important as it means that
+a traversal through the DCG would require the construction of temporary objects (e.g. Mat1, Panel)
 if the CS involves only the raw data.
-Actually, all of the operations would require the temporary SP objects.
-Another solution is to apply the FOD approach to every problem but it will cause an explode in the boilerplate code and kill the traceability.
+Actually, all of the operations may require the temporary objects.
+Another solution is to apply the FOD approach to every problem but
+it will cause an explosion in the type tags and the boilerplate code which will kill the traceability.
 
-**Hence, python usage with NumPy data types is not reasonable.**
-**The heap memory must be considered if the CS is implemented in python.**
+**Hence, a design with the CS handling DOD style raw data and the SP defining the whole class hierarchy is not reasonable.**
+**The CS shall be responsible from the memory while defining a class hierarchy.**
+Python would allocate the heap memory in order to store the user defined types.
 In summary, we have three choices for the CS:
 1. use Python with the heap memory or
 2. use Cython for the CS type definitions or
 3. use one of C++, rust and java.
 
-The 1st solution is already discussed but I want to add one more point.
+The 1st solution is not a choice due to the reasons already been discussed but I want to add one more point.
 Later I will review the DCG in detail and select functionally persistent DCG to manage the memory.
 The persistent solution would require frequent copy operations for which the heap memory usage is a significant problem.
 Every action of the user may take considarable time for large DCGs if the data is spread out of the heap memory.

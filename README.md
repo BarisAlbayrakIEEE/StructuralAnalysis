@@ -753,10 +753,10 @@ Below are the current features of the SAA based on the previous sections:
 
 ## 4. Software Design <a id='sec4'></a>
 
-The architecture section defines three components for the SAA: the CS, the solver and the UI.
-1. The SP handles the structural analyses computations.
-2. The UI is composed of three sub-components: the tree, the forms and the FE display.
-3. The CS is responsible from the memory and state management, MySQL DB interactions, frontend-backend interactions, etc.
+The architecture section defines three components for the SAA: the UI, the CS and the SP:
+1. The UI is composed of three sub-components: the tree, the forms and the FE display.
+2. The CS is responsible from the memory and state management, the MySQL DB interactions, the frontend interactions and the SP interactions.
+3. The SP handles the structural analyses computations.
 
 ### 4.1. The UI <a id='sec41'></a>
 
@@ -775,6 +775,7 @@ First of all, the frontend shall define a user form for each type of the SAA (e.
 
 ```
 // ~/src/system/UI_registry.js
+
 export class UIRegistry {
   constructor() {
     this.formSchemas = new Map();
@@ -842,7 +843,7 @@ export function registerForm(uiRegistry) {
 
 The SAA manages all data via the DCG and the MySQL DB accept for the FE data which is stored by the UI.
 Hence, almost every action of the user is handled by the following flow:
-- the user makes request,
+- the user makes a request,
 - the UI emits a corresponding CS request,
 - the CS executes the action,
 - the CS returns the outputs (if exists) to the UI,
@@ -854,7 +855,7 @@ When, for example, the user clicks on an OETVN, the frontend:
 - emits a request from the CS to retrieve the type (e.g. panel) and data (e.g. thickness and width) belonging to the DCG node and
 - presents the retreived data via the user form corresponding to the retreived type.
 
-**The CS and the DCG shall define the below interface in order to handle the above process:**
+**The CS and the DCG shall define the below interface in order to handle the UI requests:**
 - create_DCG_node(data_type, **kwargs)
 - get_DCG_node_data_vals(DCG_node_index)
 - set_DCG_node_data_vals(DCG_node_index, **kwargs)
@@ -864,55 +865,216 @@ When, for example, the user clicks on an OETVN, the frontend:
 - calculate_properties(DCG_node_index)
 
 ```
-# ~/src/system/CS.py
+// ~/src/system/ijon.h
 
-class CS:
-  def __init__():
-    self.DCGs = []
-    self.undo_count = 10
-  
-  def create_DCG_node(DCG_index: int, data_type:str, **kwargs) -> int:
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
-    
-    new_DCG, new_DCG_node_index = self.DCGs[DCG_index].create_DCG_node(data_type, **kwargs)
-    self.DCGs.append(new_DCG)
-    return new_DCG_node_index
-  
-  def get_DCG_node_data_vals(DCG_index: int, DCG_node_index: int) -> dict[str, list]:
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
-    return self.DCGs[DCG_index].get_DCG_node_data_vals(DCG_node_index)
-  
-  def set_DCG_node_data_vals(DCG_index: int, DCG_node_index: int, **kwargs) -> None:
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
+#include <nlohmann/json.hpp>
 
-    self.DCGs.append(self.DCGs[DCG_index].set_DCG_node_data_vals(DCG_node_index, **kwargs))
-  
-  def remove_DCG_node(DCG_index: int, DCG_node_index: int):
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
+// All CS types must extend this interface
+class IJSON_Object{
+  virtual ~IJSON_Object() = default;
+  virtual void from_json(const json&) = 0;
+  virtual json to_json() = 0;
+};
 
-    new_DCG, outputs = self.DCGs[DCG_index].remove_DCG_node(DCG_node_index)
-    self.DCGs.append(new_DCG)
-    return outputs
-  
-  def run_analysis(DCG_index: int, DCG_node_index: int) -> None:
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
 
-    self.DCGs.append(self.DCGs[DCG_index].run_analysis(DCG_node_index))
+
+// ~/src/system/DCG.h
+
+#include "VectorTree.h"
+#include "ijson.h"
+
+// Excludes the node relations.
+// Excludes the functions unrelated with the UI interface.
+// Assumes the objects extends IJSON_Object where all EOs, SCs and SAs will do so.
+template<typename... Ts>
+class DCG {
+  VectorTree<TODO> _object_positions; // TODO: needs some type traits work
+  VectorTree<std::vector<std::size_t>> _descendant_DCG_node_indices;
+  std::tuple<VectorTree<Ts>...> _objects;
+  ...
   
-  def get_DCG_node_indices_for_data_type(DCG_index: int, data_type: str) -> list[int]:
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
-    return self.DCGs[DCG_index].get_DCG_node_indices_for_data_type(data_type)
+  // Neglects the ancestor/descendant relations for simplicity
+  template<typename T, typename... Ts>
+  auto create(const json& json_) const -> DCG<Ts...>
+  {
+    auto new_object_container = _objects.get<VectorTree<T>>().emplace_back(json_); // TODO: VectorTree must implement emplace_back method with json input
+    ...
+    return DCG<Ts...>(new_object_container);
+  };
   
-  def calculate_properties(DCG_index: int, DCG_node_index: int):
-    if DCG_index >= len(self.DCGs):
-      raise ValueError(f"DCG index '{DCG_index}' is out of bounds.")
-    return self.DCGs[DCG_index].calculate_properties(DCG_node_index)
+  auto get(std::size_t DCG_node_index) const -> json
+  {
+    const auto& object_container = TODO; // TODO: needs some type traits work
+    auto object_position{ TODO }; // TODO: needs some type traits work
+    const auto& obj{ object_container[object_position] };
+    return obj.to_json();
+  };
+  
+  // Neglects the ancestor/descendant relations for simplicity
+  void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
+  {
+    const auto& object_container = TODO; // TODO: needs some type traits work
+    auto object_position{ TODO }; // TODO: needs some type traits work
+    auto new object_container = object_container.set(object_position, json_); // TODO: VectorTree must implement set method with json input
+    ...
+    return DCG<Ts...>(new_object_container);
+  };
+  
+  // Neglects the ancestor/descendant relations for simplicity
+  auto remove(std::size_t DCG_index, std::size_t DCG_node_index) const -> DCG<Ts...>
+  {
+    const auto& object_container = TODO; // TODO: needs some type traits work
+    auto object_position{ TODO }; // TODO: needs some type traits work
+    auto new object_container = object_container.remove(object_position);
+    ...
+    return DCG<Ts...>(new_object_container);
+  };
+};
+
+
+
+// ~/src/system/type_list_traits.h
+
+// Generic type list
+template <typename... Ts>
+struct TypeList {};
+
+// The base template to extract the Nth type from a type list
+template<std::size_t N, typename TList>
+struct TypeAt;
+
+// The 1st template specialization of TypeAt defining the variadic parameters
+template<std::size_t N, typename T, typename... Ts>
+struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
+
+// The 2nd template specialization of TypeAt which is the boundary of the recursion
+template<typename T, typename... Ts>
+struct TypeAt<0, TypeList<T, Ts...>> {
+  using type = T;
+};
+
+// The base template to extract the order of type T within a type list
+template <typename T, typename TList>
+struct IndexOf;
+
+// Specialization for non-empty list
+template <typename T, typename Head, typename... Tail>
+struct IndexOf<T, TypeList<Head, Tail...>> {
+private:
+    static constexpr std::size_t next = IndexOf<T, TypeList<Tail...>>::value;
+
+public:
+    static constexpr std::size_t value = std::is_same<T, Head>::value ? 0 : 1 + next;
+};
+
+// Base case: T not found — triggers error
+template <typename T>
+struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
+
+
+
+
+// ~/src/system/CS.h
+
+#include "type_list_traits.h"
+#include "DCG.h"
+
+using DCG_types_t = TypeList<Panel, Stiffener, Mat1> // Each new type need to be added to this alias
+using DCG_t = DCG<typename DCG_types_t>
+
+auto _DCGs = std::vector<DCG_t>(_undo_count);
+
+
+
+// ~/src/system/type_handler.h
+
+#include <crow_all.h>
+#include <unordered_map>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
+#include <functional>
+#include "CS.h"
+
+using json = nlohmann::json;
+using std::string;
+
+struct TypeHandlerBase {
+  virtual ~TypeHandlerBase() = default;
+  virtual std::size_t create(const json& j) = 0;
+  virtual json get(std::size_t index) = 0;
+  virtual void set(std::size_t index, const json& j) = 0;
+};
+
+template <typename T>
+class TypeHandler : public TypeHandlerBase {
+public:
+  std::mutex mutex;
+
+  using FromJsonFunc = std::function<void(T&, const json&)>;
+  using ToJsonFunc = std::function<json(const T&)>;
+
+  FromJsonFunc from_json_func;
+  ToJsonFunc to_json_func;
+
+  TypeHandler(FromJsonFunc from_fn, ToJsonFunc to_fn)
+    : from_json_func(from_fn), to_json_func(to_fn) {};
+
+  std::size_t create(std::size_t DCG_index, const json& json_) override {
+    std::lock_guard<std::mutex> lock(mutex);
+    T obj;
+    from_json_func(obj, json_);
+
+    _DCGs.push_back(_DCGs[DCG_index].create(json_));
+
+
+
+
+
+
+    objects.push_back(std::move(obj));
+    return objects.size() - 1;
+  };
+
+  json get(std::size_t index) override {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (index >= objects.size())
+      return json{{"error", "Index out of bounds"}};
+    return to_json_func(objects[index]);
+  };
+
+  void set(std::size_t index, const json& j) override {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (index >= objects.size()) return;
+    from_json_func(objects[index], j);
+  };
+};
+
+std::unordered_map<std::string, std::shared_ptr<TypeHandlerBase>> type_registry;
+
+template <typename T>
+void register_type(
+  const std::string& name,
+  std::function<void(T&, const json&)> from_fn,
+  std::function<json(const T&)> to_fn)
+{
+  type_registry[name] = std::make_shared<TypeHandler<T>>(from_fn, to_fn);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ~/src/system/CS.h
 
 
 
@@ -939,13 +1101,13 @@ class DCG:
 
     return self, len(self.data_type_codes) - 1
   
-  def get_DCG_node_data_vals(DCG_node_index: int) -> dict[str, list]:
+  def get_DCG_node_data_vals(std::size_t DCG_node_index) -> dict[str, list]:
     if DCG_node_index >= len(self.data_type_codes):
       raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
     
     return self.DOD_containers[self.data_type_codes[DCG_node_index]].get_data_vals(self.DOD_container_indices[DCG_node_index])
   
-  def set_DCG_node_data_vals(DCG_node_index: int, **kwargs) -> DCG:
+  def set_DCG_node_data_vals(std::size_t DCG_node_index, **kwargs) -> DCG:
     if DCG_node_index >= len(self.data_type_codes):
       raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
 
@@ -953,7 +1115,7 @@ class DCG:
       self.DOD_containers[self.data_type_codes[DCG_node_index]].set_data_vals(self.DOD_container_indices[DCG_node_index], **kwargs)
     return self
   
-  def remove_DCG_node(DCG_node_index: int):
+  def remove_DCG_node(std::size_t DCG_node_index):
     if DCG_node_index >= len(self.data_type_codes):
       raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
 
@@ -961,22 +1123,22 @@ class DCG:
       self.DOD_containers[self.data_type_codes[DCG_node_index]].remove(self.DOD_container_indices[DCG_node_index])
     return self, outputs
   
-  def run_analysis(DCG_node_index: int):
+  def run_analysis(std::size_t DCG_node_index):
     if DCG_node_index >= len(self.data_type_codes):
       raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
 
     SP.run_analysis(DCG_node_index)
-    return self, self.DCGs[DCG_index].run_analysis(DCG_node_index)
+    return self, _DCGs[DCG_index].run_analysis(DCG_node_index)
   
   def get_DCG_node_indices_for_data_type(data_type: str) -> list[int]:
     if DCG_node_index >= len(self.data_type_codes):
       raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-    return self.DCGs[DCG_index].get_DCG_node_indices_for_data_type(data_type)
+    return _DCGs[DCG_index].get_DCG_node_indices_for_data_type(data_type)
   
-  def calculate_properties(DCG_node_index: int):
+  def calculate_properties(std::size_t DCG_node_index):
     if DCG_node_index >= len(self.data_type_codes):
       raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-    return self.DCGs[DCG_index].calculate_properties(DCG_node_index)
+    return _DCGs[DCG_index].calculate_properties(DCG_node_index)
 ```
 
 All items in the above list are obvious or have already been discussed accept for the last two functions.

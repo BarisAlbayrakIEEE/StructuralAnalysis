@@ -886,9 +886,7 @@ class IJSON{
 
 // All CS types must satisfy this requirement
 template <typename T>
-concept JsonConstructible = requires(const json& j) {
-    T(j);
-};
+concept JsonConstructible = std::constructible_from<T, const json&>;
 
 #endif
 

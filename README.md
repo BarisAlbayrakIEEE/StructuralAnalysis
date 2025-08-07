@@ -915,6 +915,7 @@ struct EO_Panel : public IJSON {
   std::size_t side_stiffener_1;
   std::size_t side_stiffener_2;
 
+  // Notice that EO_Panel satisfies JsonConstructible!!!
   EO_Panel(const json& json_) {
     if (
         !j.contains("thickness") ||

@@ -872,14 +872,15 @@ When, for example, the user clicks on an OETVN, the frontend:
 // All CS types must extend this interface
 class IJSON_Object{
   virtual ~IJSON_Object() = default;
-  virtual void from_json(const json&) = 0;
-  virtual json to_json() = 0;
+  virtual void get_from_json(const json&) = 0;
+  virtual json set_to_json() const = 0;
 };
 
 
 
 // ~/src/system/DCG.h
 
+#include <memory>
 #include "VectorTree.h"
 #include "ijson.h"
 
@@ -888,46 +889,79 @@ class IJSON_Object{
 // Assumes the objects extends IJSON_Object where all EOs, SCs and SAs will do so.
 template<typename... Ts>
 class DCG {
-  VectorTree<TODO> _object_positions; // TODO: needs some type traits work
-  VectorTree<std::vector<std::size_t>> _descendant_DCG_node_indices;
-  std::tuple<VectorTree<Ts>...> _objects;
+  std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
+  std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DCG_node_indices{};
+  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _objects{};
   ...
-  
-  // Neglects the ancestor/descendant relations for simplicity
-  template<typename T, typename... Ts>
+
+public:
+
+  DCG() = defaault;
+  DCG(
+    std::shared_ptr<VectorTree<TODO>> object_positions,
+    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
+    std::tuple<std::shared_ptr<VectorTree<Ts>>...> objects,
+    ...
+  )
+  :
+  _object_positions(object_positions),
+  _descendant_DCG_node_indices(descendant_DCG_node_indices),
+  _objects(objects) {};
+
+  template<typenamee T>  
   auto create(const json& json_) const -> DCG<Ts...>
   {
-    auto new_object_container = _objects.get<VectorTree<T>>().emplace_back(json_); // TODO: VectorTree must implement emplace_back method with json input
-    ...
-    return DCG<Ts...>(new_object_container);
+    const auto object_container = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    if (!object_container) {
+      _objects.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
+      object_container = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    }
+
+    // create a new container by updating the node
+    // TODO:
+    //   VectorTree must implement emplace_back_by_json method with json input.
+    //   This breaks the generic definition of the VectorTree but is necessary for the performance.
+    //   The emplace_back_by_json would act like a factory method:
+    //     - default create an object of type T
+    //     - call get_from_json method to set the members of the default created object.
+    auto new_object_container = object_container->emplace_back_by_json(json_);
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_object_container, ...);
   };
   
   auto get(std::size_t DCG_node_index) const -> json
   {
     const auto& object_container = TODO; // TODO: needs some type traits work
-    auto object_position{ TODO }; // TODO: needs some type traits work
-    const auto& obj{ object_container[object_position] };
-    return obj.to_json();
+    auto object_container_index{ TODO, DCG_node_index }; // TODO: needs some type traits work
+    const auto& obj{ object_container[object_container_index] };
+    return obj.set_to_json();
   };
   
-  // Neglects the ancestor/descendant relations for simplicity
   void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
   {
+    // create a new container by updating the node
     const auto& object_container = TODO; // TODO: needs some type traits work
-    auto object_position{ TODO }; // TODO: needs some type traits work
-    auto new object_container = object_container.set(object_position, json_); // TODO: VectorTree must implement set method with json input
-    ...
-    return DCG<Ts...>(new_object_container);
+    auto object_container_index{ TODO, DCG_node_index }; // TODO: needs some type traits work
+    auto new_object_container = object_container.apply(
+      object_container_index,
+      [&json_](auto& obj) { obj.get_from_json(json_); });
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_object_container, ...);
   };
   
-  // Neglects the ancestor/descendant relations for simplicity
-  auto remove(std::size_t DCG_index, std::size_t DCG_node_index) const -> DCG<Ts...>
+  auto remove(std::size_t DCG_node_index) const -> DCG<Ts...>
   {
     const auto& object_container = TODO; // TODO: needs some type traits work
-    auto object_position{ TODO }; // TODO: needs some type traits work
-    auto new object_container = object_container.remove(object_position);
-    ...
-    return DCG<Ts...>(new_object_container);
+    auto object_container_index{ TODO, DCG_node_index }; // TODO: needs some type traits work
+    auto new_object_container = object_container.remove(object_container_index);
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_object_container, ...);
   };
 };
 
@@ -976,13 +1010,32 @@ struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not fou
 
 // ~/src/system/CS.h
 
+#include <stack>
 #include "type_list_traits.h"
 #include "DCG.h"
 
-using DCG_types_t = TypeList<Panel, Stiffener, Mat1> // Each new type need to be added to this alias
-using DCG_t = DCG<typename DCG_types_t>
+// CAUTION:
+//   Each new type needs to be added to this alias
+//   This is the 1st CS modification the client has to perform to add a new type via a plugin.
+//   The 2nd modification is mapping the type name to the TypeHandler which is at the end of type_handler.h.
+using DCG_t = DCG<
+  EO_Panel,
+  EO_Stiffener,
+  EO_Mat1,
+  EO_Mat2,
+  EO_Mat8,
+  EO_Mat9,
+  EO_PanelLoading,
+  EO_StiffenerLoading,
+  SC_Panel,
+  SC_Stiffener,
+  SA_PanelBuckling,
+  SA_PanelPressure,
+  SA_StiffenerInstability,
+  SA_StiffenerStrength>
 
-auto _DCGs = std::vector<DCG_t>(_undo_count);
+std::stack<DCG_t> _DCGs();
+constexpr unsigned char undo_count = 10;
 
 
 
@@ -991,7 +1044,7 @@ auto _DCGs = std::vector<DCG_t>(_undo_count);
 #include <crow_all.h>
 #include <unordered_map>
 #include <memory>
-#include <mutex>
+#include <_mutex>
 #include <string>
 #include <vector>
 #include <functional>
@@ -1000,145 +1053,133 @@ auto _DCGs = std::vector<DCG_t>(_undo_count);
 using json = nlohmann::json;
 using std::string;
 
-struct TypeHandlerBase {
-  virtual ~TypeHandlerBase() = default;
-  virtual std::size_t create(const json& j) = 0;
-  virtual json get(std::size_t index) = 0;
-  virtual void set(std::size_t index, const json& j) = 0;
+struct ITypeHandler {
+  virtual ~ITypeHandler() = default;
+  virtual void create(const json& j) const = 0;
+  virtual json get(std::size_t index) const = 0;
+  virtual void set(std::size_t index, const json& j) const = 0;
 };
 
 template <typename T>
-class TypeHandler : public TypeHandlerBase {
+class TypeHandler : public ITypeHandler {
+
+  mutable std::mutex _mutex;
+
 public:
-  std::mutex mutex;
 
-  using FromJsonFunc = std::function<void(T&, const json&)>;
-  using ToJsonFunc = std::function<json(const T&)>;
+  std::size_t create(const json& json_) const {
+    std::lock_guard<std::mutex> lock(_mutex);
+    const auto& DCG_ = _DCGs.top();
+    _DCGs.push_back(std::move(DCG_.create<T>(json_)));
+    if (_DCGs.size() > undo_count) _DCGs.pop_front();
 
-  FromJsonFunc from_json_func;
-  ToJsonFunc to_json_func;
-
-  TypeHandler(FromJsonFunc from_fn, ToJsonFunc to_fn)
-    : from_json_func(from_fn), to_json_func(to_fn) {};
-
-  std::size_t create(std::size_t DCG_index, const json& json_) override {
-    std::lock_guard<std::mutex> lock(mutex);
-    T obj;
-    from_json_func(obj, json_);
-
-    _DCGs.push_back(_DCGs[DCG_index].create(json_));
-
-
-
-
-
-
-    objects.push_back(std::move(obj));
-    return objects.size() - 1;
+    return _DCGs.top().size() - 1;
   };
 
-  json get(std::size_t index) override {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (index >= objects.size())
-      return json{{"error", "Index out of bounds"}};
-    return to_json_func(objects[index]);
+  json get(std::size_t DCG_node_index) const {
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (_DCGs.empty())
+      return json{{"error", "No DCGs found"}};
+
+    const auto& DCG_ = _DCGs.top();
+    return DCG_.get(DCG_node_index);
   };
 
-  void set(std::size_t index, const json& j) override {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (index >= objects.size()) return;
-    from_json_func(objects[index], j);
+  void set(std::size_t DCG_node_index, const json& json_) const {
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (_DCGs.empty())
+      return json{{"error", "No DCGs found"}};
+
+    const auto& DCG_ = _DCGs.top();
+    _DCGs.push_back(std::move(DCG_.set(DCG_node_index, json_)));
+    if (_DCGs.size() > undo_count) _DCGs.pop_front();
   };
 };
 
-std::unordered_map<std::string, std::shared_ptr<TypeHandlerBase>> type_registry;
+std::unordered_map<std::string, std::shared_ptr<ITypeHandler>> type_registry;
 
 template <typename T>
-void register_type(
-  const std::string& name,
-  std::function<void(T&, const json&)> from_fn,
-  std::function<json(const T&)> to_fn)
-{
-  type_registry[name] = std::make_shared<TypeHandler<T>>(from_fn, to_fn);
+void register_type(const std::string& data_type_name) {
+  type_registry[data_type_name] = std::make_shared<TypeHandler<T>>();
 }
 
 
 
+// ~/src/main.cpp
 
+/*
+ * CAUTION:
+ *   CROW ROUTINES ARE IMPLEMENTED WITH THE HELP OF CHATGPT
+ */
 
+include "./system/type_handler.h"
 
+int main() {
+  crow::SimpleApp app;
 
+  // Register types
+  // CAUTION:
+  //   This is the 2nd CS modification the client has to perform to add a new type via a plugin.
+  //   The 1st modification is adding the type into the DCG alias which is in CS.h.
+  register_type<EO_Panel>("EO_Panel");
+  register_type<EO_Stiffener>("EO_Stiffener");
+  register_type<EO_Mat1>("EO_Mat1");
+  register_type<EO_Mat2>("EO_Mat2");
+  register_type<EO_Mat8>("EO_Mat8");
+  register_type<EO_Mat9>("EO_Mat9");
+  register_type<EO_PanelLoading>("EO_PanelLoading");
+  register_type<EO_StiffenerLoading>("EO_StiffenerLoading");
+  register_type<SC_Panel>("SC_Panel");
+  register_type<SC_Stiffener>("SC_Stiffener");
+  register_type<SA_PanelBuckling>("SA_PanelBuckling");
+  register_type<SA_PanelPressure>("SA_PanelPressure");
+  register_type<SA_StiffenerInstability>("SA_StiffenerInstability");
+  register_type<SA_StiffenerStrength>("SA_StiffenerStrength");
 
+  // Create object
+  CROW_ROUTE(app, "/create/<string>").methods("POST"_method)(
+    [](const crow::request& req, const std::string& type) {
+      auto it = type_registry.find(type);
+      if (it == type_registry.end())
+        return crow::response(400, "Unknown type");
 
+      auto body = json::parse(req.body, nullptr, false);
+      if (body.is_discarded())
+        return crow::response(400, "Invalid JSON");
 
+      std::size_t DCG_node_index = it->second->create(body);
+      json res = {{"status", "created"}, {"DCG_node_index", DCG_node_index}};
+      return crow::response{res.dump()};
+    });
 
+  // Get object
+  CROW_ROUTE(app, "/get/<string>/<size_t>").methods("GET"_method)(
+    [](const std::string& type, std::size_t DCG_node_index) {
+      auto it = type_registry.find(type);
+      if (it == type_registry.end())
+        return crow::response(400, "Unknown type");
 
+      json res = it->second->get(DCG_node_index);
+      return crow::response{res.dump()};
+    });
 
-// ~/src/system/CS.h
+  // Set object
+  CROW_ROUTE(app, "/set/<string>/<size_t>").methods("POST"_method)(
+    [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
+      auto it = type_registry.find(type);
+      if (it == type_registry.end())
+        return crow::response(400, "Unknown type");
 
+      auto body = json::parse(req.body, nullptr, false);
+      if (body.is_discarded())
+        return crow::response(400, "Invalid JSON");
 
+      it->second->set(DCG_node_index, body);
+      return crow::response{R"({"status":"updated"})"};
+    });
 
-# ~/src/system/DCG.py
-
-from registry import data_type_to_code
-
-class DCG:
-  def __init__():
-    self.data_type_codes = VectorTree("uint32")
-    self.DOD_container_indices = VectorTree("uint32")
-    self.DOD_containers = {}
-  
-  def create_DCG_node(data_type: str, **kwargs) -> int:
-    if data_type not in data_type_to_code:
-      raise ValueError(f"Data type '{data_type}' is not registered.")
-
-    data_type_code = data_type_to_code[data_type]
-    self.data_type_codes = self.data_type_codes.push_back(data_type_code)
-
-    DOD_container = self.DOD_containers[data_type_code]
-    DOD_container.push_back(**kwargs)
-    self.DOD_container_indices = self.DOD_container_indices.push_back(len(DOD_container) - 1)
-
-    return self, len(self.data_type_codes) - 1
-  
-  def get_DCG_node_data_vals(std::size_t DCG_node_index) -> dict[str, list]:
-    if DCG_node_index >= len(self.data_type_codes):
-      raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-    
-    return self.DOD_containers[self.data_type_codes[DCG_node_index]].get_data_vals(self.DOD_container_indices[DCG_node_index])
-  
-  def set_DCG_node_data_vals(std::size_t DCG_node_index, **kwargs) -> DCG:
-    if DCG_node_index >= len(self.data_type_codes):
-      raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-
-    self.DOD_containers[self.data_type_codes[DCG_node_index]] =
-      self.DOD_containers[self.data_type_codes[DCG_node_index]].set_data_vals(self.DOD_container_indices[DCG_node_index], **kwargs)
-    return self
-  
-  def remove_DCG_node(std::size_t DCG_node_index):
-    if DCG_node_index >= len(self.data_type_codes):
-      raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-
-    self.DOD_containers[self.data_type_codes[DCG_node_index]], outputs =
-      self.DOD_containers[self.data_type_codes[DCG_node_index]].remove(self.DOD_container_indices[DCG_node_index])
-    return self, outputs
-  
-  def run_analysis(std::size_t DCG_node_index):
-    if DCG_node_index >= len(self.data_type_codes):
-      raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-
-    SP.run_analysis(DCG_node_index)
-    return self, _DCGs[DCG_index].run_analysis(DCG_node_index)
-  
-  def get_DCG_node_indices_for_data_type(data_type: str) -> list[int]:
-    if DCG_node_index >= len(self.data_type_codes):
-      raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-    return _DCGs[DCG_index].get_DCG_node_indices_for_data_type(data_type)
-  
-  def calculate_properties(std::size_t DCG_node_index):
-    if DCG_node_index >= len(self.data_type_codes):
-      raise ValueError(f"DCG node index '{DCG_node_index}' is out of bounds.")
-    return _DCGs[DCG_index].calculate_properties(DCG_node_index)
+  app.port(18080).multithreaded().run();
+};
 ```
 
 All items in the above list are obvious or have already been discussed accept for the last two functions.

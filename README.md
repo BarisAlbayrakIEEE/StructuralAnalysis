@@ -856,9 +856,9 @@ When, for example, the user clicks on an OETVN, the frontend:
 - presents the retreived data via the user form corresponding to the retreived type.
 
 **The CS and the DCG shall define the below interface in order to handle the UI requests:**
-- create_DCG_node(data_type, **kwargs)
+- create_DCG_node(data_type, json)
 - get_DCG_node_data_vals(DCG_node_index)
-- set_DCG_node_data_vals(DCG_node_index, **kwargs)
+- set_DCG_node_data_vals(DCG_node_index, json)
 - remove_DCG_node(DCG_node_index)
 - run_analysis(DCG_node_index)
 - get_DCG_node_indices_for_data_type(data_type)
@@ -884,6 +884,7 @@ class IJSON{
   virtual json set_to_json() const = 0;
 };
 
+// All CS types must satisfy this requirement
 template <typename T>
 concept JsonConstructible = requires(const json& j) {
     T(j);

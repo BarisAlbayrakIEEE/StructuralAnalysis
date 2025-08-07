@@ -884,16 +884,6 @@ The current one, calculate_properties, would calculate some properties such as:
 - ABD matrix of a composite laminate,
 - buckling coefficient of a panel, etc.
 
-Below presents a pseudocode of the backend/frontend interface at the CS side containing the three fundamental functions: create, get and set.
-The pseudocode contains the following source files:
-- **~/src/system/SAA_type_traits.h:** Defines the concepts for all CS types. The JsonCompatible concept enforces the types to be compatible with the required json operations. Currently involves only the construction, get and set as this is the pseudocode.
-- **~/src/plugins/panel/EO_Panel.h:** Defines a sample EO_Panel satisfying JsonCompatible.
-- **~/src/system/DCG.h:** Defines the DCG with the above three methods.
-- **~/src/system/type_list_traits.h:** Contains template metafunctions to extract a type and index of a type from a type list which are required by the DCG although this part of the DCG is not implemented in the pseudocode.
-- **~/src/system/CS.h:** Stores the DCGs and manages the undo/redo functionality.
-- **~/src/system/type_handler.h:** Relates the type names to the types and updates the DCGs. In other words, forms a gate for the UI requests.
-- **~/src/main.cpp:** Handles the Crow routines. The code is prepared mostly by ChatGPT.
-
 Below, I will present the pseudocode of the backend/frontend interface at the CS side based the three fundamental functions: create, get and set.
 Other functions such as remove can easily be defined similarly.
 

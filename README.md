@@ -867,9 +867,15 @@ When, for example, the user clicks on an OETVN, the frontend:
 Below presents a pseudocode of the CS containing the three fundamental functions: create, get and set:
 
 ```
-// ~/src/system/ijson.h
+// ~/src/system/json_utilities.h
 
+#ifndef _json_utilities_h
+#define _json_utilities_h
+
+#include <concepts>
 #include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 // All CS types must extend this interface
 class IJSON{
@@ -878,9 +884,20 @@ class IJSON{
   virtual json set_to_json() const = 0;
 };
 
+template <typename T>
+concept JsonConstructible = requires(const json& j) {
+    T(j);
+};
+
+#endif
+
+
 
 
 // ~/src/plugins/panel/EO_Panel.h
+
+#ifndef _EO_Panel_h
+#define _EO_Panel_h
 
 /*
  * CAUTION:
@@ -888,7 +905,7 @@ class IJSON{
  *   EO_Panel would be involved in the class hierarcy (e.g. as an EO) from other aspects as well.
 
 #include "json.hpp" // for nlohmann::json
-#include "~/src/system/ijson.h"
+#include "~/src/system/json_utilities.h"
 
 using json = nlohmann::json;
 
@@ -898,6 +915,22 @@ struct EO_Panel : public IJSON {
   double height;
   std::size_t side_stiffener_1;
   std::size_t side_stiffener_2;
+
+  EO_Panel(const json& json_) {
+    if (
+        !j.contains("thickness") ||
+        !j.contains("width") ||
+        !j.contains("height") ||
+        !j.contains("side_stiffener_1") ||
+        !j.contains("side_stiffener_2"))
+      throw std::exception("Wrong inputs for EO_Panel type.");
+    
+    thickness = json_["thickness"];
+    width = json_["width"];
+    height = json_["height"];
+    side_stiffener_1 = json_["side_stiffener_1"];
+    side_stiffener_2 = json_["side_stiffener_2"];
+  };
 
   void get_from_json(const json& j) {
     if (j.contains("thickness")) p.thickness = j["thickness"];
@@ -918,14 +951,19 @@ struct EO_Panel : public IJSON {
   }
 };
 
+#endif
+
 
 
 // ~/src/system/DCG.h
 
+#ifndef _DCG_h
+#define _DCG_h
+
 #include <memory>
 #include "json.hpp" // for nlohmann::json
 #include "VectorTree.h"
-#include "ijson.h"
+#include "json_utilities.h"
 
 using json = nlohmann::json;
 
@@ -963,13 +1001,8 @@ public:
     }
 
     // create a new container by updating the node
-    // TODO:
-    //   VectorTree must implement emplace_back_by_json method with json input.
-    //   This breaks the generic definition of the VectorTree but is necessary for the performance.
-    //   The emplace_back_by_json would act like a factory method:
-    //     - default create an object of type T
-    //     - call get_from_json method to set the members of the default created object.
-    auto new_object_container = object_container->emplace_back_by_json(json_);
+    // JsonConstructible concept guarantees the constructor with the json input.
+    auto new_object_container = object_container->emplace_back(json_);
 
     // TODO: update node positions, ancestors/descendants, etc.
     
@@ -1010,9 +1043,14 @@ public:
   };
 };
 
+#endif
+
 
 
 // ~/src/system/type_list_traits.h
+
+#ifndef _type_list_traits_h
+#define _type_list_traits_h
 
 // Generic type list
 template <typename... Ts>
@@ -1050,9 +1088,14 @@ public:
 template <typename T>
 struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
 
+#endif
+
 
 
 // ~/src/system/CS.h
+
+#ifndef _CS_h
+#define _CS_h
 
 #include <stack>
 #include "type_list_traits.h"
@@ -1081,9 +1124,14 @@ using DCG_t = DCG<
 std::stack<DCG_t> _DCGs();
 constexpr unsigned char undo_count = 10;
 
+#endif
+
 
 
 // ~/src/system/type_handler.h
+
+#ifndef _type_handler_h
+#define _type_handler_h
 
 #include <crow_all.h>
 #include <unordered_map>
@@ -1092,7 +1140,11 @@ constexpr unsigned char undo_count = 10;
 #include <string>
 #include <vector>
 #include <functional>
+#include "json_utilities.h"
 #include "CS.h"
+
+#ifndef _type_handler_h
+#define _type_handler_h
 
 using json = nlohmann::json;
 using std::string;
@@ -1105,6 +1157,7 @@ struct ITypeHandler {
 };
 
 template <typename T>
+requires (JsonConstructible<T>)
 class TypeHandler : public ITypeHandler {
 
   mutable std::mutex _mutex;
@@ -1146,6 +1199,8 @@ template <typename T>
 void register_type(const std::string& data_type_name) {
   type_registry[data_type_name] = std::make_shared<TypeHandler<T>>();
 }
+
+#endif
 
 
 

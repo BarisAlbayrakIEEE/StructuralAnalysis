@@ -889,11 +889,11 @@ Other functions such as remove can easily be defined similarly.
 
 Firstly, I will start with type traits metafunctions to support static type definitions.
 The type traits involve the following functionality:
-1. **This is the most important part of the CS: Defining the types (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the the core code while defining new plugins.**
+1. **This is the most important part of the CS: Defining the types (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
 3. Two metafunctions to apply the template parameters of a type list to classes and functions respectively.
 4. Setting a static type name field requirement for the SAA types. All SAA types must have this field in order for the UI and the SP interfaces.
-5. Setting a json compatibility for the SAA types. All SAA types need to be compatible with json in order for the UI interface.
+5. Setting a json compatibility for the SAA types. All SAA types need to be compatible with json operations in order for the UI interface.
 
 ```
 // ~/src/system/SAA_type_traits.h
@@ -1064,7 +1064,8 @@ public:
   _descendant_DCG_node_indices(descendant_DCG_node_indices),
   _objects(objects) {};
 
-  template<typenamee T>  
+  // create
+  template<typename T>
   auto create(const json& json_) const -> DCG<Ts...>
   {
     // get the containet for type T
@@ -1083,7 +1084,8 @@ public:
     return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
   };
   
-  template<typenamee T>  
+  // get
+  template<typename T>
   auto get(std::size_t DCG_node_index) const -> json
   {
     const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
@@ -1095,7 +1097,8 @@ public:
     return obj.set_to_json();
   };
   
-  template<typenamee T>  
+  // set
+  template<typename T>
   void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
   {
     const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
@@ -1136,9 +1139,11 @@ using DCG_t = typename UnpackTypeList<SAA_Types_t>::apply<DCG>;
 std::stack<DCG_t> _DCGs();
 constexpr unsigned char undo_count = 10;
 
+// UI synch
 std::mutex _mutex;
 using _lg = std::lock_guard<std::mutex>;
 
+// create
 template <JsonCompatible T>
 std::size_t create(const json& json_) {
   _lg lock(_mutex);
@@ -1149,6 +1154,7 @@ std::size_t create(const json& json_) {
   return _DCGs.top().size() - 1;
 };
 
+// get
 template <JsonCompatible T>
 json get(std::size_t DCG_node_index) {
   _lg lock(_mutex);
@@ -1159,6 +1165,7 @@ json get(std::size_t DCG_node_index) {
   return DCG_.get<T>(DCG_node_index);
 };
 
+// set
 template <JsonCompatible T>
 void set(std::size_t DCG_node_index, const json& json_) {
   _lg lock(_mutex);
@@ -1170,10 +1177,12 @@ void set(std::size_t DCG_node_index, const json& json_) {
   if (_DCGs.size() > undo_count) _DCGs.pop_front();
 };
 
+// store creaters, getters and setters to maps in order to respond the UI requests.
 std::unordered_map<std::string, std::size_t (*)(const json&)> creaters;
 std::unordered_map<std::string, json (*)(std::size_t)> getters;
 std::unordered_map<std::string, (*)(std::size_t, const json&)> setters;
 
+// register creater, getter and setter for each type statically
 template <typename T>
   requires (HasStaticTypeName<T> && JsonCompatible<T>)
 void register_CS_type() {
@@ -1182,6 +1191,8 @@ void register_CS_type() {
   setters[T::type_name] = set<T>;
 }
 
+// register creater, getter and setter for each type statically by calling register_CS_type recursively.
+// this is a static procedure which improves the SAA runtime performance.
 void register_CS_types() {
   for_each_type(SAA_Types_t{}, []<typename T>() {
     register_type<T>();
@@ -1285,7 +1296,7 @@ struct EO_Panel {
   // Notice that EO_Panel satisfies HasStaticTypeName!!!
   static inline std::string type_name = "EO_Panel";
 
-  // Notice that EO_Panel satisfies JsonCompatible!!!
+  // Notice that EO_Panel satisfies JsonConstructible!!!
   EO_Panel(const json& json_) {
     if (
         !j.contains("thickness") ||
@@ -1302,6 +1313,7 @@ struct EO_Panel {
     side_stiffener_2 = json_["side_stiffener_2"];
   };
 
+  // Notice that EO_Panel satisfies JsonSerializable!!!
   void get_from_json(const json& j) {
     if (j.contains("thickness")) p.thickness = j["thickness"];
     if (j.contains("width")) p.width = j["width"];
@@ -1310,6 +1322,7 @@ struct EO_Panel {
     if (j.contains("side_stiffener_2")) p.side_stiffener_2 = j["side_stiffener_2"];
   }
 
+  // Notice that EO_Panel satisfies JsonSerializable!!!
   json set_to_json(const Panel& p) const {
     return {
       {"thickness", p.thickness},

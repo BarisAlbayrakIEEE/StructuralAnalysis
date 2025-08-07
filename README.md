@@ -864,16 +864,55 @@ When, for example, the user clicks on an OETVN, the frontend:
 - get_DCG_node_indices_for_data_type(data_type)
 - calculate_properties(DCG_node_index)
 
+Below presents a pseudocode of the CS containing the three fundamental functions: create, get and set:
+
 ```
-// ~/src/system/ijon.h
+// ~/src/system/ijson.h
 
 #include <nlohmann/json.hpp>
 
 // All CS types must extend this interface
-class IJSON_Object{
-  virtual ~IJSON_Object() = default;
+class IJSON{
+  virtual ~IJSON() = default;
   virtual void get_from_json(const json&) = 0;
   virtual json set_to_json() const = 0;
+};
+
+
+
+// ~/src/plugins/panel/EO_Panel.h
+
+/*
+ * CAUTION:
+ *   This is a sample EO_Panel definition related to the UI interface.
+ *   EO_Panel would be involved in the class hierarcy (e.g. as an EO) from other aspects as well.
+
+#include "~/src/system/ijson.h"
+
+struct EO_Panel : public IJSON {
+  double thickness;
+  double width;
+  double height;
+  std::size_t side_stiffener_1;
+  std::size_t side_stiffener_2;
+
+  void get_from_json(const json& j) {
+    if (j.contains("thickness")) p.thickness = j["thickness"];
+    if (j.contains("width")) p.width = j["width"];
+    if (j.contains("height")) p.height = j["height"];
+    if (j.contains("side_stiffener_1")) p.side_stiffener_1 = j["side_stiffener_1"];
+    if (j.contains("side_stiffener_2")) p.side_stiffener_2 = j["side_stiffener_2"];
+  }
+
+  json set_to_json(const Panel& p) const {
+    return {
+      {"thickness", p.thickness},
+      {"width", p.width},
+      {"height", p.height},
+      {"side_stiffener_1", p.side_stiffener_1},
+      {"side_stiffener_2", p.side_stiffener_2}
+    };
+  }
 };
 
 
@@ -886,7 +925,7 @@ class IJSON_Object{
 
 // Excludes the node relations.
 // Excludes the functions unrelated with the UI interface.
-// Assumes the objects extends IJSON_Object where all EOs, SCs and SAs will do so.
+// Assumes the objects extends IJSON where all EOs, SCs and SAs will do so.
 template<typename... Ts>
 class DCG {
   std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
@@ -1004,7 +1043,6 @@ public:
 // Base case: T not found — triggers error
 template <typename T>
 struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
-
 
 
 

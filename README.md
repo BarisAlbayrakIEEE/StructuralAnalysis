@@ -887,7 +887,10 @@ class IJSON{
  *   This is a sample EO_Panel definition related to the UI interface.
  *   EO_Panel would be involved in the class hierarcy (e.g. as an EO) from other aspects as well.
 
+#include "json.hpp" // for nlohmann::json
 #include "~/src/system/ijson.h"
+
+using json = nlohmann::json;
 
 struct EO_Panel : public IJSON {
   double thickness;
@@ -920,8 +923,11 @@ struct EO_Panel : public IJSON {
 // ~/src/system/DCG.h
 
 #include <memory>
+#include "json.hpp" // for nlohmann::json
 #include "VectorTree.h"
 #include "ijson.h"
+
+using json = nlohmann::json;
 
 // Excludes the node relations.
 // Excludes the functions unrelated with the UI interface.
@@ -935,7 +941,7 @@ class DCG {
 
 public:
 
-  DCG() = defaault;
+  DCG() = default;
   DCG(
     std::shared_ptr<VectorTree<TODO>> object_positions,
     std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,

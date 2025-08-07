@@ -1157,8 +1157,7 @@ struct ITypeHandler {
   virtual void set(std::size_t index, const json& j) const = 0;
 };
 
-template <typename T>
-requires (JsonConstructible<T>)
+template <JsonConstructible T>
 class TypeHandler : public ITypeHandler {
 
   mutable std::mutex _mutex;

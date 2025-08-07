@@ -884,35 +884,393 @@ The current one, calculate_properties, would calculate some properties such as:
 - ABD matrix of a composite laminate,
 - buckling coefficient of a panel, etc.
 
-Below presents a pseudocode of the backend/frontend interface at the CS side containing the three fundamental functions: create, get and set:
+Below presents a pseudocode of the backend/frontend interface at the CS side containing the three fundamental functions: create, get and set.
+The pseudocode contains the following source files:
+- **~/src/system/SAA_type_traits.h:** Defines the concepts for all CS types. The JsonCompatible concept enforces the types to be compatible with the required json operations. Currently involves only the construction, get and set as this is the pseudocode.
+- **~/src/plugins/panel/EO_Panel.h:** Defines a sample EO_Panel satisfying JsonCompatible.
+- **~/src/system/DCG.h:** Defines the DCG with the above three methods.
+- **~/src/system/type_list_traits.h:** Contains template metafunctions to extract a type and index of a type from a type list which are required by the DCG although this part of the DCG is not implemented in the pseudocode.
+- **~/src/system/CS.h:** Stores the DCGs and manages the undo/redo functionality.
+- **~/src/system/type_handler.h:** Relates the type names to the types and updates the DCGs. In other words, forms a gate for the UI requests.
+- **~/src/main.cpp:** Handles the Crow routines. The code is prepared mostly by ChatGPT.
+
+Below, I will present the pseudocode of the backend/frontend interface at the CS side based the three fundamental functions: create, get and set.
+Other functions such as remove can easily be defined similarly.
+
+Firstly, I will start with type traits metafunctions to support static type definitions.
+The type traits involve the following functionality:
+1. This is the most important part of the CS: Defining the types (e.g. EO_Panel, EO_Mat1, etc.). The extending the SAA by adding plugins require an update in this file. This is the only location that the client needs to modify the the core code while defining new plugins.
+2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
+3. Two metafunctions to apply the template parameters of a type list to classes and functions respectively.
+4. Setting a static type name field requirement for the SAA types. All SAA types must have this field in order for the UI and the SP interfaces.
+5. Setting a json compatibility for the SAA types. All SAA types need to be compatible with json in order for the UI interface.
 
 ```
-// ~/src/system/json_utilities.h
+// ~/src/system/SAA_type_traits.h
 
-#ifndef _json_utilities_h
-#define _json_utilities_h
+#ifndef _SAA_type_traits_h
+#define _SAA_type_traits_h
 
+#include <string>
 #include <concepts>
+#include <type_traits>
 #include <nlohmann/json.hpp>
+
+// Generic type list
+template <typename... Ts>
+struct TypeList {};
+
+// CAUTION:
+//   Each new type needs to be added to this type list.
+//   This is the only CS modification the client has to perform to add a new type via a plugin!!!
+using SAA_Types_t = TypeList<
+  EO_Panel,
+  EO_Stiffener,
+  EO_Mat1,
+  EO_Mat2,
+  EO_Mat8,
+  EO_Mat9,
+  EO_PanelLoading,
+  EO_StiffenerLoading,
+  SC_Panel,
+  SC_Stiffener,
+  SA_PanelBuckling,
+  SA_PanelPressure,
+  SA_StiffenerInstability,
+  SA_StiffenerStrength>;
+
+// -----------------------------------------------------------------------
+
+// The base template to extract the Nth type from a type list
+template<std::size_t N, typename TList>
+struct TypeAt;
+
+// The 1st template specialization of TypeAt defining the variadic parameters
+template<std::size_t N, typename T, typename... Ts>
+struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
+
+// The 2nd template specialization of TypeAt which is the boundary of the recursion
+template<typename T, typename... Ts>
+struct TypeAt<0, TypeList<T, Ts...>> {
+  using type = T;
+};
+
+// The base template to extract the order of type T within a type list
+template <typename T, typename TList>
+struct IndexOf;
+
+// Specialization for non-empty list
+template <typename T, typename Head, typename... Tail>
+struct IndexOf<T, TypeList<Head, Tail...>> {
+private:
+  static constexpr std::size_t next = IndexOf<T, TypeList<Tail...>>::value;
+
+public:
+  static constexpr std::size_t value = std::is_same<T, Head>::value ? 0 : 1 + next;
+};
+
+// Base case: T not found — triggers error
+template <typename T>
+struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
+
+// -----------------------------------------------------------------------
+
+// Unpacking a type list for class definitions
+template <typename TypeListT>
+struct UnpackTypeList;
+
+template <template <typename...> class List, typename... Ts>
+struct UnpackTypeList<List<Ts...>> {
+    template <template <typename...> class Target>
+    using apply = Target<Ts...>;
+};
+
+// Unpacking a type list for function definitions
+template <typename TypeListT, typename F>
+void for_each_type(F&& func);
+
+template <typename... Ts, typename F>
+void for_each_type(TypeList<Ts...>, F&& func) {
+    (func.template operator()<Ts>(), ...);
+}
+
+// -----------------------------------------------------------------------
+
+// Concept for the name field: All CS types must satisfy this requirement
+template <typename T>
+concept HasStaticTypeName = requires {
+  {
+    std::remove_cvref_t<decltype(T::type_name)>{}
+  } -> std::convertible_to<std::string>;
+};
+
+// Concept for the DCG that all the types stored by the DCG satisfies HasStaticTypeName.
+template <typename... Ts>
+concept AllHaveStaticTypeName = (HasStaticTypeName<Ts> && ...);
+
+// -----------------------------------------------------------------------
 
 using json = nlohmann::json;
 
-// All CS types must extend this interface
-class IJSON{
-  virtual ~IJSON() = default;
-  virtual void get_from_json(const json&) = 0;
-  virtual json set_to_json() const = 0;
-};
-
-// All CS types must satisfy this requirement
+// Concept for json constructibillity: All CS types must satisfy this requirement
 template <typename T>
 concept JsonConstructible = std::constructible_from<T, const json&>;
 
+// Concept for json serializability: All CS types must satisfy this requirement
+template <typename T>
+concept JsonSerializable = requires(T a, const T ca, const json& json_) {
+    { ca.set_to_json() } -> std::same_as<json>;
+    { a.get_from_json(json_) } -> std::same_as<void>;
+};
+
+// Concept for json compatibility: All CS types must satisfy this requirement
+template <typename T>
+concept JsonCompatible = requires(JsonConstructible<T> && JsonSerializable<T>);
+
+// Concept for the DCG that all the types stored by the DCG satisfies JsonCompatible.
+template <typename... Ts>
+concept AllJsonCompatible = (JsonCompatible<Ts> && ...);
+
 #endif
+```
 
+The 2nd pseudocode represents the DCG.
+As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
 
+```
+// ~/src/system/DCG.h
 
+#ifndef _DCG_h
+#define _DCG_h
 
+#include <memory>
+#include "SAA_type_traits.h"
+#include "VectorTree.h"
+
+using json = nlohmann::json;
+
+// Excludes the node relations.
+// Excludes the functions unrelated with the UI interface.
+// Notice that all the types stored by the DCG must satisfy HasStaticTypeName and JsonCompatible.
+template<typename... Ts>
+  requires (AllHaveStaticTypeName<Ts...> && requires AllJsonCompatible<Ts...>)
+class DCG {
+  std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
+  std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DCG_node_indices{};
+  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _objects{};
+  ...
+
+public:
+
+  DCG() = default;
+  DCG(
+    std::shared_ptr<VectorTree<TODO>> object_positions,
+    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
+    std::tuple<std::shared_ptr<VectorTree<Ts>>...> objects,
+    ...
+  )
+  :
+  _object_positions(object_positions),
+  _descendant_DCG_node_indices(descendant_DCG_node_indices),
+  _objects(objects) {};
+
+  template<typenamee T>  
+  auto create(const json& json_) const -> DCG<Ts...>
+  {
+    // get the containet for type T
+    const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      _objects.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
+      container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    }
+
+    // create a new container by updating the node
+    // JsonConstructible concept guarantees the constructor with the json input.
+    auto new_container_T = container_T->emplace_back(json_);
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+  };
+  
+  template<typenamee T>  
+  auto get(std::size_t DCG_node_index) const -> json
+  {
+    const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      throw std::exception("DCG does not contain requested type.");
+    }
+
+    const auto& obj{ container_T[DCG_node_index] };
+    return obj.set_to_json();
+  };
+  
+  template<typenamee T>  
+  void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
+  {
+    const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      throw std::exception("DCG does not contain requested type.");
+    }
+
+    // create a new container by updating the node
+    auto new_container_T = container_T.apply(
+      DCG_node_index,
+      [&json_](auto& obj) { obj.get_from_json(json_); });
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+  };
+};
+
+#endif
+```
+
+The 3rd pseudocode represents the core.
+As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
+
+```
+// ~/src/system/CS.h
+
+#ifndef _CS_h
+#define _CS_h
+
+#include <stack>
+#include "DCG.h"
+
+// Define the type of the DCG
+using DCG_t = typename UnpackTypeList<SAA_Types_t>::apply<DCG>;
+
+// Store the DCGs for undo/redo
+std::stack<DCG_t> _DCGs();
+constexpr unsigned char undo_count = 10;
+
+std::mutex _mutex;
+using _lg = std::lock_guard<std::mutex>;
+
+template <JsonCompatible T>
+std::size_t create(const json& json_) {
+  _lg lock(_mutex);
+  const auto& DCG_ = _DCGs.top();
+  _DCGs.push_back(std::move(DCG_.create<T>(json_)));
+  if (_DCGs.size() > undo_count) _DCGs.pop_front();
+
+  return _DCGs.top().size() - 1;
+};
+
+template <JsonCompatible T>
+json get(std::size_t DCG_node_index) {
+  _lg lock(_mutex);
+  if (_DCGs.empty())
+    return json{{"error", "No DCGs found"}};
+
+  const auto& DCG_ = _DCGs.top();
+  return DCG_.get<T>(DCG_node_index);
+};
+
+template <JsonCompatible T>
+void set(std::size_t DCG_node_index, const json& json_) {
+  _lg lock(_mutex);
+  if (_DCGs.empty())
+    return json{{"error", "No DCGs found"}};
+
+  const auto& DCG_ = _DCGs.top();
+  _DCGs.push_back(std::move(DCG_.set<T>(DCG_node_index, json_)));
+  if (_DCGs.size() > undo_count) _DCGs.pop_front();
+};
+
+std::unordered_map<std::string, std::size_t (*)(const json&)> creaters;
+std::unordered_map<std::string, json (*)(std::size_t)> getters;
+std::unordered_map<std::string, (*)(std::size_t, const json&)> setters;
+
+template <typename T>
+  requires (HasStaticTypeName<T> && JsonCompatible<T>)
+void register_CS_type() {
+  creaters[T::type_name] = create<T>;
+  getters[T::type_name] = get<T>;
+  setters[T::type_name] = set<T>;
+}
+
+void register_CS_types() {
+  for_each_type(SAA_Types_t{}, []<typename T>() {
+    register_type<T>();
+  });
+}
+
+#endif
+```
+
+The 4th pseudocode represents the main involving the Crow routines.
+As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
+
+```
+// ~/src/main.cpp
+
+/*
+ * CAUTION:
+ *   CROW ROUTINES ARE IMPLEMENTED WITH THE HELP OF CHATGPT
+ */
+
+include "./system/CS.h"
+
+int main() {
+  crow::SimpleApp app;
+
+  // Register the types
+  register_CS_types();
+
+  // create
+  CROW_ROUTE(app, "/create/<string>").methods("POST"_method)(
+    [](const crow::request& req, const std::string& type) {
+      auto it = creaters.find(type);
+      if (it == creaters.end())
+        return crow::response(400, "Unknown type");
+
+      auto json_ = json::parse(req.json_, nullptr, false);
+      if (json_.is_discarded())
+        return crow::response(400, "Invalid JSON");
+
+      std::size_t DCG_node_index = it->second(json_);
+      json res = {{"status", "created"}, {"DCG_node_index", DCG_node_index}};
+      return crow::response{res.dump()};
+    });
+
+  // get
+  CROW_ROUTE(app, "/get/<string>/<size_t>").methods("GET"_method)(
+    [](const std::string& type, std::size_t DCG_node_index) {
+      auto it = getters.find(type);
+      if (it == getters.end())
+        return crow::response(400, "Unknown type");
+
+      json res = it->second(DCG_node_index);
+      return crow::response{res.dump()};
+    });
+
+  // set
+  CROW_ROUTE(app, "/set/<string>/<size_t>").methods("POST"_method)(
+    [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
+      auto it = setters.find(type);
+      if (it == setters.end())
+        return crow::response(400, "Unknown type");
+
+      auto json_ = json::parse(req.json_, nullptr, false);
+      if (json_.is_discarded())
+        return crow::response(400, "Invalid JSON");
+
+      it->second(DCG_node_index, json_);
+      return crow::response{R"({"status":"updated"})"};
+    });
+
+  app.port(18080).multithreaded().run();
+};
+```
+
+The final pseudocode represents a sample SAA type: EO_Panel.
+As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
+**Please review the caution at the beginning of the code.**
+
+```
 // ~/src/plugins/panel/EO_Panel.h
 
 #ifndef _EO_Panel_h
@@ -923,19 +1281,21 @@ concept JsonConstructible = std::constructible_from<T, const json&>;
  *   This is a sample EO_Panel definition related to the UI interface.
  *   EO_Panel would be involved in the class hierarcy (e.g. as an EO) from other aspects as well.
 
-#include "json.hpp" // for nlohmann::json
-#include "~/src/system/json_utilities.h"
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IJSON {
+struct EO_Panel {
   double thickness;
   double width;
   double height;
   std::size_t side_stiffener_1;
   std::size_t side_stiffener_2;
 
-  // Notice that EO_Panel satisfies JsonConstructible!!!
+  // Notice that EO_Panel satisfies HasStaticTypeName!!!
+  static inline std::string type_name = "EO_Panel";
+
+  // Notice that EO_Panel satisfies JsonCompatible!!!
   EO_Panel(const json& json_) {
     if (
         !j.contains("thickness") ||
@@ -972,334 +1332,9 @@ struct EO_Panel : public IJSON {
 };
 
 #endif
-
-
-
-// ~/src/system/DCG.h
-
-#ifndef _DCG_h
-#define _DCG_h
-
-#include <memory>
-#include "json.hpp" // for nlohmann::json
-#include "VectorTree.h"
-#include "json_utilities.h"
-
-using json = nlohmann::json;
-
-// Excludes the node relations.
-// Excludes the functions unrelated with the UI interface.
-// Assumes the objects extends IJSON where all EOs, SCs and SAs will do so.
-template<typename... Ts>
-class DCG {
-  std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
-  std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DCG_node_indices{};
-  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _objects{};
-  ...
-
-public:
-
-  DCG() = default;
-  DCG(
-    std::shared_ptr<VectorTree<TODO>> object_positions,
-    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
-    std::tuple<std::shared_ptr<VectorTree<Ts>>...> objects,
-    ...
-  )
-  :
-  _object_positions(object_positions),
-  _descendant_DCG_node_indices(descendant_DCG_node_indices),
-  _objects(objects) {};
-
-  template<typenamee T>  
-  auto create(const json& json_) const -> DCG<Ts...>
-  {
-    const auto object_container = _objects.get<std::shared_ptr<VectorTree<T>>>();
-    if (!object_container) {
-      _objects.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
-      object_container = _objects.get<std::shared_ptr<VectorTree<T>>>();
-    }
-
-    // create a new container by updating the node
-    // JsonConstructible concept guarantees the constructor with the json input.
-    auto new_object_container = object_container->emplace_back(json_);
-
-    // TODO: update node positions, ancestors/descendants, etc.
-    
-    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_object_container, ...);
-  };
-  
-  auto get(std::size_t DCG_node_index) const -> json
-  {
-    const auto& object_container = TODO; // TODO: needs some type traits work
-    auto object_container_index{ TODO, DCG_node_index }; // TODO: needs some type traits work
-    const auto& obj{ object_container[object_container_index] };
-    return obj.set_to_json();
-  };
-  
-  void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
-  {
-    // create a new container by updating the node
-    const auto& object_container = TODO; // TODO: needs some type traits work
-    auto object_container_index{ TODO, DCG_node_index }; // TODO: needs some type traits work
-    auto new_object_container = object_container.apply(
-      object_container_index,
-      [&json_](auto& obj) { obj.get_from_json(json_); });
-
-    // TODO: update node positions, ancestors/descendants, etc.
-    
-    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_object_container, ...);
-  };
-  
-  auto remove(std::size_t DCG_node_index) const -> DCG<Ts...>
-  {
-    const auto& object_container = TODO; // TODO: needs some type traits work
-    auto object_container_index{ TODO, DCG_node_index }; // TODO: needs some type traits work
-    auto new_object_container = object_container.remove(object_container_index);
-
-    // TODO: update node positions, ancestors/descendants, etc.
-    
-    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_object_container, ...);
-  };
-};
-
-#endif
-
-
-
-// ~/src/system/type_list_traits.h
-
-#ifndef _type_list_traits_h
-#define _type_list_traits_h
-
-// Generic type list
-template <typename... Ts>
-struct TypeList {};
-
-// The base template to extract the Nth type from a type list
-template<std::size_t N, typename TList>
-struct TypeAt;
-
-// The 1st template specialization of TypeAt defining the variadic parameters
-template<std::size_t N, typename T, typename... Ts>
-struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
-
-// The 2nd template specialization of TypeAt which is the boundary of the recursion
-template<typename T, typename... Ts>
-struct TypeAt<0, TypeList<T, Ts...>> {
-  using type = T;
-};
-
-// The base template to extract the order of type T within a type list
-template <typename T, typename TList>
-struct IndexOf;
-
-// Specialization for non-empty list
-template <typename T, typename Head, typename... Tail>
-struct IndexOf<T, TypeList<Head, Tail...>> {
-private:
-    static constexpr std::size_t next = IndexOf<T, TypeList<Tail...>>::value;
-
-public:
-    static constexpr std::size_t value = std::is_same<T, Head>::value ? 0 : 1 + next;
-};
-
-// Base case: T not found — triggers error
-template <typename T>
-struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
-
-#endif
-
-
-
-// ~/src/system/CS.h
-
-#ifndef _CS_h
-#define _CS_h
-
-#include <stack>
-#include "type_list_traits.h"
-#include "DCG.h"
-
-// CAUTION:
-//   Each new type needs to be added to this alias
-//   This is the 1st CS modification the client has to perform to add a new type via a plugin.
-//   The 2nd modification is mapping the type name to the TypeHandler which is at the end of type_handler.h.
-using DCG_t = DCG<
-  EO_Panel,
-  EO_Stiffener,
-  EO_Mat1,
-  EO_Mat2,
-  EO_Mat8,
-  EO_Mat9,
-  EO_PanelLoading,
-  EO_StiffenerLoading,
-  SC_Panel,
-  SC_Stiffener,
-  SA_PanelBuckling,
-  SA_PanelPressure,
-  SA_StiffenerInstability,
-  SA_StiffenerStrength>
-
-std::stack<DCG_t> _DCGs();
-constexpr unsigned char undo_count = 10;
-
-#endif
-
-
-
-// ~/src/system/type_handler.h
-
-#ifndef _type_handler_h
-#define _type_handler_h
-
-#include <crow_all.h>
-#include <unordered_map>
-#include <memory>
-#include <_mutex>
-#include <string>
-#include <vector>
-#include <functional>
-#include "json_utilities.h"
-#include "CS.h"
-
-#ifndef _type_handler_h
-#define _type_handler_h
-
-using json = nlohmann::json;
-using std::string;
-
-struct ITypeHandler {
-  virtual ~ITypeHandler() = default;
-  virtual void create(const json& j) const = 0;
-  virtual json get(std::size_t index) const = 0;
-  virtual void set(std::size_t index, const json& j) const = 0;
-};
-
-template <JsonConstructible T>
-class TypeHandler : public ITypeHandler {
-
-  mutable std::mutex _mutex;
-
-public:
-
-  std::size_t create(const json& json_) const {
-    std::lock_guard<std::mutex> lock(_mutex);
-    const auto& DCG_ = _DCGs.top();
-    _DCGs.push_back(std::move(DCG_.create<T>(json_)));
-    if (_DCGs.size() > undo_count) _DCGs.pop_front();
-
-    return _DCGs.top().size() - 1;
-  };
-
-  json get(std::size_t DCG_node_index) const {
-    std::lock_guard<std::mutex> lock(_mutex);
-    if (_DCGs.empty())
-      return json{{"error", "No DCGs found"}};
-
-    const auto& DCG_ = _DCGs.top();
-    return DCG_.get(DCG_node_index);
-  };
-
-  void set(std::size_t DCG_node_index, const json& json_) const {
-    std::lock_guard<std::mutex> lock(_mutex);
-    if (_DCGs.empty())
-      return json{{"error", "No DCGs found"}};
-
-    const auto& DCG_ = _DCGs.top();
-    _DCGs.push_back(std::move(DCG_.set(DCG_node_index, json_)));
-    if (_DCGs.size() > undo_count) _DCGs.pop_front();
-  };
-};
-
-std::unordered_map<std::string, std::shared_ptr<ITypeHandler>> type_registry;
-
-template <typename T>
-void register_type(const std::string& data_type_name) {
-  type_registry[data_type_name] = std::make_shared<TypeHandler<T>>();
-}
-
-#endif
-
-
-
-// ~/src/main.cpp
-
-/*
- * CAUTION:
- *   CROW ROUTINES ARE IMPLEMENTED WITH THE HELP OF CHATGPT
- */
-
-include "./system/type_handler.h"
-
-int main() {
-  crow::SimpleApp app;
-
-  // Register types
-  // CAUTION:
-  //   This is the 2nd CS modification the client has to perform to add a new type via a plugin.
-  //   The 1st modification is adding the type into the DCG alias which is in CS.h.
-  register_type<EO_Panel>("EO_Panel");
-  register_type<EO_Stiffener>("EO_Stiffener");
-  register_type<EO_Mat1>("EO_Mat1");
-  register_type<EO_Mat2>("EO_Mat2");
-  register_type<EO_Mat8>("EO_Mat8");
-  register_type<EO_Mat9>("EO_Mat9");
-  register_type<EO_PanelLoading>("EO_PanelLoading");
-  register_type<EO_StiffenerLoading>("EO_StiffenerLoading");
-  register_type<SC_Panel>("SC_Panel");
-  register_type<SC_Stiffener>("SC_Stiffener");
-  register_type<SA_PanelBuckling>("SA_PanelBuckling");
-  register_type<SA_PanelPressure>("SA_PanelPressure");
-  register_type<SA_StiffenerInstability>("SA_StiffenerInstability");
-  register_type<SA_StiffenerStrength>("SA_StiffenerStrength");
-
-  // Create object
-  CROW_ROUTE(app, "/create/<string>").methods("POST"_method)(
-    [](const crow::request& req, const std::string& type) {
-      auto it = type_registry.find(type);
-      if (it == type_registry.end())
-        return crow::response(400, "Unknown type");
-
-      auto body = json::parse(req.body, nullptr, false);
-      if (body.is_discarded())
-        return crow::response(400, "Invalid JSON");
-
-      std::size_t DCG_node_index = it->second->create(body);
-      json res = {{"status", "created"}, {"DCG_node_index", DCG_node_index}};
-      return crow::response{res.dump()};
-    });
-
-  // Get object
-  CROW_ROUTE(app, "/get/<string>/<size_t>").methods("GET"_method)(
-    [](const std::string& type, std::size_t DCG_node_index) {
-      auto it = type_registry.find(type);
-      if (it == type_registry.end())
-        return crow::response(400, "Unknown type");
-
-      json res = it->second->get(DCG_node_index);
-      return crow::response{res.dump()};
-    });
-
-  // Set object
-  CROW_ROUTE(app, "/set/<string>/<size_t>").methods("POST"_method)(
-    [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
-      auto it = type_registry.find(type);
-      if (it == type_registry.end())
-        return crow::response(400, "Unknown type");
-
-      auto body = json::parse(req.body, nullptr, false);
-      if (body.is_discarded())
-        return crow::response(400, "Invalid JSON");
-
-      it->second->set(DCG_node_index, body);
-      return crow::response{R"({"status":"updated"})"};
-    });
-
-  app.port(18080).multithreaded().run();
-};
 ```
 
+A final point about the UI is related with the standard items.
 The SAA contains many standard items such as material and fastener.
 The UI representation of the standard items can be handled by simple forms listing the values.
 For example, an isotropic material has a number of members/properties such as E1, E2, etc.

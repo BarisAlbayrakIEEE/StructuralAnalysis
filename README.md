@@ -742,7 +742,7 @@ Below are the current features of the SAA based on the previous sections:
 - The CS data structure: Functionally persistent DCG with structural sharing
 - Core manages two DCGs: online and offline
 - The DCG manages the state for each node which is visualized by the frontend
-- Handle undo/redo operations making use of the persistency of the DCG
+- DCG_Node_Handle undo/redo operations making use of the persistency of the DCG
 - DCG configuration field: the FE version (e.g. fe-v0.1), the DCG version (e.g. dcg-v0.1) and the SP version (e.g. sp-v0.1)
 - The SP keeps the SAMMs and their versions
 - The SP version: sp-v0.1
@@ -1584,6 +1584,216 @@ using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant
 #endif
 ```
 
+**The Dynamism**\
+The static definition of the DCG is problematic in case of the dynamically dominated behaviours such as the descendant traversal.
+As an edge case example, the descendants of the root node or the ancestors of the tail node cannot be defined statically.
+Another example would be Material class such that too many objects of too many types would depend on material objects.
+In such cases, an algorithm is required to access statically defined data (e.g. _type_containers) with the runtime information.
+The efficiency of this algorithm is crucial as it would help central algorithms used frequently (e.g. the descendant traversal for the state propogation).
+
+
+
+
+
+```
+#include <tuple>
+#include <vector>
+#include <array>
+#include <utility>
+#include <type_traits>
+#include <cstdint>
+
+// ~/src/system/DCG.h
+
+/*
+ * CAUTION:
+ *   Excludes the node relations and the functions unrelated with the UI interface!!!
+ */
+
+#ifndef _DCG_h
+#define _DCG_h
+
+#include <memory>
+#include "core_type_traits.h"
+#include "VectorTree.h"
+
+using json = nlohmann::json;
+
+template<typename... Ts>
+  requires (All_Json_Constructible<Ts...>)
+class DCG {
+  // Type utilities
+  using _a_type_tuple = std::tuple<Ts...>;
+  static constexpr std::size_t _type_list_size = sizeof...(Ts);
+
+  // The DCG node handle defines the position of an object:
+  //   type: represents the index of the type within SAA_Types_t.
+  //   index: represents the index of the object within the corresponding type container.
+  struct DCG_Node_Handle { std::uint32_t type; std::uint32_t index; };
+
+  // Members
+  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _type_containers;                     // SoA: Type indexing is same as the other members
+  std::vector<std::shared_ptr<VectorTree<std::vector<DCG_Node_Handle>>>> _descendants; // [type][index] -> children
+  std::vector<std::shared_ptr<VectorTree<enum_DCG_node_states>>> _states; // The ordering of the outer most std::vector is the same as the SAA_Types_t
+  std::string _FE_link;
+  ...
+
+
+
+  // Returns the type id corresponding to the index of the type parameter T.
+  template<class T>
+  static consteval std::size_t get_type_id() {
+    return []<std::size_t... Is(std::index_sequence<Is..>) {
+      std::size_t id = _type_list_size;
+      ((std::is_same_v<T, std::tuple_element_t<Is _a_type_tuple>> ? id = Is: 0), ...);
+      return id;
+    }(std::make_index_sequence<_type_list_size>{});
+  }
+
+  // FP: Transforms the input function to be applicable to the type container corresponding to the input type id.
+  // std::size_t type_id corresponds to the index of a type within SAA_Types_t.
+  template<class F>
+  decltype(auto) with_type_container(std::size_t type_id, F&& f) {
+    using R = std::common_type_t<std::invoke_result_t<F, std::vector<Ts>&>...>;
+    using Fn = R(*)(DCG&, F&&);
+
+    static constexpr std::array<Fn, _type_list_size> function_array{
+      +[](DCG& DCG_, F&& f)->R { return std::forward<F>(f)(
+        std::get<std::shared_ptr<VectorTree<Ts>>>(DCG_._type_containers)); }...
+    };
+
+    return function_array[type_id](*this, std::forward<F>(f));
+  }
+
+  // FP: Transforms the input function to be applicable to the object corresponding to the input DCG_Node_Handle.
+  template<class F>
+  decltype(auto) with_type_object(DCG_Node_Handle h, F&& f) {
+    return with_type_container(h.type, [&](auto type_container) -> decltype(auto) {
+      return std::forward<F>(f)(type_container->operator[](h.index));
+    });
+  }
+
+public:
+
+  DCG() : _descendants(_type_list_size) {}  // prepare outer dimension
+
+  // create
+  template<typename T>
+  auto create(const json& json_) const -> DCG<Ts...>
+  {
+    // get the containet for type T
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      _type_containers.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
+      container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    }
+
+    // create a new container by updating the node
+    // Json_Constructible concept guarantees the constructor with the json input.
+    auto new_container_T = container_T->emplace_back(json_);
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+  };
+  
+  // get
+  template<typename T>
+  auto get(std::size_t DCG_node_index) const -> json
+  {
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      throw std::exception("DCG does not contain requested type.");
+    }
+
+    const auto& obj{ container_T[DCG_node_index] };
+    return obj.set_to_json();
+  };
+  
+  // set
+  template<typename T>
+  void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
+  {
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      throw std::exception("DCG does not contain requested type.");
+    }
+
+    // create a new container by updating the node
+    auto new_container_T = container_T.apply(
+      DCG_node_index,
+      [&json_](auto& obj) { obj.get_from_json(json_); });
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+  };
+
+  // TODO: Sample emplace function to demonstrate the solution for the the dynamic type selection.
+  // TODO: Shall be updated for functional persistency.
+  template<class T, class... Args>
+  DCG_Node_Handle emplace(Args&&... args) {
+    auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(_type_containers);
+    type_container->emplace_back(std::forward<Args>(args)...);
+    const std::uint32_t idx  = static_cast<std::uint32_t>(type_container->size() - 1);
+    const std::uint32_t tid  = static_cast<std::uint32_t>(get_type_id<T>());
+
+    auto& descendant_DCG_nodes__T = _descendants[tid];
+    if (descendant_DCG_nodes__T.size() <= idx) descendant_DCG_nodes__T.resize(type_container->size());
+    // descendant_DCG_nodes__T[idx] starts empty (no children yet)
+    return {tid, idx};
+  }
+
+  // TODO: The DCG will have inner Iterator and ConstIterator classes, this function is to demonstrate the solution for the the dynamic type selection.
+  // TODO: The iteration needs a visited node definition as the DCG is a cyclic graph.
+  template<class F>
+  void dfs(DCG_Node_Handle root, F&& visit) {
+    std::vector<DCG_Node_Handle> stack{root};
+    while (!stack.empty()) {
+      DCG_Node_Handle h = stack.back(); stack.pop_back();
+      with_type_object(h, [&](auto& obj) { visit(obj, h); });
+      auto& kids = _descendants[h.type].size() > h.index ? _descendants[h.type][h.index] : _empty_vector;
+      // push children (LIFO)
+      for (auto it = kids.rbegin(); it != kids.rend(); ++it) stack.push_back(*it);
+    }
+  }
+
+private:
+  static inline std::vector<DCG_Node_Handle> _empty_vector{};
+};
+```
+
+
+
+
+
+
+
+The weakest side of this static type based approach is that the descendant DCG node extraction (e.g. traversal in the descendant direction)
+which is actually a significant role of the DCG considering the runtime requests.
+In case of the SAA, defining the descendant DCG nodes statically is cumbersome and creates too much pressure on the client side.
+Consider the client defines CrossSection class.
+A CrossSection can be inolved by a stiffener and a beam.
+Lets assume that the client defines the descendant types of CrossSection as well as Stiffener and Beam.
+Consider, later the client defines Bracket class which also involves a CrossSection.
+The client needs to extend the descendant type definition for CrossSection with Bracket class.
+
+
+The weakest side of this static type based approach is the descendant DCG node extraction (e.g. traversal in the descendant direction)
+which is actually a significant role of the DCG considering the runtime requests.
+In case of the SAA, defining the descendant DCG nodes statically is cumbersome and creates too much pressure on the client side.
+Consider the client defines CrossSection class.
+A CrossSection can be inolved by a stiffener and a beam.
+Lets assume that the client defines the descendant types of CrossSection as well as Stiffener and Beam.
+Consider, later the client defines Bracket class which also involves a CrossSection.
+The client needs to extend the descendant type definition for CrossSection with Bracket class.
+
+
+
+
+Although, its possible for many types (e.g. the SAs are predefined for all SCs)
+For example, a material object can be used by any object
+
 **The DOD**\
 The definitions for the above members would be:
 
@@ -1616,16 +1826,6 @@ class DCG {
 public:
 
   DCG() = default;
-  DCG(
-    std::shared_ptr<VectorTree<TODO>> object_positions,
-    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
-    std::tuple<std::shared_ptr<VectorTree<Ts>>...> type_containers,
-    ...
-  )
-  :
-  _object_positions(object_positions),
-  _descendant_DCG_node_indices(descendant_DCG_node_indices),
-  _type_containers(type_containers) {};
 
   // create
   template<typename T>

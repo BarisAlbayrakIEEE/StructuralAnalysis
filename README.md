@@ -350,10 +350,10 @@ A prototype for the Panel type of the SP would be:
 
 ```
 class Panel(SC):
-  def __init__(t, side_stiffener_1, side_stiffener_2):
+  def __init__(t, _side_stiffener_1, _side_stiffener_2):
     self.t = t
-    self.side_stiffener_1 = side_stiffener_1
-    self.side_stiffener_2 = side_stiffener_2
+    self._side_stiffener_1 = _side_stiffener_1
+    self._side_stiffener_2 = _side_stiffener_2
     ...
   
   def calculate_buckling_coefficient():
@@ -412,7 +412,7 @@ C++ solution for the DCG would look like:
 template<typename... Ts>
 class DCG {
   private:
-    std::tuple<std::vector<Ts>...> containers;
+    std::tuple<std::vector<Ts>...> _type_containers;
   ...
 ```
 
@@ -857,8 +857,8 @@ When, for example, the user clicks on an OETVN, the frontend:
 
 **The CS and the DCG shall define the below interface in order to handle the UI requests:**
 - create_DCG_node(data_type, json)
-- get_DCG_node_data_vals(DCG_node_index)
-- set_DCG_node_data_vals(DCG_node_index, json)
+- get__type_containers(DCG_node_index)
+- set__type_containers(DCG_node_index, json)
 - remove_DCG_node(DCG_node_index)
 - run_analysis(DCG_node_index)
 - get_DCG_node_indices_for_data_type(data_type)
@@ -1045,7 +1045,7 @@ template<typename... Ts>
 class DCG {
   std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
   std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DCG_node_indices{};
-  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _objects{};
+  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _type_containers{};
   ...
 
 public:
@@ -1054,23 +1054,23 @@ public:
   DCG(
     std::shared_ptr<VectorTree<TODO>> object_positions,
     std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
-    std::tuple<std::shared_ptr<VectorTree<Ts>>...> objects,
+    std::tuple<std::shared_ptr<VectorTree<Ts>>...> type_containers,
     ...
   )
   :
   _object_positions(object_positions),
   _descendant_DCG_node_indices(descendant_DCG_node_indices),
-  _objects(objects) {};
+  _type_containers(type_containers) {};
 
   // create
   template<typename T>
   auto create(const json& json_) const -> DCG<Ts...>
   {
     // get the containet for type T
-    const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
-      _objects.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
-      container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+      _type_containers.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
+      container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     }
 
     // create a new container by updating the node
@@ -1086,7 +1086,7 @@ public:
   template<typename T>
   auto get(std::size_t DCG_node_index) const -> json
   {
-    const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
       throw std::exception("DCG does not contain requested type.");
     }
@@ -1099,7 +1099,7 @@ public:
   template<typename T>
   void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
   {
-    const auto container_T = _objects.get<std::shared_ptr<VectorTree<T>>>();
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
       throw std::exception("DCG does not contain requested type.");
     }
@@ -1288,8 +1288,8 @@ struct EO_Panel : public IUI {
   double thickness;
   double width;
   double height;
-  std::size_t side_stiffener_1;
-  std::size_t side_stiffener_2;
+  std::size_t _side_stiffener_1;
+  std::size_t _side_stiffener_2;
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
   EO_Panel(const json& json_) {
@@ -1297,15 +1297,15 @@ struct EO_Panel : public IUI {
         !json_.contains("thickness") ||
         !json_.contains("width") ||
         !json_.contains("height") ||
-        !json_.contains("side_stiffener_1") ||
-        !json_.contains("side_stiffener_2"))
+        !json_.contains("_side_stiffener_1") ||
+        !json_.contains("_side_stiffener_2"))
       throw std::exception("Wrong inputs for EO_Panel type.");
     
     thickness = json_["thickness"];
     width = json_["width"];
     height = json_["height"];
-    side_stiffener_1 = json_["side_stiffener_1"];
-    side_stiffener_2 = json_["side_stiffener_2"];
+    _side_stiffener_1 = json_["_side_stiffener_1"];
+    _side_stiffener_2 = json_["_side_stiffener_2"];
   };
 
   // IUI interface function: get_type_name
@@ -1316,8 +1316,8 @@ struct EO_Panel : public IUI {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width")) width = json_["width"];
     if (json_.contains("height")) height = json_["height"];
-    if (json_.contains("side_stiffener_1")) side_stiffener_1 = json_["side_stiffener_1"];
-    if (json_.contains("side_stiffener_2")) side_stiffener_2 = json_["side_stiffener_2"];
+    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = json_["_side_stiffener_1"];
+    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = json_["_side_stiffener_2"];
   }
 
   // IUI interface function: set_to_json
@@ -1326,8 +1326,8 @@ struct EO_Panel : public IUI {
       {"thickness", thickness},
       {"width", width},
       {"height", height},
-      {"side_stiffener_1", side_stiffener_1},
-      {"side_stiffener_2", side_stiffener_2}
+      {"_side_stiffener_1", _side_stiffener_1},
+      {"_side_stiffener_2", _side_stiffener_2}
     };
   }
 };
@@ -1376,16 +1376,18 @@ This approach will add significant efficiency into the design while working on:
 The current definition of the class is very simple where some functionalities will be added later to support the above list:
 
 ```
-// ~/src/system/type_container_index.h
+// ~/src/system/DCG_node.h
 
-#ifndef _type_container_index_h
-#define _type_container_index_h
+#ifndef _DCG_node_h
+#define _DCG_node_h
+
+#include "core_type_traits.h"
 
 // This class defines the index of an object within the DCG type container.
-// This class can work statically over the DCG containers as it holds the type information.
+// This class can work statically with zero overhead over the DCG containers as it holds the type information.
 template <typename T>
-class Type_Container_Index {
-  std::size_t _container_index{};
+class DCG_Node {
+  std::size_t _index{};
 };
 
 // A simple struct to convert a type list to the variant of a wrapper class over the type list.
@@ -1394,20 +1396,17 @@ struct type_list_to_variant {
   using type = std::variant<Wrapper<Ts>...>;
 };
 
-// Create an alias to set Type_Container_Index as the wrapper class
+// Create an alias to set DCG_Node as the wrapper class
 template <typename... Ts>
-using type_list_to_variant_CID = typename type_list_to_variant<Ts..., Type_Container_Index>::type;
+using type_list_to_variant_for_DCG_node = typename type_list_to_variant<Ts..., DCG_Node>::type;
 
-// This type holds the variants of Type_Container_Index.
-// This type can be used to deal with the objects of Type_Container_Index where the stored value is not known statically:
-//   Ex: get_ancestors method would return this variant.
-using type_container_index_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant_CID>;
+// This type holds the variants of DCG_Node.
+// This type can be used to deal with the objects of DCG_Node where the stored value is not known statically:
+using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant_for_DCG_node>;
 
 #endif
 ```
 
-This header is actually dependent on core_type_traits due to SAA_Types_t definition.
-It would be better to locate this header within that one but I will do this later.
 **From now on, i will stop using the term DCG node index and switch to type container index.**
 
 **Initial Member List**\
@@ -1418,11 +1417,11 @@ Lets start by recalling the data that should be stored by the DCG:
 4. the FE data (e.g. FE elements linked to a Panel instance).
 
 A corresponding member list definition for the DCG would be:
-1. ancestor_type_container_indices: Stores the ancestor DCG node indices for all DCG nodes.
-2. descendant_type_container_indices: Stores the descendant DCG node indices for all DCG nodes.
-3. states: Stores the states for all DCG nodes.
-4. data_vals: Stores the data for all DCG nodes.
-5. FE_link: A descriptor for the linked FEM.
+1. _ancestors: Stores the ancestor DCG node indices for all DCG nodes.
+2. _descendants: Stores the descendant DCG node indices for all DCG nodes.
+3. _states: Stores the states for all DCG nodes.
+4. _type_containers: Stores the data for all DCG nodes.
+5._FE_link: A descriptor for the linked FEM.
 
 **Ancestor Relations**\
 The above list contains both the ancestor and the descendant node relations.
@@ -1431,9 +1430,11 @@ The type definitions would (have to) contain that information.
 For example, a panel type would be:
 
 ```
+...
+
 class Panel {
-  Type_Container_Index<Stiffener> side_stiffener_1;
-  Type_Container_Index<Stiffener> side_stiffener_2;
+  DCG_Node<Stiffener> _side_stiffener_1;
+  DCG_Node<Stiffener> _side_stiffener_2;
   ...
 };
 ```
@@ -1441,190 +1442,29 @@ class Panel {
 **Defining the ancestor relations within the DCG would duplicate the data which breaks the design rules.**
 The DCG shall request the ancestor relations from the stored data.
 Hence, the DCG members become:
-1. descendant_type_container_indices: Stores the descendant indices.
-2. states: Stores the states.
-3. data_vals: Stores the data.
-4. FE_link: A descriptor for the linked FEM.
+1. _descendants: Stores the descendant indices.
+2. _states: Stores the states.
+3. _type_containers: Stores the data.
+4. _FE_link: A descriptor for the linked FEM.
 
-**At this point, its obvious that the DCG has a requirement for the stored data in order to access the ancestors.**
-I will add this requirement into core_type_traits.h defined before:
+**An interface is required in order for the DCG to get the ancestors from the types.**
 
 ```
-// ~/src/system/core_type_traits.h
+// ~/src/system/IDCG.h
 
-#ifndef _core_type_traits_h
-#define _core_type_traits_h
+#ifndef _IDCG_h
+#define _IDCG_h
 
-#include <string>
-#include <concepts>
-#include <type_traits>
-#include <nlohmann/json.hpp>
-#include "type_container_index.h"
+#include <vector>
 
-// Generic type list
-template <typename... Ts>
-struct TypeList {};
-
-// CAUTION:
-//   Each new type needs to be added to this type list.
-//   This is the only CS modification the client has to perform to add a new type via a plugin!!!
-using SAA_Types_t = TypeList<
-  EO_Panel,
-  EO_Stiffener,
-  EO_Mat1,
-  EO_Mat2,
-  EO_Mat8,
-  EO_Mat9,
-  EO_PanelLoading,
-  EO_StiffenerLoading,
-  SC_Panel,
-  SC_Stiffener,
-  SA_PanelBuckling,
-  SA_PanelPressure,
-  SA_StiffenerInstability,
-  SA_StiffenerStrength>;
-
-// -----------------------------------------------------------------------
-
-// The base template to extract the Nth type from a type list
-template<std::size_t N, typename TList>
-struct TypeAt;
-
-// The 1st template specialization of TypeAt defining the variadic parameters
-template<std::size_t N, typename T, typename... Ts>
-struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
-
-// The 2nd template specialization of TypeAt which is the boundary of the recursion
-template<typename T, typename... Ts>
-struct TypeAt<0, TypeList<T, Ts...>> {
-  using type = T;
+class IDCG {
+  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
 };
-
-// The base template to extract the order of type T within a type list
-template <typename T, typename TList>
-struct IndexOf;
-
-// Specialization for non-empty list
-template <typename T, typename Head, typename... Tail>
-struct IndexOf<T, TypeList<Head, Tail...>> {
-private:
-  static constexpr std::size_t next = IndexOf<T, TypeList<Tail...>>::value;
-
-public:
-  static constexpr std::size_t value = std::is_same<T, Head>::value ? 0 : 1 + next;
-};
-
-// Base case: T not found — triggers error
-template <typename T>
-struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
-
-// -----------------------------------------------------------------------
-
-// Unpacking a type list for class definitions
-template <typename TypeListT>
-struct UnpackTypeList;
-
-template <template <typename...> class List, typename... Ts>
-struct UnpackTypeList<List<Ts...>> {
-    template <template <typename...> class Target>
-    using apply = Target<Ts...>;
-};
-
-// Unpacking a type list for function definitions
-template <typename TypeListT, typename F>
-void for_each_type(F&& func);
-
-template <typename... Ts, typename F>
-void for_each_type(TypeList<Ts...>, F&& func) {
-    (func.template operator()<Ts>(), ...);
-}
-
-// -----------------------------------------------------------------------
-
-// Concept for the name field: All CS types must satisfy this requirement
-template <typename T>
-concept Has_Static_Type_Name = requires {
-  {
-    std::remove_cvref_t<decltype(T::type_name)>{}
-  } -> std::convertible_to<std::string>;
-};
-
-// Concept for the DCG that all the types stored by the DCG satisfies Has_Static_Type_Name.
-template <typename... Ts>
-concept All_Have_Static_Type_Name = (Has_Static_Type_Name<Ts> && ...);
-
-// -----------------------------------------------------------------------
-
-using json = nlohmann::json;
-
-// Concept for json constructibillity: All CS types must satisfy this requirement
-template <typename T>
-concept Json_Constructible = std::constructible_from<T, const json&>;
-
-// Concept for json serializability: All CS types must satisfy this requirement
-template <typename T>
-concept Json_Serializable = requires(T a, const T ca, const json& json_) {
-    { ca.set_to_json() } -> std::same_as<json>;
-    { a.get_from_json(json_) } -> std::same_as<void>;
-};
-
-// Concept for json compatibility: All CS types must satisfy this requirement
-template <typename T>
-concept Json_Compatible = requires(Json_Constructible<T> && Json_Serializable<T>);
-
-// Concept for the DCG that all the types stored by the DCG satisfies Json_Compatible.
-template <typename... Ts>
-concept All_Json_Compatible = (Json_Compatible<Ts> && ...);
-
-// -----------------------------------------------------------------------
-
-// This class defines the index of an object within the DCG type container.
-// This class can work statically over the DCG containers as it holds the type information.
-template <typename T>
-class Type_Container_Index {
-  std::size_t _index{};
-};
-
-// A simple struct to convert a type list to the variant of a wrapper class over the type list.
-template <typename... Ts, template <typename...> class Wrapper>
-struct type_list_to_variant {
-  using type = std::variant<Wrapper<Ts>...>;
-};
-
-// Create an alias to set Type_Container_Index as the wrapper class
-template <typename... Ts>
-using type_list_to_variant_CID = typename type_list_to_variant<Ts..., Type_Container_Index>::type;
-
-// This type holds the variants of Type_Container_Index.
-// This type can be used to deal with the objects of Type_Container_Index where the stored value is not known statically:
-//   Ex: get_ancestors method would return this variant.
-using type_container_index_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant_CID>;
-
-// -----------------------------------------------------------------------
-
-// Concept for json serializability: All CS types must satisfy this requirement
-template <typename T>
-concept Ancestor_Accessible = requires(T t) {
-    { t.get_ancestors() } -> std::same_as<std::vector<type_container_index_variant>>;
-};
-
-// Concept for the DCG that all the types stored by the DCG satisfies Ancestor_Accessible.
-template <typename... Ts>
-concept All_Ancestor_Accessible = (Ancestor_Accessible<Ts> && ...);
-
-// -----------------------------------------------------------------------
-
-// Concept by the DCG: All the types stored by the DCG must satisfy this requirement
-template <typename... Ts>
-concept DCG_Storable = requires(
-  All_Have_Static_Type_Name<Ts...> &&
-  All_Json_Compatible<Ts...> &&
-  All_Ancestor_Accessible<Ts...>);
 
 #endif
 ```
 
-Correspondingly, the source file defined before for the sample Panel class becomes:
+Correspondingly, the source file defined before for the sample EO_Panel class becomes:
 
 ```
 // ~/src/plugins/core/panel/EO_Panel.h
@@ -1636,18 +1476,21 @@ Correspondingly, the source file defined before for the sample Panel class becom
  * CAUTION:
  *   This is a sample EO_Panel definition related to the UI interface.
  *   EO_Panel would be involved in the class hierarcy (e.g. as an EO) from other aspects as well.
+ */
 
 #include <nlohmann/json.hpp>
-#include "~/src/system/core_type_traits.h"
+#include "~/src/system/IUI.h"
+#include "~/src/system/IDCG.h"
+#include "~/src/system/DCG_node.h"
 
 using json = nlohmann::json;
 
-struct EO_Panel {
+struct EO_Panel : public IUI, IDCG {
   double thickness;
   double width;
   double height;
-  Type_Container_Index<Stiffener> side_stiffener_1;
-  Type_Container_Index<Stiffener> side_stiffener_2;
+  DCG_Node<Stiffener> _side_stiffener_1;
+  DCG_Node<Stiffener> _side_stiffener_2;
 
   // Notice that EO_Panel satisfies Has_Static_Type_Name!!!
   static inline std::string type_name = "EO_Panel";
@@ -1658,15 +1501,15 @@ struct EO_Panel {
         !json_.contains("thickness") ||
         !json_.contains("width") ||
         !json_.contains("height") ||
-        !json_.contains("side_stiffener_1") ||
-        !json_.contains("side_stiffener_2"))
+        !json_.contains("_side_stiffener_1") ||
+        !json_.contains("_side_stiffener_2"))
       throw std::exception("Wrong inputs for EO_Panel type.");
     
     thickness = json_["thickness"];
     width = json_["width"];
     height = json_["height"];
-    side_stiffener_1 = Type_Container_Index<Stiffener>(json_["side_stiffener_1"]);
-    side_stiffener_2 = Type_Container_Index<Stiffener>(json_["side_stiffener_2"]);
+    _side_stiffener_1 = DCG_Node<Stiffener>(json_["_side_stiffener_1"]);
+    _side_stiffener_2 = DCG_Node<Stiffener>(json_["_side_stiffener_2"]);
   };
 
   // Notice that EO_Panel satisfies Json_Serializable!!!
@@ -1674,8 +1517,8 @@ struct EO_Panel {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width")) width = json_["width"];
     if (json_.contains("height")) height = json_["height"];
-    if (json_.contains("side_stiffener_1")) side_stiffener_1 = Type_Container_Index<Stiffener>(json_["side_stiffener_1"]);
-    if (json_.contains("side_stiffener_2")) side_stiffener_2 = Type_Container_Index<Stiffener>(json_["side_stiffener_2"]);
+    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = DCG_Node<Stiffener>(json_["_side_stiffener_1"]);
+    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = DCG_Node<Stiffener>(json_["_side_stiffener_2"]);
   }
 
   // Notice that EO_Panel satisfies Json_Serializable!!!
@@ -1684,83 +1527,177 @@ struct EO_Panel {
       {"thickness", thickness},
       {"width", width},
       {"height", height},
-      {"side_stiffener_1", ["Stiffener", side_stiffener_1._index]},
-      {"side_stiffener_1", ["Stiffener", side_stiffener_2._index]}
+      {"_side_stiffener_1", ["Stiffener", _side_stiffener_1._index]},
+      {"_side_stiffener_1", ["Stiffener", _side_stiffener_2._index]}
     };
   }
 
-  // Notice that EO_Panel satisfies Ancestor_Accessible!!!
-  std::vector<type_container_index_variant> get_ancestors() const {
-    std::vector<type_container_index_variant> ancestors{};
-    ancestors.emplace_back(side_stiffener_1);
-    ancestors.emplace_back(side_stiffener_2);
+  // IDCG interface function: get_ancestors
+  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const {
+    std::vector<IDCG const*> ancestors{};
+    ancestors.push_back(_side_stiffener_1.get_object(DCG_));
+    ancestors.push_back(_side_stiffener_2.get_object(DCG_));
     return ancestors;
-  }
+  };
 };
 
 #endif
 ```
 
-**DOD**\
+DCG_Node class needs to define get_object method.
+
+```
+// ~/src/system/DCG_node.h
+
+#ifndef _DCG_node_h
+#define _DCG_node_h
+
+#include "core_type_traits.h"
+#include "IDCG.h"
+
+// This class defines the index of an object within the DCG type container.
+// This class can work statically with zero overhead over the DCG containers as it holds the type information.
+template <typename T>
+class DCG_Node {
+  std::size_t _index{};
+  IDCG const* get_object(DCG_t const* DCG_) const {
+    const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(DCG_->_type_containers);
+    return &(type_container->operator[](_index));
+  };
+};
+
+// A simple struct to convert a type list to the variant of a wrapper class over the type list.
+// this will be moved to core_type_traits
+template <typename... Ts, template <typename...> class Wrapper>
+struct type_list_to_variant {
+  using type = std::variant<Wrapper<Ts>...>;
+};
+
+// Create an alias to set DCG_Node as the wrapper class
+template <typename... Ts>
+using type_list_to_variant_for_DCG_node = typename type_list_to_variant<Ts..., DCG_Node>::type;
+
+// This type holds the variants of DCG_Node.
+// This type can be used to deal with the objects of DCG_Node where the stored value is not known statically:
+using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant_for_DCG_node>;
+
+#endif
+```
+
+**The DOD**\
 The definitions for the above members would be:
-1. descendant_type_container_indices: list[list[int]]
-2. DCG_node_states: list[enum__DCG_node_states]
-3. DCG_node_data_vals: list[object]
-4. FE_link: str
-
-**The ordering/indexing within the 1st three list containers must be the same.**
-
-The previous sections presented many details about the DCG.
-One of the most important point about the DCG is that it shall follow the DOD approach which comes with two important requirements:
-- work with indices instead of the references/pointers and
-- apply struct of arrays (SoA) instead of arrays of structs (AoS).
-
-The DCG is a functionally persistent data structure powered by structural sharing.
-It is expected to process a copy operation for each action.
-**The efficiency of the copy operation is crucial for the persistent data structures.**
-The use of the primitive types (i.e. np.dtype with raw types) with np.ndarray or array.array ensures the **bitwise copy operation**.
-I will replace the list containers with np.ndarray and array.array.
-
-Applying the DOD, we would have:
-1. descendant_type_container_indices: array.array[array.array[int]]
-2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_data_vals: dict{ np.uint32: np.ndarray[np.dtype] }: np.dtype packs the type data. np.uint32 presents the type code which will be explained soon.
-4. FE_link: str
-
-Now, we store the data in very efficient np.ndarray and np.dtype combination as the objects of the same type are stored in a contiguous array.
-However, the indexing compatibility between the 1st two containers (lets call this as global indexing) and the 3rd one (type local indexing) has been lost.
-We need to define another containerr which will relate the global indexing to the type local indexing.
-Now we have two new containers:
-- DCG_node_data_types: Stores the type codes for all DCG nodes. The type registry assigns a type code to each type.
-- DCG_node_data_positions: Stores the type local indices of all DCG nodes.
-
-The members become:
-1. descendant_type_container_indices: array.array[array.array[int]]
-2. DCG_node_states: np.ndarray[enum__DCG_node_states]
-3. DCG_node_data_types: np.ndarray[np.uint32]
-4. DCG_node_data_positions: np.ndarray[np.uint32]
-5. DCG_node_data_vals: dict{ np.uint32: np.ndarray[np.dtype] }
-6. FE_link: str
-
-Use the 3rd and the 4th members to access the data in the 5th member:
 
 ```
-type_code = self.DCG_node_data_types[type_container_index]
-location = self.DCG_node_data_positions[type_container_index]
-data_container = self.DCG_node_data_vals[type_code]
-data_val = data_container[location]
+// ~/src/system/DCG.h
+
+/*
+ * CAUTION:
+ *   Excludes the node relations and the functions unrelated with the UI interface!!!
+ */
+
+#ifndef _DCG_h
+#define _DCG_h
+
+#include <memory>
+#include "core_type_traits.h"
+#include "VectorTree.h"
+
+using json = nlohmann::json;
+
+template<typename... Ts>
+  requires (All_Json_Constructible<Ts...>)
+class DCG {
+  std::vector<std::shared_ptr<VectorTree<DCG_node>>> _descendants; // The ordering of the outer most std::vector is the same as the SAA_Types_t
+  std::vector<std::shared_ptr<VectorTree<enum_DCG_node_states>>> _states; // The ordering of the outer most std::vector is the same as the SAA_Types_t
+  std::tuple<std::shared_ptr<VectorTree<Ts>>...> _type_containers;
+  std::string _FE_link;
+  ...
+
+public:
+
+  DCG() = default;
+  DCG(
+    std::shared_ptr<VectorTree<TODO>> object_positions,
+    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
+    std::tuple<std::shared_ptr<VectorTree<Ts>>...> type_containers,
+    ...
+  )
+  :
+  _object_positions(object_positions),
+  _descendant_DCG_node_indices(descendant_DCG_node_indices),
+  _type_containers(type_containers) {};
+
+  // create
+  template<typename T>
+  auto create(const json& json_) const -> DCG<Ts...>
+  {
+    // get the containet for type T
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      _type_containers.get<std::shared_ptr<VectorTree<T>>>() = std::make_shared<VectorTree<T>>
+      container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    }
+
+    // create a new container by updating the node
+    // Json_Constructible concept guarantees the constructor with the json input.
+    auto new_container_T = container_T->emplace_back(json_);
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+  };
+  
+  // get
+  template<typename T>
+  auto get(std::size_t DCG_node_index) const -> json
+  {
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      throw std::exception("DCG does not contain requested type.");
+    }
+
+    const auto& obj{ container_T[DCG_node_index] };
+    return obj.set_to_json();
+  };
+  
+  // set
+  template<typename T>
+  void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
+  {
+    const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
+    if (!container_T) {
+      throw std::exception("DCG does not contain requested type.");
+    }
+
+    // create a new container by updating the node
+    auto new_container_T = container_T.apply(
+      DCG_node_index,
+      [&json_](auto& obj) { obj.get_from_json(json_); });
+
+    // TODO: update node positions, ancestors/descendants, etc.
+    
+    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+  };
+};
+
+#endif
 ```
+
+**All members defined by a container (e.g. std::vector) or by a product type (e.g. std::tuple) must have the same ordering/indexing.**
+
+
+
 
 **UI**\
 The 1st user scenario showed that the UI needs to access the names of all objects of a type.
 A buffer would help the DCG to respond quickly to this request:
-1. descendant_type_container_indices: array.array[array.array[int]]
-2. DCG_node_states: np.ndarray[enum__DCG_node_states]
+1. _descendants: array.array[array.array[int]]
+2. _states: np.ndarray[enum___states]
 3. DCG_node_data_types: np.ndarray[np.uint32]
 4. DCG_node_data_positions: np.ndarray[np.uint32]
-5. DCG_node_data_vals: dict{ np.uint32: np.ndarray[np.dtype] }
+5. _type_containers: dict{ np.uint32: np.ndarray[np.dtype] }
 6. DCG_node_data_names: dict{ np.uint32: np.ndarray[S32] }: Names are limited to 32 chars, can be replaced by U32 to allow unicode chars.
-7. FE_link: str
+7._FE_link: str
 
 **Structural Sharing**\
 The above listing follows the SoA approach which allocates the memory more efficiently and improve the cache efficiency.
@@ -1769,13 +1706,13 @@ The structural sharing would be obtained by using a tree of arrays (i.e. [vector
 The last two items are better to be defined by VectorTree.
 Hence, the DCG members become:
 1. ancestor_type_container_indices: array.array[array.array[int]]
-2. descendant_type_container_indices: array.array[array.array[int]]
-3. DCG_node_states: np.ndarray[enum__DCG_node_states]
+2. _descendants: array.array[array.array[int]]
+3. _states: np.ndarray[enum___states]
 4. DCG_node_data_types: np.ndarray[np.uint32]
 5. DCG_node_data_positions: np.ndarray[np.uint32]
-6. DCG_node_data_vals: dict{ np.uint32: VectorTree[np.dtype] }
+6. _type_containers: dict{ np.uint32: VectorTree[np.dtype] }
 7. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
-8. FE_link: str
+8._FE_link: str
 
 **DCG node state enumeration**\
 The node state data management is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
@@ -1827,7 +1764,7 @@ class IDCG(ABC):
     pass
 
   @abstractmethod
-  def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
+  def propogate_state_change(self, final_ancestor_state: enum___states) -> enum___states:
     """Update the state of the node due to a state change propogation"""
     pass
 
@@ -1838,21 +1775,21 @@ class IDCG(ABC):
 import m_DCG
 
 class Panel(IDCG):
-  def __init__(self, side_stiffener_1, side_stiffener_2, ...):
-    self.side_stiffener_1 = side_stiffener_1
-    self.side_stiffener_2 = side_stiffener_2
+  def __init__(self, _side_stiffener_1, _side_stiffener_2, ...):
+    self._side_stiffener_1 = _side_stiffener_1
+    self._side_stiffener_2 = _side_stiffener_2
     ...
 
   def get_ancestor_type_container_indices(self) -> []:
     """Return the ancestor DCG node indices"""
-    return [self.side_stiffener_1, self.side_stiffener_2]
+    return [self._side_stiffener_1, self._side_stiffener_2]
 
   @abstractmethod
   def inspect_invariant(self) -> bool:
     """Inspect the invariant: Inspect the side stiffeners and other issues"""
     ...
 
-  def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
+  def propogate_state_change(self, final_ancestor_state: enum___states) -> enum___states:
     """Update the state of the node due to a state change propogation"""
     ...
 ```
@@ -1869,14 +1806,14 @@ When a DCG is loaded or constructed, it needs to initialize a boolean array size
 Initially all nodes are non-updated so that the array is filled up with the default false value.
 Each user action with an update makes the update state true for the corresponding DCG node.
 Hence, the members of the DCG becomes:
-1. descendant_type_container_indices: array.array[array.array[int]]
-2. DCG_node_states__DB: np.ndarray[np.bool]
-3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
+1. _descendants: array.array[array.array[int]]
+2. _states__DB: np.ndarray[np.bool]
+3. _states__DCG: np.ndarray[enum___states]
 4. DCG_node_data_types: np.ndarray[np.uint32]
 5. DCG_node_data_positions: np.ndarray[np.uint32]
-6. DCG_node_data_vals: dict{ np.uint32: VectorTree[np.dtype] }
+6. _type_containers: dict{ np.uint32: VectorTree[np.dtype] }
 7. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
-8. FE_link: str
+8._FE_link: str
 
 **FEM**\
 The SCs needs to keep the FE definition.
@@ -1887,15 +1824,15 @@ Hence, the FE linkage shall be defined within the SCs only.
 However, including a string field in the dtype is not a good practice.
 Instead, the DCG shall keep the FE link information.
 
-1. descendant_type_container_indices: array.array[array.array[int]]
-2. DCG_node_states__DB: np.ndarray[np.bool]
-3. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
-4. DCG_node_states__DCG: np.ndarray[enum__DCG_node_states]
+1. _descendants: array.array[array.array[int]]
+2. _states__DB: np.ndarray[np.bool]
+3. _states__DCG: np.ndarray[enum___states]
+4. _states__DCG: np.ndarray[enum___states]
 5. DCG_node_data_types: np.ndarray[np.uint32]
 6. DCG_node_data_positions: np.ndarray[np.uint32]
-7. DCG_node_data_vals: dict{ np.uint32: VectorTree[np.dtype] }
+7. _type_containers: dict{ np.uint32: VectorTree[np.dtype] }
 8. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
-9. FE_link: str
+9._FE_link: str
 
 
 
@@ -1908,7 +1845,7 @@ Instead, the DCG shall keep the FE link information.
     pass
 
   @abstractmethod
-  def propogate_state_change(self, final_ancestor_state: enum__DCG_node_states) -> enum__DCG_node_states:
+  def propogate_state_change(self, final_ancestor_state: enum___states) -> enum___states:
     """Update the state of the node due to a state change propogation"""
     pass
 
@@ -2201,7 +2138,7 @@ Currently we have the following architecture:
 Additionally, the CS is developed with C++ while the SP is developed with python.
 Hence, the procedure to run an SA is as follows:
 - The user selects an SA for the analysis run,
-- UI emits an analysis request for the type_container_index of the SA,
+- UI emits an analysis request for the DCG_node of the SA,
 - the CS prepares the analysis dataset and requests an analysis from the SP,
 - the SP constructs SP objects from the CS dataset,
 - the SP runs the SAMMs with the constructed objects,
@@ -2215,15 +2152,15 @@ The process flow contains
 
 **In order to handle the above procedure, the SP shall define the following interface:**
 - **run_analysis(SC):** The interface for the analysis execution.
-- **DCG_to_SP(type_tag, type_container_index):** The factory pattern high level function to create SP objects from DCG raw data.
+- **DCG_to_SP(type_tag, DCG_node):** The factory pattern high level function to create SP objects from DCG raw data.
 - **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
 - **register_DCG_to_SPs(type_tag, method_for_DCG_to_SP):** The high level function registration for the factory methods.
 - **register_SP_to_DCGs(type_tag, method_for_SP_to_DCG):** The high level function registration for the inverse factory methods.
 
-DCG_to_SP function shall call get_DCG_node_data_vals to get the DCG raw data for the input type_container_index.
+DCG_to_SP function shall call get__type_containers to get the DCG raw data for the input DCG_node.
 
 **The plugins shall define the factory and the inverse factory methods as well as the registers:**
-- **create_T(type_container_index):** Creates a SP object of type T. called by DCG_to_SP.
+- **create_T(DCG_node):** Creates a SP object of type T. called by DCG_to_SP.
 - **extract_T(t):** Extract DCG raw data from t object of type T. called by SP_to_DCG.
 - **register_DCG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
 - **register_SP_to_DCG(type_tag, extract_T):** The low level function registration for the inverse factory method.

@@ -1907,20 +1907,6 @@ struct EO_Panel : public IUI, IDCG {
 #endif
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 **DCG node state enumeration: enum_DCG_node_states**\
 The node state data management is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
 Below are the possible states for a DCG node:
@@ -1971,6 +1957,8 @@ class IDCG {
 
 #endif
 ```
+
+EO_Panel shall implemented new interface functions but I will skip it.
 
 **MySQL DB**\
 The DCG has another interface which is the MySQL DB.
@@ -2030,48 +2018,8 @@ class DCG {
 
 
 
-1. _descendants: array.array[array.array[int]]
-2. _states__DB: np.ndarray[np.bool]
-3. _states__DCG: np.ndarray[enum___states]
-4. DCG_node_data_types: np.ndarray[np.uint32]
-5. DCG_node_data_positions: np.ndarray[np.uint32]
-6. _type_containers: dict{ np.uint32: VectorTree[np.dtype] }
-7. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
-8._FE_link: str
-
-**FEM**\
-The SCs needs to keep the FE definition.
-For example, a Panel instance may be defined by the following FE elements: 1, 3, 7.
-The CS shall store this data as well.
-However, the DCG nodes do not store the SCs only.
-Hence, the FE linkage shall be defined within the SCs only.
-However, including a string field in the dtype is not a good practice.
-Instead, the DCG shall keep the FE link information.
-
-1. _descendants: array.array[array.array[int]]
-2. _states__DB: np.ndarray[np.bool]
-3. _states__DCG: np.ndarray[enum___states]
-4. _states__DCG: np.ndarray[enum___states]
-5. DCG_node_data_types: np.ndarray[np.uint32]
-6. DCG_node_data_positions: np.ndarray[np.uint32]
-7. _type_containers: dict{ np.uint32: VectorTree[np.dtype] }
-8. DCG_node_data_names: dict{ np.uint32: VectorTree[str] }
-9._FE_link: str
 
 
-
-
-
-
-  @abstractmethod
-  def inspect_invariant(self) -> bool:
-    """Inspect the invariant"""
-    pass
-
-  @abstractmethod
-  def propogate_state_change(self, final_ancestor_state: enum___states) -> enum___states:
-    """Update the state of the node due to a state change propogation"""
-    pass
 
 
 

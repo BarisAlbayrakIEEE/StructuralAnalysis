@@ -2132,15 +2132,42 @@ struct EO_Panel : public IUI, IDCG, Invariant_Updatable<EO_Panel> {
 ...
 ```
 
-**Other issues**\
-The DCG is examined alot in this document.
+**Other Issues About the DCG**\
 [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes
 many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
-However, I think, up to this point, I clearified the important aspects of the issue.
-Nevertheless, I will exclude the DCG implementation in this project.
+However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and the deign.
+
+
+
+
+- FE_Importable: importFE()
+- FE_Exportable: export_FE()
+- FE_Importable_Exportable: importFE() and export_FE()
+- Non_Sizeable: No sizeability. size_for_RF does nothing.
+- Auto_Sizeable: The default sizing algorithms handle the structural sizing. size_for_RF calls the default sizing algorithms.
+- Manual_Sizeable: Requires size_manually function. size_for_RF calls size_manually function.
+
+
 
 #### 4.2.3. A General Overview of the Types <a id='sec423'></a>
+
+In this document, I mentioned about the following base types for the SAA:
+- engineering object (EO),
+- structural component (SC),
+- structural component loading (SCL),
+- structural analysis (SA) and
+- structural analysis result (SAR).
+
+
+
+
+
+
+
+
+
+
 
 I will examine two important aspects of the software design: polymorphism and immutability.
 
@@ -2204,26 +2231,10 @@ The same applies to the SARs similarly.
 
 
 
-- Standard_UI: registers the UI as the standard_UI.js.
-- INonstandard_UI: requires register_UI(js_file_name).
-- IFE_Importable: importFE()
-- IFE_Exportable: export_FE()
-- IFE_ImportableExportable: importFE() and export_FE()
-- Auto_Sizeable: set_read_write_state based on the state data. requires_sizing and sizing_improved. member: previous_SAR.
-- Manual_Sizeable: set_read_write_state based on the state data. requires_sizing. member: previous_SAR.
-- Non_Sizeable: set_read_write_state makes: read_write_state = false.
-**Mutable**
 
 
 
 
-
-Currently, we have the following interfaces:
-- structural component (SC),
-- structural component loading (SCL),
-- structural analysis (SA),
-- structural analysis dataset (SAD) and
-- structural analysis result (SAR).
 
 
 

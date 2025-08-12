@@ -863,7 +863,9 @@ The CS contains 4 components:
 3. The UI interface
 4. The SP interface
 
-#### 4.2.1. More on the Functionally Persistent DCG <a id='sec421'></a>
+I will discuss on the above issues based on the requests by the UI.
+
+#### 4.2.1. Evaluation Based on the UI Requests <a id='sec421'></a>
 
 The CS and the DCG shall define the below interface in order to handle the UI requests:
 - create_DCG_node(data_type, json)
@@ -2044,6 +2046,123 @@ There, offcourse, exist many significant differences in the two data structures.
 However, I think, up to this point, I clearified the important aspects of the issue.
 Nevertheless, I will exclude the DCG implementation in this project.
 
+#### 4.2.3. A General Overview of the Types <a id='sec423'></a>
+
+I will examine two important aspects of the software design: polymorphism and immutability.
+
+**Polymorphism**\
+In case of the SAA, we have a number of components (i.e. the DCG, the SCs, the SAs, the solver and the UI) which require a careful design.
+However, the types of the SAA live on the same "level" beneath this small set of interfaces.
+In other words, the types do not form complex hierarchies.
+Consider the SCs, for example.
+The SCs have some properties and FMs based on which the SCs are inspected.
+They do not need deep class hierarchies structurally or behaviourally.
+
+In summary, the domain model uses a shallow, interface-driven design where a few core interfaces is followed by dozens of direct implementations so that the plug-ins can be extended without wading through deep inheritance chains.
+Hence, the polymorhism is not one of the central issues for the design of the SAA.
+
+**Immutability**\
+As stated earlier the DCG keeps the state data for the types.
+Additionally, **the DCG is functionally persistent**.
+These two points yield that the transformations on the types can be performed using pure immutable functions.
+
+Considering the comments on the polymorphism and immutability we can make a design decission:
+- follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
+
+**The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
+Although, Python has some gaps in case of functional programming such as the lack of function overloading,
+these issues can be handled by simple workarounds adding litle boilerplate code.
+
+**Load related types**\
+The loading in case of structural analysis has different shapes.
+For example, consider the two analyses applied on panels:
+- the pressure panel analysis
+- the panel buckling analysis
+
+The two analyses are performed under different load components.
+A similar situation holds for the stiffeners and beams as they carry different load components.
+
+Another point related to the loading is the level of the loading.
+A SC may have different FMs or different applicability regimes under different load levels.
+For example, under limit load level, instability would not be accepted for a stiffener
+while under ultimate loading it may depending on the compony/project policies.
+
+Hence, the definition of the loading is significant in case of the SAA.
+The SCL has the following members:
+- load type: pressure, 2D force flux, 2D combined loading, etc
+- load level: limit, ultimate, crash, etc.
+- load data: P for pressure, [Nxx, Nyy, Nxy] for 2D force flux, [Fxx, Fyy, Fxy, Mxx, Myy, Mxy] for 2D combined loading, etc.
+
+I already described that the data related to the loading cause memory problems so that they shall be stored by the MySQL DB.
+Hence, SCLs and SARs are stored in the MySQL DB.
+However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
+In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
+The CS needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
+Hence, we would have two definitions for the SCLs and SARs:
+- a definition for the offline process and
+- a definition for the online process.
+
+The SCL definition for the offline process would have all of the three members listed above
+while the online SCL would only have a key in order to query the MySQL DB.
+The same applies to the SARs similarly.
+
+
+
+
+
+**IDCG**
+**IDOD_Container**
+- Non_Updatable: no update. update_DCG_node_state pass
+- Ancestor_Updatable: Inherits Abstract_Ancestor_Updatable. update_DCG_node_state calls: **inspect_ancestors()**
+- Abstract_Invariant_Updatable: Inherits Abstract_Ancestor_Updatable. implements **inspect_invariant()**. update_DCG_node_state calls: **inspect_ancestors
+- Standard_UI: registers the UI as the standard_UI.js.
+- INonstandard_UI: requires register_UI(js_file_name).
+- IFE_Importable: importFE()
+- IFE_Exportable: export_FE()
+- IFE_ImportableExportable: importFE() and export_FE()
+- Auto_Sizeable: set_read_write_state based on the state data. requires_sizing and sizing_improved. member: previous_SAR.
+- Manual_Sizeable: set_read_write_state based on the state data. requires_sizing. member: previous_SAR.
+- Non_Sizeable: set_read_write_state makes: read_write_state = false.
+**Mutable**
+
+
+
+
+
+Currently, we have the following interfaces:
+- structural component (SC),
+- structural component loading (SCL),
+- structural analysis (SA),
+- structural analysis dataset (SAD) and
+- structural analysis result (SAR).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2099,84 +2218,6 @@ DCG_to_SP function shall call get_type_containers to get the DCG raw data for th
 
 
 
-
-### 4.3. The Data Types <a id='sec43'></a>
-
-Currently, we have the following interfaces:
-- structural component (SC),
-- structural component loading (SCL),
-- structural analysis (SA),
-- structural analysis dataset (SAD) and
-- structural analysis result (SAR).
-
-#### 4.3.1. A General Overview of the Types
-
-I will examine two important aspects of the software design: polymorphism and immutability.
-
-**Polymorphism**\
-In case of the SAA, we have a number of components (i.e. the DCG, the SCs, the SAs, the solver and the UI) which require a careful design.
-However, the types of the SAA live on the same "level" beneath this small set of interfaces.
-In other words, the types do not form complex hierarchies.
-Consider the SCs, for example.
-The SCs have some properties and FMs based on which the SCs are inspected.
-They do not need deep class hierarchies structurally or behaviourally.
-
-In summary, the domain model uses a shallow, interface-driven design where a few core interfaces is followed by dozens of direct implementations so that the plug-ins can be extended without wading through deep inheritance chains.
-Hence, the polymorhism is not one of the central issues for the design of the SAA.
-
-**Immutability**\
-As stated earlier the DCG keeps the state data for the types.
-Additionally, **the DCG is functionally persistent**.
-These two points yield that the transformations on the types can be performed using pure immutable functions.
-
-Considering the comments on the polymorphism and immutability we can make a design decission:
-- follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
-
-**The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
-Although, Python has some gaps in case of functional programming such as the lack of function overloading,
-these issues can be handled by simple workarounds adding litle boilerplate code.
-
-
-
-
-
-#### 4.3.2. Load Related Types
-
-**Load related types**\
-The loading in case of structural analysis has different shapes.
-For example, consider the two analyses applied on panels:
-- the pressure panel analysis
-- the panel buckling analysis
-
-The two analyses are performed under different load components.
-A similar situation holds for the stiffeners and beams as they carry different load components.
-
-Another point related to the loading is the level of the loading.
-A SC may have different FMs or different applicability regimes under different load levels.
-For example, under limit load level, instability would not be accepted for a stiffener
-while under ultimate loading it may depending on the compony/project policies.
-
-Hence, the definition of the loading is significant in case of the SAA.
-
-The SCL has the following members:
-- load type: pressure, 2D force flux, 2D combined loading, etc
-- load level: limit, ultimate, crash, etc.
-- load data: P for pressure, [Nxx, Nyy, Nxy] for 2D force flux, [Fxx, Fyy, Fxy, Mxx, Myy, Mxy] for 2D combined loading, etc.
-
-I already described that the data related to the loading cause memory problems so that they shall be stored by the MySQL DB.
-Hence, SCLs and SARs are stored in the MySQL DB.
-However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
-In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
-The CS needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
-Hence, we would have two definitions for the SCLs and SARs:
-- a definition for the offline process and
-- a definition for the online process.
-
-The SCL definition for the offline process would have all of the three members listed above
-while the online SCL would only have a key in order to query the MySQL DB.
-The same applies to the SARs similarly.
-
-**Structural Analysis (SA)**\
 
 
 

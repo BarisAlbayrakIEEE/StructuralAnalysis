@@ -863,9 +863,25 @@ The CS contains 4 components:
 3. The UI interface
 4. The SP interface
 
-I will discuss on the above issues based on the requests by the UI.
+Firstly, I will discuss on the above issues based on the requests by the UI.
 
-#### 4.2.1. Evaluation Based on the UI Requests <a id='sec421'></a>
+#### 4.2.1. A General Overview of the Types <a id='sec421'></a>
+
+In this document, I mentioned about the following base types for the SAA:
+- engineering object (EO),
+- structural component (SC),
+- structural component loading (SCL),
+- structural analysis (SA) and
+- structural analysis result (SAR).
+
+
+
+
+
+
+
+
+#### 4.2.2. The UI Interface Requirements <a id='sec422'></a>
 
 The CS and the DCG shall define the below interface in order to handle the UI requests:
 - create_DCG_node(data_type, json)
@@ -1471,7 +1487,7 @@ Hence, the DCG members become:
 #include <vector>
 
 class IDCG {
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
+  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
 };
 
 #endif
@@ -1817,11 +1833,8 @@ Moving the descendants to the type definitions requires an update for IDCG inter
 #include <vector>
 
 class IDCG {
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
-  std::vector<IDCG const*> get_descendants(DCG_t const* DCG_) const;
-  enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const;
-  bool inspect_invariant(DCG_t const* DCG_) const;
-  bool inspect_ancestors(DCG_t const* DCG_) const;
+  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
+  virtual std::vector<IDCG const*> get_descendants(DCG_t const* DCG_) const = 0;
 };
 
 #endif
@@ -1967,10 +1980,10 @@ In summary, an update on a node shall be propogated by the DCG inspecting the fo
 #include <vector>
 
 class IDCG {
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
-  enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const;
-  bool inspect_invariant(DCG_t const* DCG_) const;
-  bool inspect_ancestors(DCG_t const* DCG_) const;
+  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
+  virtual enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const = 0;
+  virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
+  virtual bool inspect_ancestors(DCG_t const* DCG_) const = 0;
 };
 
 #endif
@@ -2049,7 +2062,8 @@ Hence, we have 3 base types considering the updateability of the SAA types:
 - Invariant_Updatable: Requires inspect_invariant. reevaluate_state__DCG calls inspect_invariant and inspect_ancestors.
 
 Obviously, IDCG interface treats all SAA types the same in terms of the updateability issue.
-Hence, the updateability shall be inspected by another interface.
+Deriving from IDCG interface, I will define 3 abstract classes to obey the single responsibiliity rule.
+The IDCG interface becomes.
 
 ```
 // ~/src/system/IDCG.h
@@ -2060,13 +2074,14 @@ Hence, the updateability shall be inspected by another interface.
 #include <vector>
 
 class IDCG {
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
+  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
+  virtual bool reevaluate_state__DCG(DCG_t const* DCG_) const = 0;
 };
 
 #endif
 ```
 
-The CRTP is the best solution for this purpose:
+The abstract base classes drived from the IDCG interface:
 
 ```
 // ~/src/system/Updateable.h
@@ -2074,17 +2089,18 @@ The CRTP is the best solution for this purpose:
 #ifndef _Updateable_h
 #define _Updateable_h
 
-struct Non_Updatable {
+#include "IDCG.h"
+
+// Abstract as get_ancestors is not defined.
+struct Abstract_Non_Updatable : public IDCG {
   bool reevaluate_state__DCG(DCG_t const* DCG_) const { return true; };
-  bool inspect_invariant(DCG_t const* DCG_) const { return static_cast<T*>(this)->inspect_invariant(DCG_); };
-  bool inspect_ancestors(DCG_t const* DCG_) const { return static_cast<T*>(this)->inspect_ancestors(DCG_); };
 };
 
-template<typename T>
-struct Ancestor_Updatable {
+// Abstract as get_ancestors is not defined.
+struct Abstract_Ancestor_Updatable : public IDCG {
   bool reevaluate_state__DCG(DCG_t const* DCG_) const { return inspect_ancestors(DCG_); };
   bool inspect_ancestors(DCG_t const* DCG_) const {
-    auto ancestors{ static_cast<T*>(this)->get_ancestors(DCG_) };
+    auto ancestors{ get_ancestors(DCG_) };
     for (auto ancestor : ancestors) {
       if (!ancestor->get_state__DCG()) return false;
     }
@@ -2092,21 +2108,21 @@ struct Ancestor_Updatable {
   };
 };
 
-template<typename T>
-struct Invariant_Updatable {
+// Abstract as get_ancestors andd inspect_invariant are not defined.
+struct Abstract_Invariant_Updatable : public IDCG {
   bool reevaluate_state__DCG(DCG_t const* DCG_) const {
     auto inspection{ inspect_ancestors(DCG_) };
     if (!inspection) return false;
     return inspect_invariant(DCG_);
   };
   bool inspect_ancestors(DCG_t const* DCG_) const {
-    auto ancestors{ static_cast<T*>(this)->get_ancestors(DCG_) };
+    auto ancestors{ get_ancestors(DCG_) };
     for (auto ancestor : ancestors) {
       if (!ancestor->get_state__DCG(DCG_)) return false;
     }
     return true;
   };
-  bool inspect_invariant(DCG_t const* DCG_) const { return static_cast<T*>(this)->inspect_invariant(DCG_); };
+  virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
 };
 
 #endif
@@ -2119,11 +2135,16 @@ The Panel class becomes:
 
 ...
 
-struct EO_Panel : public IUI, IDCG, Invariant_Updatable<EO_Panel> {
+struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
   
   ...
 
-  bool inspect_invariant(DCG_t const* DCG_) const;
+  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const {
+    ...
+  };
+  bool inspect_invariant(DCG_t const* DCG_) const {
+    ...
+  };
 
   ...
 
@@ -2138,138 +2159,26 @@ many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
 However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and the deign.
 
+#### 4.2.3. The SP Interface Requirements <a id='sec423'></a>
 
 
 
-- FE_Importable: importFE()
-- FE_Exportable: export_FE()
-- FE_Importable_Exportable: importFE() and export_FE()
-- Non_Sizeable: No sizeability. size_for_RF does nothing.
-- Auto_Sizeable: The default sizing algorithms handle the structural sizing. size_for_RF calls the default sizing algorithms.
-- Manual_Sizeable: Requires size_manually function. size_for_RF calls size_manually function.
 
+#### 4.2.4. FE Interface Requirements <a id='sec424'></a>
 
+In terms of the FE interface, we can mainly define 3 types:
+1. FE_Importable: import_FE()
+2. FE_Exportable: export_FE()
+3. FE_Importable_Exportable: import_FE() and export_FE()
 
-#### 4.2.3. A General Overview of the Types <a id='sec423'></a>
+The FE importability is required for all types existing in an online DCG.
+The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
+Hence The three types would represent the ffollowing cases:
+1. FE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
+2. FE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
+3. FE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
-In this document, I mentioned about the following base types for the SAA:
-- engineering object (EO),
-- structural component (SC),
-- structural component loading (SCL),
-- structural analysis (SA) and
-- structural analysis result (SAR).
-
-
-
-
-
-
-
-
-
-
-
-I will examine two important aspects of the software design: polymorphism and immutability.
-
-**Polymorphism**\
-In case of the SAA, we have a number of components (i.e. the DCG, the SCs, the SAs, the solver and the UI) which require a careful design.
-However, the types of the SAA live on the same "level" beneath this small set of interfaces.
-In other words, the types do not form complex hierarchies.
-Consider the SCs, for example.
-The SCs have some properties and FMs based on which the SCs are inspected.
-They do not need deep class hierarchies structurally or behaviourally.
-
-In summary, the domain model uses a shallow, interface-driven design where a few core interfaces is followed by dozens of direct implementations so that the plug-ins can be extended without wading through deep inheritance chains.
-Hence, the polymorhism is not one of the central issues for the design of the SAA.
-
-**Immutability**\
-As stated earlier the DCG keeps the state data for the types.
-Additionally, **the DCG is functionally persistent**.
-These two points yield that the transformations on the types can be performed using pure immutable functions.
-
-Considering the comments on the polymorphism and immutability we can make a design decission:
-- follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
-
-**The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
-Although, Python has some gaps in case of functional programming such as the lack of function overloading,
-these issues can be handled by simple workarounds adding litle boilerplate code.
-
-**Load related types**\
-The loading in case of structural analysis has different shapes.
-For example, consider the two analyses applied on panels:
-- the pressure panel analysis
-- the panel buckling analysis
-
-The two analyses are performed under different load components.
-A similar situation holds for the stiffeners and beams as they carry different load components.
-
-Another point related to the loading is the level of the loading.
-A SC may have different FMs or different applicability regimes under different load levels.
-For example, under limit load level, instability would not be accepted for a stiffener
-while under ultimate loading it may depending on the compony/project policies.
-
-Hence, the definition of the loading is significant in case of the SAA.
-The SCL has the following members:
-- load type: pressure, 2D force flux, 2D combined loading, etc
-- load level: limit, ultimate, crash, etc.
-- load data: P for pressure, [Nxx, Nyy, Nxy] for 2D force flux, [Fxx, Fyy, Fxy, Mxx, Myy, Mxy] for 2D combined loading, etc.
-
-I already described that the data related to the loading cause memory problems so that they shall be stored by the MySQL DB.
-Hence, SCLs and SARs are stored in the MySQL DB.
-However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
-In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
-The CS needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
-Hence, we would have two definitions for the SCLs and SARs:
-- a definition for the offline process and
-- a definition for the online process.
-
-The SCL definition for the offline process would have all of the three members listed above
-while the online SCL would only have a key in order to query the MySQL DB.
-The same applies to the SARs similarly.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Most of the types are FE_Importable_Exportable which requires both import_FE and export_FE functions.
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 
@@ -2311,192 +2220,19 @@ DCG_to_SP function shall call get_type_containers to get the DCG raw data for th
 
 
 
+### 4.4. Additional Software Design <a id='sec44'></a>
 
+The SAA would have features such as:
+- reporting,
+- automation,
+- structural sizing,
+- etc.
 
+All of these features would require an additional interface to be inserted into the design.
+I will examine the structural sizing as an example.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-**States**
-- DCG_state
-- user_state
-- config_state
-- DCG_node_state
-- read_write_state
-- structural_state
-
-**DCG_state**
-- DCG_state__RO: Read-only
-- DCG_state__RW: Read-write
-
-**user_state**
-- bool: if the inspector is the owner read-write otherwise read-only
-
-**config_state**
-- config_state__design: Read-only
-- config_state__sizing: Read-write
-- config_state__inspection: All Read-only accept for SAR being read-write
-- config_state__frozen: Read-only
-
-**DCG_node_state**
-- DCG_node_state__uptodate
-- DCG_node_state__outofdate
-- DCG_node_state__ancestor_fail
-- DCG_node_state__invariant_fail
-
-**read_write_state**
-- bool: true if read/write. false if read-only
-
-**structural_state**
-- bool: if the item is structurally safe based on the RF.
-
-**DCG**
-- FE link
-- DB adress
-- owner
-- inspector
-- DCG_state
-- user_state
-
-**DCG_Node**
-- UUID
-- name
-- config_state
-- DCG_node_state
-- read_write_state
-
-**IDCG**
-1. Interface
-- get_ancestor_DCG_nodes
-
-**DOD_Container**
-- DOD style container interface
-- get_values(index) -> dict{ member_name: member_val }
-- set_values(index, dict{ member_name: member_val }) -> DOD_Container: pure by persistency
-- add(dict{ member_name: member_val }) -> DOD_Container: pure by persistency
-- remove(index) -> [DOD_Container, modified_indexs]: pure by persistency. apply swap-andd-pop
-
-**IDOD_Container**
-1. Interface
-- create_DOD_container: DCG calls this method to add a DOD_Container.
-
-**IUpdatable**
-1. Interface
-- update_DCG_node_state
-
-2. Types
-- Non_Updatable: Inherits IUpdatable. no update. update_DCG_node_state pass
-- Abstract_Ancestor_Updatable: Inherits IUpdatable. implements **inspect_ancestors()**. Abstract as not implementing update_DCG_node_state().
-- Ancestor_Updatable: Inherits Abstract_Ancestor_Updatable. implements update_DCG_node_state to call: **inspect_ancestors()**.
-- Abstract_Invariant_Updatable: Inherits Abstract_Ancestor_Updatable. implements **inspect_invariant()**. implements update_DCG_node_state to call: **inspect_ancestors() and inspect_invariant()**.
-
-**UI**
-1. Interface
-- register_UI()
-
-2. Types
-- Standard_UI: register_UI(js_file_path) registers the UI as the standard_UI.js.
-- INonstandard_UI: register_UI().
-
-**FE**
-1. Types
-- IFE_Importable: importFE()
-- IFE_Exportable: export_FE()
-- IFE_ImportableExportable: importFE() and export_FE()
-
-**ISizeable**
-1. Interface
-- size()
-- read_write_state__sizeable() -> bool: Called by DCG
-
-2. Types
-- Auto_Sizeable: implements size(). read_write_state__sizeable returns true. requires_sizing and sizing_improved. member: previous_SAR.
-- Manual_Sizeable: size() pass. read_write_state__sizeable returns true. requires_sizing. member: previous_SAR.
-- Non_Sizeable: size() pass. read_write_state__sizeable returns false.
-
-3. Definitions of requires_sizing and sizing_improved
-- requires_sizing() -> bool: returns if further sizing is needed. sets the structural_state.
-- sizing_improved() -> bool: returns if the last sizing has improved the RF.
-
-**Mutable**
-- member: _mutable (bool)
-- read_write_state__mutable() -> bool: if _mutable returns true. otherwise returns false.
-
-
-
-
-**IDCG**
-**IDOD_Container**
-- Non_Updatable: no update. update_DCG_node_state pass
-- Ancestor_Updatable: Inherits Abstract_Ancestor_Updatable. update_DCG_node_state calls: **inspect_ancestors()**
-- Abstract_Invariant_Updatable: Inherits Abstract_Ancestor_Updatable. implements **inspect_invariant()**. update_DCG_node_state calls: **inspect_ancestors
-- Standard_UI: registers the UI as the standard_UI.js.
-- INonstandard_UI: requires register_UI(js_file_name).
-- IFE_Importable: importFE()
-- IFE_Exportable: export_FE()
-- IFE_ImportableExportable: importFE() and export_FE()
-- Auto_Sizeable: set_read_write_state based on the state data. requires_sizing and sizing_improved. member: previous_SAR.
-- Manual_Sizeable: set_read_write_state based on the state data. requires_sizing. member: previous_SAR.
-- Non_Sizeable: set_read_write_state makes: read_write_state = false.
-**Mutable**
-
-**Enum_DB_data_types**
-- _0D
-- _1D
-- _2D
-- _3D
-
-**DB_Object(IDCG, IDOD_Container)**
-- members: Standard_UI, Non_Sizeable, Mutable, DB_data_type (Enum_DB_data_types) and DB_key.
-- get_DB_data() -> dict{ member_name: member_val }: is implemented based on the DB_data_type.
-- get_ancestor_DCG_nodes returns empty list.
-- create_DOD_container creates DOD_container containing the DB_data_type and DB_key.
-
-**Abstract_Material(IFE_ImportableExportable)**
-- member: DB_Object with Mutable._mutable = false and DB_data_type = _1D.
-- Abstract as not implementing IFE_ImportableExportable. Concrete classes will imlement.
-
-**Abstract_Fastener(IFE_ImportableExportable)**
-- member: DB_Object with Mutable._mutable = false and DB_data_type = _1D.
-- Abstract as not implementing IFE_ImportableExportable. Concrete classes will imlement.
-
-**Abstract_SCL(IFE_ImportableExportable)**
-- member: DB_Object with Mutable._mutable = true and DB_data_type = _2D
-- Abstract as not implementing IFE_ImportableExportable. Concrete classes will imlement.
-
-**AbstractEO(IDCG, IDOD_Container)**
-
-
-- Standard: Contains the DB key as a member. Inherits StandardUI. config_state = config_state__frozen. get_DB gets values from DB.
-- DB: Contains the DB key as a member. Inherits PredefinedUI. config_state = config_state__inspection. get_DB gets DB data. set_DB sets DB data.
-- Structural: mat/geo/loading. Inherits PredefinedUI. get_mat, get_geo, get_loading
-- Irregular: Inherits IrregularUI.
-
-**SC(StandardUI)**
-1. Main
-- structural_state
-Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same name and put the thickness in the EO.
-
-2. Interface
-- Inherits StandardUI.
-- All need FE importer. Hence, must inherit FEImportable or FEImportableExportable
-- get_FE_elements returns the FE element list
-
-**SA(StandardUI)**
-1. Interface
-- Inherits StandardUI.
-- Set applicability of analysis: Ex: panel pressure is applicable if pressure is applied
-- Select analysis type: FEA or analytical
-- Set analysis parameters: Ex: Fitting factor
-
+The SCs would be derived from the sizeability interface which would basically require a function to perform the sizing: size_for_RF.
+In terms of the structural sizing types can be qualified into the followings:
+- Non_Sizeable: No sizeability. size_for_RF does nothing.
+- Auto_Sizeable: The default sizing algorithms handle the structural sizing. size_for_RF calls the default sizing algorithms.
+- Abstract_Manual_Sizeable: Requires size_manually function. size_for_RF calls size_manually function.

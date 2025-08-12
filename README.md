@@ -1819,7 +1819,7 @@ Moving the descendants to the type definitions requires an update for IDCG inter
 class IDCG {
   std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
   std::vector<IDCG const*> get_descendants(DCG_t const* DCG_) const;
-  enum_DCG_node_states reevaluate_state(DCG_t const* DCG_) const;
+  enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const;
   bool inspect_invariant(DCG_t const* DCG_) const;
   bool inspect_ancestors(DCG_t const* DCG_) const;
 };
@@ -1968,7 +1968,7 @@ In summary, an update on a node shall be propogated by the DCG inspecting the fo
 
 class IDCG {
   std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
-  enum_DCG_node_states reevaluate_state(DCG_t const* DCG_) const;
+  enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const;
   bool inspect_invariant(DCG_t const* DCG_) const;
   bool inspect_ancestors(DCG_t const* DCG_) const;
 };
@@ -2037,6 +2037,100 @@ The following lists the whole state data required by the SAA algorithms:
 - DCG_node_state   : per node : already defined
 
 I will not redefine the DCG for all of these states as its straight forward.
+
+**State Management**\
+The DCG is responsible from the management of the state of the data (i.e. enum_DCG_node_states).
+Previously, I defined IDCG interface for this purpose which requires reevaluate_state__DCG, inspect_invariant and inspect_ancestors function definitions.
+However, not all the types of the SAA follows this path for the state inspection.
+Some may not have any ancestors (e.g. standard items like material), some may even not hold any invariant.
+Hence, we have 3 base types considering the updateability of the SAA types:
+- Non_Updatable: No update issue. inspect_invariant returns true.
+- Ancestor_Updatable: No function definition. reevaluate_state__DCG calls inspect_ancestors.
+- Invariant_Updatable: Requires inspect_invariant. reevaluate_state__DCG calls inspect_invariant and inspect_ancestors.
+
+Obviously, IDCG interface treats all SAA types the same in terms of the updateability issue.
+Hence, the updateability shall be inspected by another interface.
+
+```
+// ~/src/system/IDCG.h
+
+#ifndef _IDCG_h
+#define _IDCG_h
+
+#include <vector>
+
+class IDCG {
+  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const;
+};
+
+#endif
+```
+
+The CRTP is the best solution for this purpose:
+
+```
+// ~/src/system/Updateable.h
+
+#ifndef _Updateable_h
+#define _Updateable_h
+
+struct Non_Updatable {
+  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return true; };
+  bool inspect_invariant(DCG_t const* DCG_) const { return static_cast<T*>(this)->inspect_invariant(DCG_); };
+  bool inspect_ancestors(DCG_t const* DCG_) const { return static_cast<T*>(this)->inspect_ancestors(DCG_); };
+};
+
+template<typename T>
+struct Ancestor_Updatable {
+  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return inspect_ancestors(DCG_); };
+  bool inspect_ancestors(DCG_t const* DCG_) const {
+    auto ancestors{ static_cast<T*>(this)->get_ancestors(DCG_) };
+    for (auto ancestor : ancestors) {
+      if (!ancestor->get_state__DCG()) return false;
+    }
+    return true;
+  };
+};
+
+template<typename T>
+struct Invariant_Updatable {
+  bool reevaluate_state__DCG(DCG_t const* DCG_) const {
+    auto inspection{ inspect_ancestors(DCG_) };
+    if (!inspection) return false;
+    return inspect_invariant(DCG_);
+  };
+  bool inspect_ancestors(DCG_t const* DCG_) const {
+    auto ancestors{ static_cast<T*>(this)->get_ancestors(DCG_) };
+    for (auto ancestor : ancestors) {
+      if (!ancestor->get_state__DCG(DCG_)) return false;
+    }
+    return true;
+  };
+  bool inspect_invariant(DCG_t const* DCG_) const { return static_cast<T*>(this)->inspect_invariant(DCG_); };
+};
+
+#endif
+```
+
+The Panel class becomes:
+
+```
+// ~/src/plugins/core/panel/EO_Panel.h
+
+...
+
+struct EO_Panel : public IUI, IDCG, Invariant_Updatable<EO_Panel> {
+  
+  ...
+
+  bool inspect_invariant(DCG_t const* DCG_) const;
+
+  ...
+
+};
+
+...
+```
 
 **Other issues**\
 The DCG is examined alot in this document.
@@ -2110,11 +2204,6 @@ The same applies to the SARs similarly.
 
 
 
-**IDCG**
-**IDOD_Container**
-- Non_Updatable: no update. update_DCG_node_state pass
-- Ancestor_Updatable: Inherits Abstract_Ancestor_Updatable. update_DCG_node_state calls: **inspect_ancestors()**
-- Abstract_Invariant_Updatable: Inherits Abstract_Ancestor_Updatable. implements **inspect_invariant()**. update_DCG_node_state calls: **inspect_ancestors
 - Standard_UI: registers the UI as the standard_UI.js.
 - INonstandard_UI: requires register_UI(js_file_name).
 - IFE_Importable: importFE()

@@ -855,10 +855,20 @@ When, for example, the user clicks on an OETVN, the frontend:
 - emits a request from the CS to retrieve the type (e.g. panel) and data (e.g. thickness and width) belonging to the DCG node and
 - presents the retreived data via the user form corresponding to the retreived type.
 
-**The CS and the DCG shall define the below interface in order to handle the UI requests:**
+### 4.2. The CS <a id='sec42'></a>
+
+The CS contains 4 components:
+1. The DCG
+2. The types (i.e. the plugins)
+3. The UI interface
+4. The SP interface
+
+#### 4.2.1. More on the Functionally Persistent DCG <a id='sec421'></a>
+
+The CS and the DCG shall define the below interface in order to handle the UI requests:
 - create_DCG_node(data_type, json)
-- get__type_containers(DCG_node_index)
-- set__type_containers(DCG_node_index, json)
+- get_type_containers(DCG_node_index)
+- set_type_containers(DCG_node_index, json)
 - remove_DCG_node(DCG_node_index)
 - run_analysis(DCG_node_index)
 - get_DCG_node_indices_for_data_type(data_type)
@@ -887,7 +897,7 @@ The current one, calculate_properties, would calculate some properties such as:
 **Below, I will present the pseudocode of the backend/frontend interface at the CS side based on the three fundamental functions: create, get and set.**
 Other functions such as remove can easily be defined similarly.
 
-Firstly, I will start with type traits metafunctions to support static type definitions.
+Firstly, I will start with the type traits metafunctions to support static type definitions.
 The type traits involve the following functionality:
 1. **This is the most important part of the CS: Defining the types (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
@@ -1345,7 +1355,7 @@ The frontend library shall provvide simple solutions for the UI form representat
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.
 
-### 4.2. The Functionally Persistent DCG <a id='sec42'></a>
+#### 4.2.2. More on the Functionally Persistent DCG <a id='sec422'></a>
 
 The architecture chapter underlined that we need two DCG definitions which are online and offline respectively.
 **I will skip the offline DCG in order for the simplicity of the project.**
@@ -1585,7 +1595,7 @@ using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant
 #endif
 ```
 
-**The Dynamism**\
+**The Dynamic Behaviour**\
 The static definition of the DCG is problematic in case of the dynamically dominated behaviours.
 As edge case examples, the descendants of the root node or the ancestors of the tail node cannot be defined statically.
 Another example would be Material class such that too many objects of too many types would depend on material objects.
@@ -1907,6 +1917,12 @@ struct EO_Panel : public IUI, IDCG {
 #endif
 ```
 
+I excluded the root and the tail node definitions and the iterators (const aand non-const) of the DCG intensionally.
+[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes these issues in detail.
+**Its worth to note only that the relations of both the root and the tail nodes are runtime dependent.**
+Hence, the descendants of the root node and the ancestors of the tail node
+should be treated with the high level FP functions (i.e. with_type_container and with_type_object).
+
 **DCG node state enumeration: enum_DCG_node_states**\
 The node state data management is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
 Below are the possible states for a DCG node:
@@ -2009,10 +2025,158 @@ class DCG {
 #endif
 ```
 
+**Other States**\
+The following lists the whole state data required by the SAA algorithms:
+- DCG_state        : per DCG  : read-only and read-write
+- user_state       : per DCG  : owner, viewer, approver, etc.
+- config_state     : per DCG  : design, sizing, inspection and frozen
+- read_write_state : per DCG  : bool
+- structural_state : per node : safe and fail
+- DCG_node_state   : per node : already defined
+
+I will not redefine the DCG for all of these states as its straight forward.
+
+**Other issues**\
+The DCG is examined alot in this document.
+[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes
+many aspects of the DAG data structure such as the DFS/BFS iterators.
+There, offcourse, exist many significant differences in the two data structures.
+However, I think, up to this point, I clearified the important aspects of the issue.
+Nevertheless, I will exclude the DCG implementation in this project.
 
 
 
 
+
+
+
+
+
+### 4.3. The Solver Pack (SP) <a id='sec43'></a>
+
+Currently we have the following architecture:
+- The CS stores data packed as the objects deriving from some base constructs (e.g. Json_Compatible) and SAA base types (i.e. EO, SC annd SA).
+- The SP executes the behaviours (e.g. analyses). The SP would have its own class hierarchy (e.g. BucklingPermitable).
+
+Additionally, the CS is developed with C++ while the SP is developed with python.
+Hence, the procedure to run an SA is as follows:
+- The user selects an SA for the analysis run,
+- UI emits an analysis request for the DCG_node of the SA,
+- the CS prepares the analysis dataset and requests an analysis from the SP,
+- the SP constructs SP objects from the CS dataset,
+- the SP runs the SAMMs with the constructed objects,
+- the SAMMs constructs the SARs,
+- the SP returns the SARs to the CS,
+- the CS updates the MySQL DB ffor the SARs and
+- the CS returns the analysis results to UI.
+
+The process flow contains
+
+
+**In order to handle the above procedure, the SP shall define the following interface:**
+- **run_analysis(SC):** The interface for the analysis execution.
+- **DCG_to_SP(type_tag, DCG_node):** The factory pattern high level function to create SP objects from DCG raw data.
+- **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
+- **register_DCG_to_SPs(type_tag, method_for_DCG_to_SP):** The high level function registration for the factory methods.
+- **register_SP_to_DCGs(type_tag, method_for_SP_to_DCG):** The high level function registration for the inverse factory methods.
+
+DCG_to_SP function shall call get_type_containers to get the DCG raw data for the input DCG_node.
+
+**The plugins shall define the factory and the inverse factory methods as well as the registers:**
+- **create_T(DCG_node):** Creates a SP object of type T. called by DCG_to_SP.
+- **extract_T(t):** Extract DCG raw data from t object of type T. called by SP_to_DCG.
+- **register_DCG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
+- **register_SP_to_DCG(type_tag, extract_T):** The low level function registration for the inverse factory method.
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4.3. The Data Types <a id='sec43'></a>
+
+Currently, we have the following interfaces:
+- structural component (SC),
+- structural component loading (SCL),
+- structural analysis (SA),
+- structural analysis dataset (SAD) and
+- structural analysis result (SAR).
+
+#### 4.3.1. A General Overview of the Types
+
+I will examine two important aspects of the software design: polymorphism and immutability.
+
+**Polymorphism**\
+In case of the SAA, we have a number of components (i.e. the DCG, the SCs, the SAs, the solver and the UI) which require a careful design.
+However, the types of the SAA live on the same "level" beneath this small set of interfaces.
+In other words, the types do not form complex hierarchies.
+Consider the SCs, for example.
+The SCs have some properties and FMs based on which the SCs are inspected.
+They do not need deep class hierarchies structurally or behaviourally.
+
+In summary, the domain model uses a shallow, interface-driven design where a few core interfaces is followed by dozens of direct implementations so that the plug-ins can be extended without wading through deep inheritance chains.
+Hence, the polymorhism is not one of the central issues for the design of the SAA.
+
+**Immutability**\
+As stated earlier the DCG keeps the state data for the types.
+Additionally, **the DCG is functionally persistent**.
+These two points yield that the transformations on the types can be performed using pure immutable functions.
+
+Considering the comments on the polymorphism and immutability we can make a design decission:
+- follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
+
+**The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
+Although, Python has some gaps in case of functional programming such as the lack of function overloading,
+these issues can be handled by simple workarounds adding litle boilerplate code.
+
+
+
+
+
+#### 4.3.2. Load Related Types
+
+**Load related types**\
+The loading in case of structural analysis has different shapes.
+For example, consider the two analyses applied on panels:
+- the pressure panel analysis
+- the panel buckling analysis
+
+The two analyses are performed under different load components.
+A similar situation holds for the stiffeners and beams as they carry different load components.
+
+Another point related to the loading is the level of the loading.
+A SC may have different FMs or different applicability regimes under different load levels.
+For example, under limit load level, instability would not be accepted for a stiffener
+while under ultimate loading it may depending on the compony/project policies.
+
+Hence, the definition of the loading is significant in case of the SAA.
+
+The SCL has the following members:
+- load type: pressure, 2D force flux, 2D combined loading, etc
+- load level: limit, ultimate, crash, etc.
+- load data: P for pressure, [Nxx, Nyy, Nxy] for 2D force flux, [Fxx, Fyy, Fxy, Mxx, Myy, Mxy] for 2D combined loading, etc.
+
+I already described that the data related to the loading cause memory problems so that they shall be stored by the MySQL DB.
+Hence, SCLs and SARs are stored in the MySQL DB.
+However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
+In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
+The CS needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
+Hence, we would have two definitions for the SCLs and SARs:
+- a definition for the offline process and
+- a definition for the online process.
+
+The SCL definition for the offline process would have all of the three members listed above
+while the online SCL would only have a key in order to query the MySQL DB.
+The same applies to the SARs similarly.
+
+**Structural Analysis (SA)**\
 
 
 
@@ -2194,238 +2358,4 @@ Formed by EOs. No raw member (e.g. no thickness). Hence, create EO with same nam
 - Set applicability of analysis: Ex: panel pressure is applicable if pressure is applied
 - Select analysis type: FEA or analytical
 - Set analysis parameters: Ex: Fitting factor
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-**Other issues**\
-The DCG is examined alot in this document.
-Besides, although written in C++, [the persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git)
-describes many aspects of the DAG data structure such as the DFS/BFS iterators.
-There, offcourse, exist many significant differences in the two data structures.
-However, I think, up to this point, I clearified the important aspects of the issue.
-Nevertheless, I will exclude the DCG implementation in this project
-defining only the required interfaces by the CS
-as it would be similar with the DAG implementation (e.g. persistency, immutable functions, DFS/BFS iterators, etc.) above.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-The type codes are assigned by the plugin registration.
-
-```
-# core/registry.py
-
-type_to_code = []
-code_to_type = []
-
-class TypeRegistry:
-  """
-  Assigns a unique integer code to each registered type.
-  """
-  def __init__(self):
-    self._next_code = 1
-    self._type_codes: dict[str, int] = {}
-
-  def register_type(self, name: str) -> None:
-    """
-    Register a new type by name.
-    """
-    if name in self._type_codes:
-      raise ValueError(f"Type '{name}' is already registered")
-    
-    code = self._next_code
-    self._next_code += 1
-    self._type_codes[name] = code
-    return code
-
-  def get_code(self, name: str) -> int | None:
-    return self._type_codes.get(name)
-
-  def create(self, code: int, *args, **kwargs):
-    """
-    Instantiate an object of the given type code by calling its factory.
-    """
-    factory = self._factories.get(code)
-    if factory is None:
-      raise KeyError(f"No factory for type code {code}")
-    return factory(*args, **kwargs)
-
-# a module‐level singleton
-type_registry = TypeRegistry()
-  
-```
-
-
-
-
-
-
-
-
-
-
-
-
-### 4.3. The Solver Pack (SP) <a id='sec42'></a>
-
-Currently we have the following architecture:
-- The CS stores data packed as the objects deriving from some base constructs (e.g. Json_Compatible) and SAA base types (i.e. EO, SC annd SA).
-- The SP executes the behaviours (e.g. analyses). The SP would have its own class hierarchy (e.g. BucklingPermitable).
-
-Additionally, the CS is developed with C++ while the SP is developed with python.
-Hence, the procedure to run an SA is as follows:
-- The user selects an SA for the analysis run,
-- UI emits an analysis request for the DCG_node of the SA,
-- the CS prepares the analysis dataset and requests an analysis from the SP,
-- the SP constructs SP objects from the CS dataset,
-- the SP runs the SAMMs with the constructed objects,
-- the SAMMs constructs the SARs,
-- the SP returns the SARs to the CS,
-- the CS updates the MySQL DB ffor the SARs and
-- the CS returns the analysis results to UI.
-
-The process flow contains
-
-
-**In order to handle the above procedure, the SP shall define the following interface:**
-- **run_analysis(SC):** The interface for the analysis execution.
-- **DCG_to_SP(type_tag, DCG_node):** The factory pattern high level function to create SP objects from DCG raw data.
-- **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
-- **register_DCG_to_SPs(type_tag, method_for_DCG_to_SP):** The high level function registration for the factory methods.
-- **register_SP_to_DCGs(type_tag, method_for_SP_to_DCG):** The high level function registration for the inverse factory methods.
-
-DCG_to_SP function shall call get__type_containers to get the DCG raw data for the input DCG_node.
-
-**The plugins shall define the factory and the inverse factory methods as well as the registers:**
-- **create_T(DCG_node):** Creates a SP object of type T. called by DCG_to_SP.
-- **extract_T(t):** Extract DCG raw data from t object of type T. called by SP_to_DCG.
-- **register_DCG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
-- **register_SP_to_DCG(type_tag, extract_T):** The low level function registration for the inverse factory method.
-
-
-
-
-
-
-
-
-
-
-
-
-
-### 4.3. The Data Types <a id='sec43'></a>
-
-Currently, we have the following interfaces:
-- structural component (SC),
-- structural component loading (SCL),
-- structural analysis (SA),
-- structural analysis dataset (SAD) and
-- structural analysis result (SAR).
-
-#### 4.3.1. A General Overview of the Types
-
-I will examine two important aspects of the software design: polymorphism and immutability.
-
-**Polymorphism**\
-In case of the SAA, we have a number of components (i.e. the DCG, the SCs, the SAs, the solver and the UI) which require a careful design.
-However, the types of the SAA live on the same "level" beneath this small set of interfaces.
-In other words, the types do not form complex hierarchies.
-Consider the SCs, for example.
-The SCs have some properties and FMs based on which the SCs are inspected.
-They do not need deep class hierarchies structurally or behaviourally.
-
-In summary, the domain model uses a shallow, interface-driven design where a few core interfaces is followed by dozens of direct implementations so that the plug-ins can be extended without wading through deep inheritance chains.
-Hence, the polymorhism is not one of the central issues for the design of the SAA.
-
-**Immutability**\
-As stated earlier the DCG keeps the state data for the types.
-Additionally, **the DCG is functionally persistent**.
-These two points yield that the transformations on the types can be performed using pure immutable functions.
-
-Considering the comments on the polymorphism and immutability we can make a design decission:
-- follow the **function oriented design (FOD)** approach rather than the **object oriented design (DOD)** approach.
-
-**The function hierarchies of FOD can be assembled rather than the polymorphic class hierarchies of OOD.**
-Although, Python has some gaps in case of functional programming such as the lack of function overloading,
-these issues can be handled by simple workarounds adding litle boilerplate code.
-
-
-
-
-
-#### 4.3.2. Load Related Types
-
-**Load related types**\
-The loading in case of structural analysis has different shapes.
-For example, consider the two analyses applied on panels:
-- the pressure panel analysis
-- the panel buckling analysis
-
-The two analyses are performed under different load components.
-A similar situation holds for the stiffeners and beams as they carry different load components.
-
-Another point related to the loading is the level of the loading.
-A SC may have different FMs or different applicability regimes under different load levels.
-For example, under limit load level, instability would not be accepted for a stiffener
-while under ultimate loading it may depending on the compony/project policies.
-
-Hence, the definition of the loading is significant in case of the SAA.
-
-The SCL has the following members:
-- load type: pressure, 2D force flux, 2D combined loading, etc
-- load level: limit, ultimate, crash, etc.
-- load data: P for pressure, [Nxx, Nyy, Nxy] for 2D force flux, [Fxx, Fyy, Fxy, Mxx, Myy, Mxy] for 2D combined loading, etc.
-
-I already described that the data related to the loading cause memory problems so that they shall be stored by the MySQL DB.
-Hence, SCLs and SARs are stored in the MySQL DB.
-However, the 3rd user scenario showed that the user may perform offline tradeoffs without connecting to an FEM.
-In this case, the load related data would not be stored in the MySQL DB, but is stored in the offline DCG.
-The CS needs to know if a load object carries data (as its offline) or the data should be loaded from the MySQL DB (as its online).
-Hence, we would have two definitions for the SCLs and SARs:
-- a definition for the offline process and
-- a definition for the online process.
-
-The SCL definition for the offline process would have all of the three members listed above
-while the online SCL would only have a key in order to query the MySQL DB.
-The same applies to the SARs similarly.
-
-**Structural Analysis (SA)**\
-
-
 

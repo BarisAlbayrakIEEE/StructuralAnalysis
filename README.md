@@ -1021,6 +1021,7 @@ struct IUI {
 ```
 
 The next pseudocode represents the DCG.
+The DCG makes use of the structural sharing by utilizing the [vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) data structure.
 As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
 
 ```
@@ -1373,7 +1374,7 @@ This approach will add significant efficiency into the design while working on:
 - the data transfer to UI,
 - etc.
 
-The current definition of the class is very simple where some functionalities will be added later to support the above list:
+The current definition of the class is very simple where some functionalities will be added later to support the functions in the above list:
 
 ```
 // ~/src/system/DCG_node.h
@@ -1387,7 +1388,7 @@ The current definition of the class is very simple where some functionalities wi
 // This class can work statically with zero overhead over the DCG containers as it holds the type information.
 template <typename T>
 class DCG_Node {
-  std::size_t _index{};
+  std::size_t _index{}; // The index of the object within the type container
 };
 
 // A simple struct to convert a type list to the variant of a wrapper class over the type list.
@@ -1421,7 +1422,7 @@ A corresponding member list definition for the DCG would be:
 2. _descendants: Stores the descendant DCG node indices for all DCG nodes.
 3. _states: Stores the states for all DCG nodes.
 4. _type_containers: Stores the data for all DCG nodes.
-5._FE_link: A descriptor for the linked FEM.
+5. _FE_link: A descriptor for the linked FEM.
 
 **Ancestor Relations**\
 The above list contains both the ancestor and the descendant node relations.
@@ -1586,7 +1587,7 @@ using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant
 
 **The Dynamism**\
 The static definition of the DCG is problematic in case of the dynamically dominated behaviours.
-As an edge case example, the descendants of the root node or the ancestors of the tail node cannot be defined statically.
+As edge case examples, the descendants of the root node or the ancestors of the tail node cannot be defined statically.
 Another example would be Material class such that too many objects of too many types would depend on material objects.
 In such cases, an algorithm is required to access statically defined data (e.g. _type_containers) with the runtime information.
 The efficiency of this algorithm is crucial as it would help central algorithms used frequently (e.g. the descendant traversal for the state propogation).

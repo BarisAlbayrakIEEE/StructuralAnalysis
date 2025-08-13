@@ -1024,9 +1024,10 @@ The CS also needs to define an interface in order to allow the CS objects to int
 using json = nlohmann::json;
 
 struct IUI {
-  std::string get_type_name() const;
-  void get_from_json(json);
-  json set_to_json() const;
+  virtual std::string get_type_name() const = 0;
+  virtual void get_from_json(json) = 0;
+  virtual json set_to_json() const = 0;
+  virtual ~IUI() = default;
 };
 
 #endif
@@ -1470,8 +1471,9 @@ Hence, the DCG members become:
 
 #include <vector>
 
-class IDCG {
+struct IDCG {
   virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
+  virtual ~IDCG() = default;
 };
 
 #endif
@@ -1494,7 +1496,7 @@ Correspondingly, the source file defined before for the sample EO_Panel class be
 #include <nlohmann/json.hpp>
 #include "~/src/system/IUI.h"
 #include "~/src/system/IDCG.h"
-#include "~/src/system/DCG_node.h"
+#include "~/src/system/DCG_Node.h"
 
 using json = nlohmann::json;
 
@@ -1560,10 +1562,10 @@ struct EO_Panel : public IUI, IDCG {
 DCG_Node class needs to define get_object method.
 
 ```
-// ~/src/system/DCG_node.h
+// ~/src/system/DCG_Node.h
 
-#ifndef _DCG_node_h
-#define _DCG_node_h
+#ifndef _DCG_Node_h
+#define _DCG_Node_h
 
 #include "core_type_traits.h"
 #include "IDCG.h"
@@ -1816,7 +1818,7 @@ Moving the descendants to the type definitions requires an update for IDCG inter
 
 #include <vector>
 
-class IDCG {
+struct IDCG {
   virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
   virtual std::vector<IDCG const*> get_descendants(DCG_t const* DCG_) const = 0;
 };
@@ -1963,7 +1965,7 @@ In summary, an update on a node shall be propogated by the DCG inspecting the fo
 
 #include <vector>
 
-class IDCG {
+struct IDCG {
   virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
   virtual enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const = 0;
   virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
@@ -2057,7 +2059,7 @@ The IDCG interface becomes.
 
 #include <vector>
 
-class IDCG {
+struct IDCG {
   virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
   virtual bool reevaluate_state__DCG(DCG_t const* DCG_) const = 0;
 };
@@ -2436,7 +2438,7 @@ Lets exemine the components of this strategy:
 The 2nd, the 3rd and the 4th are quite standard processes which would not put too much load on the client.
 **The CS safely implements all the connections and the patterns required for C++/Python interaction.**
 
-#### 4.2.4. FE Interface Requirements <a id='sec424'></a>
+#### 4.2.4. The FE Interface Requirements <a id='sec424'></a>
 
 In terms of the FE interface, we can mainly define 3 types:
 1. FE_Importable: import_FE()
@@ -2445,16 +2447,12 @@ In terms of the FE interface, we can mainly define 3 types:
 
 The FE importability is required for all types existing in an online DCG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
-Hence The three types would represent the ffollowing cases:
+Hence The three types would represent the following cases:
 1. FE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
 2. FE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
 3. FE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
-Most of the types are FE_Importable_Exportable which requires both import_FE and export_FE functions.
-
-
-
-
+Most of the types are expected to be FE_Importable_Exportable.
 
 #### 4.2.5. A General Overview of the Types <a id='sec425'></a>
 
@@ -2464,6 +2462,57 @@ In this document, I mentioned about the following base types for the SAA:
 - structural component loading (SCL),
 - structural analysis (SA) and
 - structural analysis result (SAR).
+
+All of these interfaces shall satisfy the above interfaces in order to:
+- be stored by the DCG,
+- suffice the UI interactions,
+- suffice the SP interactions and
+- suffice the FE interactions.
+
+Hence, the CS shall form a class hierarchy whiich roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDCG).
+
+```
+// ~/src/system/Abstract_CS_Base.h
+
+#ifndef _Abstract_CS_Base_h
+#define _Abstract_CS_Base_h
+
+template<typename T>
+  requires(Has_Static_Type_Name<T> && Json_Compatible<T>)
+struct Abstract_CS_Base : public IUI, IDCG, Bindable<T> {
+  std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
+    return static_cast<T const*>(this)->create_bind_object(DCG_);
+  };
+  virtual ~CS_Base() = default;
+};
+
+#endif
+```
+
+Additionally, each CS type shall extend one of the abstract classes defined for the FE and the updateability.
+Besides, other interfaces would be required such as the structural sizeability.
+
+The EOs 
+
+
+
+
+
+
+struct IUI {
+struct IDCG {
+concept Has_Static_Type_Name = std::constructible_from<T, const json&>;
+concept Json_Compatible = std::constructible_from<T, const json&>;
+struct Abstract_Non_Updatable : public IDCG {
+struct Abstract_Ancestor_Updatable : public IDCG {
+struct Abstract_Invariant_Updatable : public IDCG {
+struct Bindable {
+
+
+
+
+
+
 
 
 

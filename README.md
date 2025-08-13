@@ -2480,19 +2480,41 @@ Hence, the CS shall form a class hierarchy whiich roots to a base class visualiz
 template<typename T>
   requires(Has_Static_Type_Name<T> && Json_Compatible<T>)
 struct Abstract_CS_Base : public IUI, IDCG, Bindable<T> {
+  virtual ~Abstract_CS_Base() = default;
   std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
     return static_cast<T const*>(this)->create_bind_object(DCG_);
   };
-  virtual ~CS_Base() = default;
 };
 
 #endif
 ```
 
 Additionally, each CS type shall extend one of the abstract classes defined for the FE and the updateability.
-Besides, other interfaces would be required such as the structural sizeability.
 
-The EOs 
+**The EOs**\
+The EOs represents the physical elements such as material, panel, stiffener, etc.
+In other words, the SAs performed on the SCs actually examines the physical elements stored within the EOs involved in the SCs.
+Hence, the most important feature of the EOs is that they allow us to size the structure to handle the applied loading.
+In other words, the EOs extends an interface related to the structural sizing:
+
+```
+// ~/src/system/Abstract_EO_Base.h
+
+#ifndef _Abstract_EO_Base_h
+#define _Abstract_EO_Base_h
+
+template<typename T>
+  requires(Has_Static_Type_Name<T> && Json_Compatible<T>)
+struct Abstract_EO_Base : public Abstract_CS_Base<Abstract_EO_Base<T>> {
+  virtual ~Abstract_EO_Base() = default;
+  std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
+    return static_cast<T const*>(this)->create_bind_object(DCG_);
+  };
+
+};
+
+#endif
+```
 
 
 

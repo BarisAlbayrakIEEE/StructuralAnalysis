@@ -865,23 +865,7 @@ The CS contains 4 components:
 
 Firstly, I will discuss on the above issues based on the requests by the UI.
 
-#### 4.2.1. A General Overview of the Types <a id='sec421'></a>
-
-In this document, I mentioned about the following base types for the SAA:
-- engineering object (EO),
-- structural component (SC),
-- structural component loading (SCL),
-- structural analysis (SA) and
-- structural analysis result (SAR).
-
-
-
-
-
-
-
-
-#### 4.2.2. The UI Interface Requirements <a id='sec422'></a>
+#### 4.2.1. The UI Interface Requirements <a id='sec421'></a>
 
 The CS and the DCG shall define the below interface in order to handle the UI requests:
 - create_DCG_node(data_type, json)
@@ -1373,7 +1357,7 @@ The frontend library shall provvide simple solutions for the UI form representat
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.
 
-#### 4.2.2. More on the Functionally Persistent DCG <a id='sec422'></a>
+#### 4.2.2. The Functionally Persistent DCG <a id='sec422'></a>
 
 The architecture chapter underlined that we need two DCG definitions which are online and offline respectively.
 **I will skip the offline DCG in order for the simplicity of the project.**
@@ -2161,7 +2145,37 @@ However, I think, up to this point, I clearified the fundamental aspects of the 
 
 #### 4.2.3. The SP Interface Requirements <a id='sec423'></a>
 
+We have the following architecture for the SAA:
+- The UI is developed in js.
+- The CS is developed in C++.
+- The SP is developed in python.
 
+The CS/SP interface requires the communication between C++ and python in both directions.
+I will use pybind11 for this interface as it allows flexible and efficient access from both sides.
+
+The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DCG.
+However, the SP should not need to access the DCG for the security puposes.
+I will apply a C++/python binding strategy to solve this problem:
+- The CS defines the types: Ex: EO_Material, EO_Panel and SA_Panel_Buckling.
+- The CS defines the python binding (i.e. pybind11) types: Ex: Bind_Material, Bind_Panel and Bind_Panel_Buckling.
+- The SP defines the python wrapper classes if needed: Ex: Py_Material, Py_Panel and Py_Panel_Buckling.
+
+The SP python wrapper classes (e.g. Py_Panel) is defined when there iss a need.
+Some EOs would have behaviours which is strongly relaated with the processes executed by the SP.
+For example, the cross-sectional properties of a stiffener is needed frequently during the SAs of the stiffeners.
+Hence, the SP would need the Py_Stiffener wrapper.
+
+The pprocess flow for this strategy is as follows:
+1. The user requests an analysis on an SC with type and index,
+2. The CS asks to the DCG to create a temporary Bind SC object corresponding to the type and index,
+3. The CS exposes the Bind object to python and requests an SP analysis,
+4. If needed, the SP analysis function creates a Python class (e.g. Py_Panel) with the Bind object,
+5. The SP analysis function performs the calculations and updates the results (i.e. Bind SAR object composed by the Bind SC object),
+6. The CS reads the results and updates CS SAR object stored by the DCG or MySQL DB,
+7. The CS releases all temporary objects.
+
+Lets review an example for this strategy.
+The CS definition of panel EO becomes:
 
 
 #### 4.2.4. FE Interface Requirements <a id='sec424'></a>
@@ -2179,6 +2193,24 @@ Hence The three types would represent the ffollowing cases:
 3. FE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
 Most of the types are FE_Importable_Exportable which requires both import_FE and export_FE functions.
+
+
+
+
+
+#### 4.2.5. A General Overview of the Types <a id='sec425'></a>
+
+In this document, I mentioned about the following base types for the SAA:
+- engineering object (EO),
+- structural component (SC),
+- structural component loading (SCL),
+- structural analysis (SA) and
+- structural analysis result (SAR).
+
+
+
+
+
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

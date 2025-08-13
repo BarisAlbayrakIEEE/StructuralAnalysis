@@ -1298,9 +1298,9 @@ As mentioned above, the pseudocode represents only the backend/frontend interfac
 using json = nlohmann::json;
 
 struct EO_Panel : public IUI {
-  double thickness;
-  double width;
-  double height;
+  double _thickness;
+  double _width;
+  double _height;
   std::size_t _side_stiffener_1;
   std::size_t _side_stiffener_2;
 
@@ -1499,9 +1499,9 @@ Correspondingly, the source file defined before for the sample EO_Panel class be
 using json = nlohmann::json;
 
 struct EO_Panel : public IUI, IDCG {
-  double thickness;
-  double width;
-  double height;
+  double _thickness;
+  double _width;
+  double _height;
   DCG_Node<EO_Stiffener> _side_stiffener_1;
   DCG_Node<EO_Stiffener> _side_stiffener_2;
 
@@ -1846,9 +1846,9 @@ The descendants are moved to the type definitions:
 using json = nlohmann::json;
 
 struct EO_Panel : public IUI, IDCG {
-  double thickness;
-  double width;
-  double height;
+  double _thickness;
+  double _width;
+  double _height;
   DCG_Node<EO_Stiffener> _side_stiffener_1;
   DCG_Node<EO_Stiffener> _side_stiffener_2;
   DCG_Node<SA_Panel_Buckling> _panel_pressure;
@@ -2169,11 +2169,214 @@ The pprocess flow for this strategy is as follows:
 1. The user requests an analysis on an SC with type and index,
 2. The CS asks to the DCG to create a temporary Bind SC object corresponding to the type and index,
 3. The CS exposes the Bind object to python and requests an SP analysis,
-4. If needed, the SP analysis function creates a Python class (e.g. Py_Panel) with the Bind object,
+4. If needed, the SP analysis function creates a Python object (e.g. Py_Panel) wrapping the Bind object,
 5. The SP analysis function performs the calculations and updates the results (i.e. Bind SAR object composed by the Bind SC object),
 6. The CS reads the results and updates CS SAR object stored by the DCG or MySQL DB,
-7. The CS releases all temporary objects.
+7. The CS releases all temporary shared objects.
 
+The flow involves the the construction of Bind objects and executing python functions.
+The 1st part is type dependent which requires type transformations if the solution is intended to contain interfaces.
+A better solution is assigning an **executer process** at the CS level (like create, get and set defined before).
+The **executer** involves the whole flow above.
+The **executer** is a templated function and shall be registered like the other CS utilities (i.e. create<T>, get<T> and set<T>).
+The **executer** asks the CS types to construct Bind objects.
+Hence, the CS types shall implement a method returning the Bind object which requires an interface.
+The best solution for this interface is a CRTP base class as it can evaluate the return type at compile time.
+
+The CRTP base class looks like:
+
+```
+// ~/src/system/Bindable.h
+
+#ifndef _Bindable_h
+#define _Bindable_h
+
+#include <memory>
+
+// CAUTION: Bindable depends on the DCG which will depend on Bindable: circular dependency
+// TODO: Dependency inversion:
+//   Create IDCG_Base which defines create_bind_object method
+//   Inherit DCG<Ts...> from this interface
+//   Use IDCG_Base in this file instead of DCG_t
+template<typename T>
+struct Bindable {
+  std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
+    return static_cast<T const*>(this)->create_bind_object(DCG_);
+  };
+};
+
+#endif
+```
+
+Notice that the caution in the above header detects the circular dependency between the DCG and Bindable.
+**TODO explains the solution which is quite an easy application of the dependency inversion and I will not go into the details.**
+
+The CS types shall inherit from the Bindable which can be examined by a concept like Json_Constructible used before:
+
+```
+template <template <class> class Base, class T>
+concept ExtendsCRTP = std::derived_from<T, Base<T>>;
+
+template <class T>
+concept CBindable = ExtendsCRTP<Bindable, T>;
+```
+
+This concept can easily be applied all the types in the SAA_Types_t similar to All_Json_Constructible.
+The DCG needs a function which would return the Bind objects for the input type and index.
+The function will be templated and return type (e.g. Bind_Panel) depends on the template type (e.g. EO_Panel).
+The solution is defining an alias in the CS types that stores the type of the corresponding Bind type.
+This alias would be used in many steps of the above flow.
+
+The factory function of the DCG is:
+
+```
+...
+
+  template <typename T>
+  std::shared_ptr<typename T::bind_type> create_bind_object(std::size_t index) {
+    const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(_type_containers);
+    cons auto& CS_object = type_container->operator[](index);
+    return CS_object.create_bind_object(this);
+  };
+
+...
+```
+
+The CS panel class becomes:
+
+```
+// ~/src/plugins/core/panel/EO_Panel.h
+
+...
+
+struct EO_Panel : public IUI, Bindable, Abstract_Invariant_Updatable {
+  using bind_type = Bind_Panel;
+
+  double _thickness;
+  double _width;
+  double _height;
+  DCG_Node<EO_Stiffener> _side_stiffener_1;
+  DCG_Node<EO_Stiffener> _side_stiffener_2;
+  
+  ...
+
+  std::shared_ptr<bind_type> create_bind_object(IDCG_Base const* DCG_) const {
+    auto side_stiffener_1{ DCG_->create_bind_object<EO_Stiffener>(_side_stiffener_1._index) };
+    auto side_stiffener_2{ DCG_->create_bind_object<EO_Stiffener>(_side_stiffener_2._index) };
+    return std::make_shared<bind_type>(thickness, width, height, side_stiffener_1, side_stiffener_2);
+  };
+
+  ...
+
+};
+
+...
+```
+
+The Bind class definition for the panel would be:
+
+```
+// ~/src/plugins/core/panel/Bind_Panel.h
+
+#ifndef _Bind_Panel_h
+#define _Bind_Panel_h
+
+struct Bind_Panel{
+  double _thickness;
+  double _width;
+  double _height;
+  std::shared_ptr<Bind_Stiffener> _side_stiffener_1;
+  std::shared_ptr<Bind_Stiffener> _side_stiffener_2;
+
+  Bind_Panel(
+    double thickness,
+    double width,
+    double height,
+    const std::shared_ptr<Bind_Stiffener>& side_stiffener_1,
+    const std::shared_ptr<Bind_Stiffener>& side_stiffener_2
+  ):
+    _thickness(thickness),
+    _width(width),
+    _height(height),
+    _side_stiffener_1(side_stiffener_1),
+    _side_stiffener_2(side_stiffener_2) {};
+};
+
+#endif
+```
+
+The SP python class definition for the panel would be:
+
+```
+# ~/src/plugins/core/panel/SP_Panel.h
+
+from cs_bindings import Bind_Panel
+
+class SP_Panel:
+  def __init__(self, bind_panel: Bind_Panel):
+    self._bind_panel = bind_panel
+
+  def calculate_buckling_coefficient(self) -> double:
+    # TODO: perform calculations
+    return buckling_coeff
+```
+
+The CS defines all operations required by the flow at the beginning:
+
+```
+template<typename T>
+void execute_SP(std::size_t type_container_index, const std::string& function_name) {
+  py::scoped_interpreter guard{};  // Start Python interpreter
+
+  // get the DCG
+  auto DCG_{ get_current_DCG() };
+
+  // create the Bind object
+  auto bind_object{ DCG_.get_bind_object<T>(type_container_index) };
+
+  // find the module containing the requested function
+  auto module_name{ get_module(function_name) };
+
+  // execute the requested SP function
+  py::module py_analysis = py::module::import(module_name);
+  py::function analyze = py_analysis.attr(function_name);
+  analyze(panel);  // Pass shared_ptr<Bind_Panel> to Python
+}
+
+...
+
+// register creater, getter, setter and executer for each type statically
+template <typename T>
+  requires (Has_Static_Type_Name<T> && Json_Compatible<T>)
+void register_CS_type() {
+  creaters[T::type_name] = create<T>;
+  getters[T::type_name] = get<T>;
+  setters[T::type_name] = set<T>;
+  executers[T::type_name] = executer<T>;
+}
+
+...
+
+```
+
+Similarly, main.cpp needs an update for the registration of the executer:
+
+```
+...
+
+  // executer
+  CROW_ROUTE(app, "/execute/<string>/<size_t>").methods("POST"_method)(
+    [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
+      auto it = executers.find(type);
+      if (it == executers.end())
+        return crow::response(400, "Unknown type");
+
+      it->second(DCG_node_index);
+      return crow::response{R"({"status":"updated"})"};
+    });
+
+...
+```
 
 
 

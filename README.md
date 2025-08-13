@@ -2174,6 +2174,9 @@ The pprocess flow for this strategy is as follows:
 6. The CS reads the results and updates CS SAR object stored by the DCG or MySQL DB,
 7. The CS releases all temporary objects.
 
+
+
+
 Lets review an example for this strategy.
 The CS definition of panel EO becomes:
 

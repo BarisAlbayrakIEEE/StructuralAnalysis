@@ -1188,21 +1188,21 @@ void set(std::size_t DCG_node_index, const json& json_) {
   if (_DCGs.size() > undo_count) _DCGs.pop_front();
 };
 
-// store creaters, getters and setters to maps in order to respond the UI requests.
-std::unordered_map<std::string, std::size_t (*)(const json&)> creaters;
+// store creators, getters and setters to maps in order to respond the UI requests.
+std::unordered_map<std::string, std::size_t (*)(const json&)> creators;
 std::unordered_map<std::string, json (*)(std::size_t)> getters;
 std::unordered_map<std::string, (*)(std::size_t, const json&)> setters;
 
-// register creater, getter and setter for each type statically
+// register creator, getter and setter for each type statically
 template <typename T>
   requires (Has_Static_Type_Name<T> && Json_Compatible<T>)
 void register_CS_type() {
-  creaters[T::type_name] = create<T>;
+  creators[T::type_name] = create<T>;
   getters[T::type_name] = get<T>;
   setters[T::type_name] = set<T>;
 }
 
-// register creater, getter and setter for each type statically by calling register_CS_type recursively.
+// register creator, getter and setter for each type statically by calling register_CS_type recursively.
 // this is a static procedure which improves the SAA runtime performance.
 void register_CS_types() {
   for_each_type(SAA_Types_t{}, []<typename T>() {
@@ -1235,8 +1235,8 @@ int main() {
   // create
   CROW_ROUTE(app, "/create/<string>").methods("POST"_method)(
     [](const crow::request& req, const std::string& type) {
-      auto it = creaters.find(type);
-      if (it == creaters.end())
+      auto it = creators.find(type);
+      if (it == creators.end())
         return crow::response(400, "Unknown type");
 
       auto json_ = json::parse(req.json_, nullptr, false);
@@ -2176,10 +2176,10 @@ The pprocess flow for this strategy is as follows:
 
 The flow involves the the construction of Bind objects and executing python functions.
 The 1st part is type dependent which requires type transformations if the solution is intended to contain interfaces.
-A better solution is assigning an **executer process** at the CS level (like create, get and set defined before).
-The **executer** involves the whole flow above.
-The **executer** is a templated function and shall be registered like the other CS utilities (i.e. create<T>, get<T> and set<T>).
-The **executer** asks the CS types to construct Bind objects.
+A better solution is assigning an **executor process** at the CS level (like create, get and set defined before).
+The **executor** involves the whole flow above.
+The **executor** is a templated function and shall be registered like the other CS utilities (i.e. create<T>, get<T> and set<T>).
+The **executor** asks the CS types to construct Bind objects.
 Hence, the CS types shall implement a method returning the Bind object which requires an interface.
 The best solution for this interface is a CRTP base class as it can evaluate the return type at compile time.
 
@@ -2305,27 +2305,72 @@ struct Bind_Panel{
 #endif
 ```
 
+Additionally, we need the pybind11 binding file for each CS type:
+
+```
+// ~/src/plugins/core/panel/pybind11_Panel.cpp
+
+#include <pybind11/pybind11.h>
+#include <pybind11/smart_ptr.h>
+#include "bind_types.hpp"
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(panel_bindings, m) {
+  py::class_<Bind_Panel, std::shared_ptr<Bind_Panel>>(m, "Bind_Panel")
+    .def(
+      py::init<
+        double,
+        double,
+        double,
+        const std::shared_ptr<Bind_Stiffener>&,
+        const std::shared_ptr<Bind_Stiffener>&>());
+
+  py::class_<Bind_Panel, std::shared_ptr<Bind_Panel>>(m, "Bind_Panel")
+    .def(
+      py::init<
+        double,
+        double,
+        double,
+        const std::shared_ptr<Bind_Stiffener>&,
+        const std::shared_ptr<Bind_Stiffener>&>());
+    .def_readonly("_thickness", &Bind_Panel::_thickness)
+    .def_readonly("_width", &Bind_Panel::_width)
+    .def_readonly("_height", &Bind_Panel::_height)
+    .def_readonly("_side_stiffener_1", &Bind_Panel::_side_stiffener_1)
+    .def_readonly("_side_stiffener_2", &Bind_Panel::_side_stiffener_2);
+}
+```
+
 The SP python class definition for the panel would be:
 
 ```
-# ~/src/plugins/core/panel/SP_Panel.h
+# ~/src/plugins/core/panel/SP_Panel.py
 
-from cs_bindings import Bind_Panel
+from panel_bindings import Bind_Panel
 
 class SP_Panel:
   def __init__(self, bind_panel: Bind_Panel):
     self._bind_panel = bind_panel
 
   def calculate_buckling_coefficient(self) -> double:
-    # TODO: perform calculations
+    # TODO: perform calculations: t = self._bind_panel._side_stiffener_1.web_thickness
     return buckling_coeff
+
+def calculate_buckling_coefficient(bind_panel):
+  sp_panel = SP_Panel(bind_panel)
+  sp_panel.calculate_buckling_coefficient()
 ```
 
 The CS defines all operations required by the flow at the beginning:
 
 ```
+// ~/src/system/CS.h
+
+...
+
 template<typename T>
-void execute_SP(std::size_t type_container_index, const std::string& function_name) {
+void execute(std::size_t type_container_index, const std::string& function_name) {
   py::scoped_interpreter guard{};  // Start Python interpreter
 
   // get the DCG
@@ -2338,37 +2383,39 @@ void execute_SP(std::size_t type_container_index, const std::string& function_na
   auto module_name{ get_module(function_name) };
 
   // execute the requested SP function
-  py::module py_analysis = py::module::import(module_name);
-  py::function analyze = py_analysis.attr(function_name);
-  analyze(panel);  // Pass shared_ptr<Bind_Panel> to Python
-}
+  py::module py_module = py::module::import(module_name);
+  py::function py_function = py_module.attr(function_name);
+  py_function(bind_object);  // pass shared_ptr<Bind_Panel> to python
+};
 
 ...
 
-// register creater, getter, setter and executer for each type statically
+// register creator, getter, setter and executor for each type statically
 template <typename T>
   requires (Has_Static_Type_Name<T> && Json_Compatible<T>)
 void register_CS_type() {
-  creaters[T::type_name] = create<T>;
+  creators[T::type_name] = create<T>;
   getters[T::type_name] = get<T>;
   setters[T::type_name] = set<T>;
-  executers[T::type_name] = executer<T>;
+  executors[T::type_name] = execute<T>;
 }
 
 ...
 
 ```
 
-Similarly, main.cpp needs an update for the registration of the executer:
+Similarly, main.cpp needs an update for the registration of the executor:
 
 ```
+// ~/src/main.cpp
+
 ...
 
-  // executer
+  // executor
   CROW_ROUTE(app, "/execute/<string>/<size_t>").methods("POST"_method)(
     [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
-      auto it = executers.find(type);
-      if (it == executers.end())
+      auto it = executors.find(type);
+      if (it == executors.end())
         return crow::response(400, "Unknown type");
 
       it->second(DCG_node_index);
@@ -2378,10 +2425,6 @@ Similarly, main.cpp needs an update for the registration of the executer:
 ...
 ```
 
-
-
-Lets review an example for this strategy.
-The CS definition of panel EO becomes:
 
 
 #### 4.2.4. FE Interface Requirements <a id='sec424'></a>

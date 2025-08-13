@@ -2427,12 +2427,13 @@ Similarly, main.cpp needs an update for the registration of the executor:
 
 Lets exemine the components of this strategy:
 - The CS implements the factory and the strategy patterns.
+- The client needs to define the factory method creating the Bind type object (e.g. Bind_Panel) within each CS type (e.g. EO_Panel).
 - The client needs to define a Bind class for each CS type which is almost a copy of the original CS class.
 - The client needs to implement the pybind11 interface for each CS class.
 - The client needs to implement the SP processes.
 
-The last one is inevitable; actually its a requirement for the SAA.
-The 2nd and the 3rd are quite standard processes which would not put too much load on the client.
+**The last one is inevitable; actually the client side development of the SP is a requirement for the SAA.**
+The 2nd, the 3rd and the 4th are quite standard processes which would not put too much load on the client.
 **The CS safely implements all the connections and the patterns required for C++/Python interaction.**
 
 #### 4.2.4. FE Interface Requirements <a id='sec424'></a>

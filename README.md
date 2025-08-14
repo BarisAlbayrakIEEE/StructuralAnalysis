@@ -2855,9 +2855,8 @@ Defining the EO interface, the full version of EO_Panel can be defined:
 
 #include "~/src/system/IEO.h"
 #include "~/src/plugins/core/material/EO_Mat1.h"
-#include "~/src/plugins/core/stiffener/EO_Stiffener.h"
-#include "SA_Panel_Buckling.h"
-#include "SA_Panel_Pressure.h"
+#include "~/src/plugins/core/stiffener/SC_Stiffener.h"
+#include "SC_Panel.h"
 
 using json = nlohmann::json;
 
@@ -2946,9 +2945,6 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     };
   }
 
-  // IDAG interface function: get_DAG_node
-  inline DAG_Node<EO_Panel> get_DAG_node() const { return DAG_Node<EO_Panel>(_type_container_index); };
-
   // IDAG interface function: get_ancestors
   std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
     return std::vector<IDAG const*>{ _EO_mat1.get_object(DAG_) };
@@ -3003,14 +2999,14 @@ Hence, the SCs are mostly related with the analysis requirements such as reporti
 
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/SC_Panel.h
 
-#ifndef _EO_Panel_h
-#define _EO_Panel_h
+#ifndef _SC_Panel_h
+#define _SC_Panel_h
 
 #include "~/src/system/IEO.h"
-#include "~/src/plugins/core/material/EO_Mat1.h"
 #include "~/src/plugins/core/stiffener/EO_Stiffener.h"
+#include "EO_Panel.h"
 #include "SA_Panel_Buckling.h"
 #include "SA_Panel_Pressure.h"
 
@@ -3021,16 +3017,16 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<EO_Mat1> _EO_mat1;
+  DAG_Node<EO_Panel> _EO_panel;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
   DAG_Node<SA_Panel_Buckling> _SA_panel_pressure;
   DAG_Node<SA_Panel_Pressure> _SA_panel_buckling;
 
-  // Notice that EO_Panel satisfies Has_Type_Name concept.
-  static inline std::string type_name = "EO_Panel";
+  // Notice that SC_Panel satisfies Has_Type_Name concept.
+  static inline std::string type_name = "SC_Panel";
 
-  // Notice that EO_Panel satisfies Has_Member_Names concept.
+  // Notice that SC_Panel satisfies Has_Member_Names concept.
   static inline auto member_names = std::vector<std::string>{
     "_type_container_index",
     "_thickness",
@@ -3042,7 +3038,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "_SA_panel_pressure",
     "_SA_panel_buckling"};
 
-  // Notice that EO_Panel satisfies Has_Member_Types concept.
+  // Notice that SC_Panel satisfies Has_Member_Types concept.
   static inline std::string member_names = std::vector<std::string>{
     "std::size_t",
     "double",
@@ -3054,8 +3050,8 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "DAG_Node",
     "DAG_Node"};
 
-  // Notice that EO_Panel satisfies Json_Constructible concept.
-  EO_Panel(std::size_t type_container_index, const json& json_) {
+  // Notice that SC_Panel satisfies Json_Constructible concept.
+  SC_Panel(std::size_t type_container_index, const json& json_) {
     if (
         !json_.contains("_thickness") ||
         !json_.contains("_width_a") ||
@@ -3065,7 +3061,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
         !json_.contains("_EO_side_stiffener_2") ||
         !json_.contains("_SA_panel_pressure") ||
         !json_.contains("_SA_panel_buckling"))
-      throw std::exception("Wrong inputs for EO_Panel type.");
+      throw std::exception("Wrong inputs for SC_Panel type.");
     
     _type_container_index = type_container_index;
     _thickness = json_["_thickness"];
@@ -3079,7 +3075,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   };
 
   // IUI interface function: get_type_name
-  inline std::string get_type_name() const { return "EO_Panel"; };
+  inline std::string get_type_name() const { return "SC_Panel"; };
 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
@@ -3107,9 +3103,6 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     };
   }
 
-  // IDAG interface function: get_DAG_node
-  inline DAG_Node<EO_Panel> get_DAG_node() const { return DAG_Node<EO_Panel>(_type_container_index); };
-
   // IDAG interface function: get_ancestors
   std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
     std::vector<IDAG const*> ancestors{};
@@ -3129,7 +3122,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     return descendants;
   };
 
-  // Notice that EO_Panel satisfies CBindable concept.
+  // Notice that SC_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
     auto EO_mat1{ DAG_->create_bind_object<Mat1>(_EO_mat1._index) };
     auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };

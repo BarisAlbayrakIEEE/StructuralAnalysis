@@ -1207,7 +1207,7 @@ std::unordered_map<std::string, (*)(std::size_t, const json&)> setters;
 
 // register creator, getter and setter for each type statically
 template <typename T>
-  requires (Has_Static_Type_Name<T> && Json_Compatible<T>)
+  requires (Has_Type_Name<T> && Json_Compatible<T>)
 void register_CS_type() {
   creators[T::type_name] = create<T>;
   getters[T::type_name] = get<T>;
@@ -1523,7 +1523,7 @@ struct EO_Panel : public IUI, IDCG {
   DCG_Node<EO_Stiffener> _side_stiffener_1;
   DCG_Node<EO_Stiffener> _side_stiffener_2;
 
-  // Notice that EO_Panel satisfies Has_Static_Type_Name!!!
+  // Notice that EO_Panel satisfies Has_Type_Name!!!
   static inline std::string type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
@@ -1872,7 +1872,7 @@ struct EO_Panel : public IUI, IDCG {
   DCG_Node<SA_Panel_Buckling> _panel_pressure;
   DCG_Node<SA_Panel_Pressure> _panel_buckling;
 
-  // Notice that EO_Panel satisfies Has_Static_Type_Name!!!
+  // Notice that EO_Panel satisfies Has_Type_Name!!!
   static inline std::string type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
@@ -2217,6 +2217,7 @@ The CRTP base class looks like:
 //   Inherit DCG<Ts...> from this interface
 //   Use IDCG_Base in this file instead of DCG_t
 template<typename T>
+  requires(Has_Bind_Type<T>)
 struct Bindable {
   std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
     return static_cast<T const*>(this)->create_bind_object(DCG_);
@@ -2410,7 +2411,7 @@ void execute(std::size_t type_container_index, const std::string& function_name)
 
 // register creator, getter, setter and executor for each type statically
 template <typename T>
-  requires (Has_Static_Type_Name<T> && Json_Compatible<T>)
+  requires (Has_Type_Name<T> && Json_Compatible<T>)
 void register_CS_type() {
   creators[T::type_name] = create<T>;
   getters[T::type_name] = get<T>;
@@ -2473,17 +2474,16 @@ Most of the types are expected to be FE_Importable_Exportable.
 #### 4.2.5. The MySQL DB Interface <a id='sec425'></a>
 
 ```
-// ~/src/system/db.h
+// ~/src/system/DB.h
 
-#ifndef _db_h
-#define _db_h
+#ifndef _DB_h
+#define _DB_h
 
 #include <string>
 #include <memory>
 #include <vector>
 #include <optional>
 #include <cstdint>
-#include "DCG.h"
 
 namespace sql { class Connection; class PreparedStatement; class ResultSet; }
 
@@ -2497,6 +2497,8 @@ public:
   ~DB();
 
   void bootstrap();
+  template<typename T>
+  void load(const DCG_t&, const DCG_Node<T>&);
   template<typename T>
   void insert(DCG_t&, const DCG_Node<T>&);
   template<typename T>
@@ -2522,18 +2524,13 @@ private:
   std::unique_ptr<sql::Connection> _connection;
 };
 
-struct IDB {
-  virtual void load_from_DB(const DB& db) = 0;
-  virtual void save_to_DB(const DB& db) const = 0;
-  virtual ~IDB() = default;
-};
-
 #endif
+```
 
+The implementation of this interface would look like:
 
-
-
-// ~/src/system/db.cpp
+```
+// ~/src/system/DB.cpp
 
 #include <iostream>
 #include <stdexcept>
@@ -2544,7 +2541,7 @@ struct IDB {
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
 #include <cppconn/exception.h>
-#include "db.h"
+#include "DB.h"
 
 static void log_sql_error(const sql::SQLException& e, const char* where) {
   std::cerr
@@ -2560,21 +2557,21 @@ template<typename T>
 std::string Database::initiate_member_vals_str_1() { // an easy string manipulation funcction };
 
 // T::member_names_str: Member names accept for the MySQL DB ID. Panel::member_names_str: "thickness, side_stiffener_1, side_stiffener_2"
-// initiate_member_vals_str_2 adds '=?' after each member name and adds " WHERE _ID=?"
-// initial_member_vals_str_2: Ex: "thickness=?, side_stiffener_1=?, side_stiffener_2=? WHERE _ID=?"
+// initiate_member_vals_str_2 adds '=?' after each member name
+// initial_member_vals_str_2: Ex: "thickness=?, side_stiffener_1=?, side_stiffener_2=?"
 template<typename T>
 std::string Database::initiate_member_vals_str_2() { // an easy string manipulation funcction };
 
 // 
 template<typename T>
-  requires(HasIDMember<T> && HasMemberNames<T> && HasMemberTypes<T>)
+  requires(HasIDMember<T> && Has_Member_Names<T> && Has_Member_Types<T>)
 std::string Database::get_DDL_str() {
-  "CREATE TABLE IF NOT EXISTS materials (" +
-  "  _ID BIGINT PRIMARY KEY AUTO_INCREMENT," + // assumes _ID member (needs a concept)
-  "  member_name_1 VARCHAR(255) NOT NULL," + // this line shall be parameterized for the member_name_1 and VARCHAR(255) based on type T 
-  "  member_name_2 DOUBLE NOT NULL," + // this line shall be parameterized for the member_name_2 and DOUBLE based on
-  "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-  ") ENGINE=InnoDB"
+  return "CREATE TABLE IF NOT EXISTS materials (" +
+    " _DB_ID BIGINT PRIMARY KEY AUTO_INCREMENT," + // HasIDMember<T>
+    " member_name_1 VARCHAR(255) NOT NULL," + // parameterize for member_name_1 and VARCHAR(255). ensured by Has_Member_Names<T> && Has_Member_Types<T>
+    " member_name_2 DOUBLE NOT NULL," + // parameterize for member_name_2 and DOUBLE. ensured by Has_Member_Names<T> && Has_Member_Types<T>
+    " created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+    ") ENGINE=InnoDB";
 };
 
 void Database::ensure_connected() {
@@ -2691,7 +2688,8 @@ void DB::save(const DCG_Node<T>& DCG_node) {
     "UPDATE " +
     table_name +
     " SET " +
-    initial_member_vals_str_2 };
+    initial_member_vals_str_2 +
+    " WHERE _DB_ID=?" };
 
   try {
     auto ps = prepare(MySQL_command);
@@ -2704,12 +2702,27 @@ void DB::save(const DCG_Node<T>& DCG_node) {
 }
 ```
 
+The DB core defined above is too simple and needs lots of work.
+However, I will not go through the details here.
 
+A parameterized DB core requires an interface at the CS side.
+The fields like member names and member types would also support automization of the UI interface.
+Following defines a short and clean interface which would most probably improved while designing the DB in moore detail.
 
+```
+// ~/src/system/IDB.h
 
+#ifndef _IDB_h
+#define _IDB_h
 
+struct IDB {
+  virtual void load_from_DB(const DB&) = 0;
+  virtual void save_to_DB(const DB&) const = 0;
+  virtual ~IDB() = default;
+};
 
-
+#endif
+```
 
 #### 4.2.6. The CS Class Hierarchy <a id='sec426'></a>
 
@@ -2724,9 +2737,10 @@ All of these interfaces shall satisfy the above interfaces in order to:
 - be stored by the DCG,
 - suffice the UI interactions,
 - suffice the SP interactions and
+- suffice the DB interactions.
 - suffice the FE interactions.
 
-Hence, the CS shall form a class hierarchy whiich roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDCG).
+Hence, the CS shall form a class hierarchy which roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDCG).
 
 ```
 // ~/src/system/Abstract_CS_Base.h
@@ -2735,8 +2749,8 @@ Hence, the CS shall form a class hierarchy whiich roots to a base class visualiz
 #define _Abstract_CS_Base_h
 
 template<typename T>
-  requires(Has_Static_Type_Name<T> && Json_Compatible<T>)
-struct Abstract_CS_Base : public IUI, IDCG, Bindable<T> {
+  requires(Has_Type_Name<T> && Json_Compatible<T> && Has_Member_Names<T> && Has_Member_Types<T>)
+struct Abstract_CS_Base : public IUI, IDCG, IDB, Bindable<T> {
   virtual ~Abstract_CS_Base() = default;
   std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
     return static_cast<T const*>(this)->create_bind_object(DCG_);
@@ -2761,7 +2775,7 @@ In other words, the EOs extends an interface related to the structural sizing:
 #define _Abstract_EO_Base_h
 
 template<typename T>
-  requires(Has_Static_Type_Name<T> && Json_Compatible<T>)
+  requires(Has_Type_Name<T> && Json_Compatible<T>)
 struct Abstract_EO_Base : public Abstract_CS_Base<Abstract_EO_Base<T>> {
   virtual ~Abstract_EO_Base() = default;
   std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
@@ -2780,7 +2794,7 @@ struct Abstract_EO_Base : public Abstract_CS_Base<Abstract_EO_Base<T>> {
 
 struct IUI {
 struct IDCG {
-concept Has_Static_Type_Name = std::constructible_from<T, const json&>;
+concept Has_Type_Name = std::constructible_from<T, const json&>;
 concept Json_Compatible = std::constructible_from<T, const json&>;
 struct Abstract_Non_Updatable : public IDCG {
 struct Abstract_Ancestor_Updatable : public IDCG {

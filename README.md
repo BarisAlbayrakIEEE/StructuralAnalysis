@@ -923,7 +923,7 @@ struct TypeList {};
 // CAUTION:
 //   Each new type needs to be added to this type list.
 //   This is the only CS modification the client has to perform to add a new type via a plugin!!!
-using SAA_Types_t = TypeList<
+using CS_Types_t = TypeList<
   EO_Panel,
   EO_Stiffener,
   EO_Mat1,
@@ -976,7 +976,7 @@ struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not fou
 // -----------------------------------------------------------------------
 
 // Unpacking a type list for class definitions
-template <typename TypeListT>
+template <typename Types>
 struct UnpackTypeList;
 
 template <template <typename...> class List, typename... Ts>
@@ -985,13 +985,24 @@ struct UnpackTypeList<List<Ts...>> {
     using apply = Target<Ts...>;
 };
 
-// Unpacking a type list for function definitions
-template <typename TypeListT, typename F>
-void for_each_type(F&& func);
+// -----------------------------------------------------------------------
 
-template <typename... Ts, typename F>
-void for_each_type(TypeList<Ts...>, F&& func) {
-    (func.template operator()<Ts>(), ...);
+// Unpacking a type list for function definitions
+template<typename T>
+struct type_tag { using type = T; };
+
+// Compile-time iteration over TypeList<Ts...>
+template<typename Types, typename F>
+struct for_each_type_impl;
+
+template<typename... Ts, typename F>
+struct for_each_type_impl<TypeList<Ts...>, F> {
+  static void apply(F&& f) { (f(type_tag<Ts>{}), ...); }
+};
+
+template<typename Types, typename F>
+inline void for_each_type(F&& f) {
+  for_each_type_impl<Types, F>::apply(std::forward<F>(f));
 }
 
 // -----------------------------------------------------------------------
@@ -1145,7 +1156,7 @@ As mentioned above, the pseudocode represents only the backend/frontend interfac
 #include "DCG.h"
 
 // Define the type of the DCG
-using DCG_t = typename UnpackTypeList<SAA_Types_t>::apply<DCG>;
+using DCG_t = typename UnpackTypeList<CS_Types_t>::apply<DCG>;
 
 // Store the DCGs for undo/redo
 std::stack<DCG_t> _DCGs();
@@ -1205,10 +1216,15 @@ void register_CS_type() {
 
 // register creator, getter and setter for each type statically by calling register_CS_type recursively.
 // this is a static procedure which improves the SAA runtime performance.
+template<typename Types>
+void register_CS_types_helper() {
+  for_each_type<Types>(
+    [this](auto t) {
+      using T = typename decltype(t)::type;
+      register_type<T>(); });
+}
 void register_CS_types() {
-  for_each_type(SAA_Types_t{}, []<typename T>() {
-    register_type<T>();
-  });
+    register_CS_types_helper<CS_Types_t>();
 }
 
 #endif
@@ -1416,7 +1432,7 @@ using type_list_to_variant_for_DCG_node = typename type_list_to_variant<Ts..., D
 
 // This type holds the variants of DCG_Node.
 // This type can be used to deal with the objects of DCG_Node where the stored value is not known statically:
-using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant_for_DCG_node>;
+using DCG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_for_DCG_node>;
 
 #endif
 ```
@@ -1594,7 +1610,7 @@ using type_list_to_variant_for_DCG_node = typename type_list_to_variant<Ts..., D
 
 // This type holds the variants of DCG_Node.
 // This type can be used to deal with the objects of DCG_Node where the stored value is not known statically:
-using DCG_node_variant = UnpackTypeList<SAA_Types_t>::apply<type_list_to_variant_for_DCG_node>;
+using DCG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_for_DCG_node>;
 
 #endif
 ```
@@ -1643,7 +1659,7 @@ class DCG {
   static constexpr std::size_t _type_list_size = sizeof...(Ts);
 
   // The DCG node handle defines the position of an object:
-  //   type: represents the index of the type within SAA_Types_t.
+  //   type: represents the index of the type within CS_Types_t.
   //   index: represents the index of the object within the corresponding type container.
   struct DCG_Node_Handle { std::uint32_t type; std::uint32_t index; };
 
@@ -1651,7 +1667,7 @@ class DCG {
   // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DCG[N]
   _a_type_containers _type_containers;   // SoA: Type indexing is same as the other members
   _a_DCG_node_handles__DCG _descendants; // [type][index] -> children
-  _a_states__DCG__DCG _states__DCG;       // The ordering of the outer most std::vector is the same as the SAA_Types_t
+  _a_states__DCG__DCG _states__DCG;       // The ordering of the outer most std::vector is the same as the CS_Types_t
   std::string _FE_link;
   ...
 
@@ -1668,7 +1684,7 @@ class DCG {
   }
 
   // FP: Transforms the input function to be applicable to the type container corresponding to the input type id.
-  // std::size_t type_id corresponds to the index of a type within SAA_Types_t.
+  // std::size_t type_id corresponds to the index of a type within CS_Types_t.
   template<class F>
   decltype(auto) with_type_container(std::size_t type_id, F&& f) {
     using R = std::common_type_t<std::invoke_result_t<F, std::vector<Ts>&>...>;
@@ -1792,14 +1808,14 @@ class DCG {
   static constexpr std::size_t _type_list_size = sizeof...(Ts);
 
   // The DCG node handle defines the position of an object:
-  //   type: represents the index of the type within SAA_Types_t.
+  //   type: represents the index of the type within CS_Types_t.
   //   index: represents the index of the object within the corresponding type container.
   struct DCG_Node_Handle { std::uint32_t type; std::uint32_t index; };
 
   // Members
   // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DCG[N]
   _a_type_containers _type_containers;   // SoA: Type indexing is same as the other members
-  _a_states__DCG__DCG _states__DCG;      // The ordering of the outer most std::vector is the same as the SAA_Types_t
+  _a_states__DCG__DCG _states__DCG;      // The ordering of the outer most std::vector is the same as the CS_Types_t
   std::string _FE_link;
   ...
 
@@ -2016,8 +2032,8 @@ class DCG {
   // Members
   // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DCG[N]
   _a_type_containers _type_containers;   // SoA: Type indexing is same as the other members
-  _a_states__DCG__DCG _states__DCG       // The ordering of the outer most std::vector is the same as the SAA_Types_t
-  _a_states__DB__DCG _states__DB;        // The ordering of the outer most std::vector is the same as the SAA_Types_t
+  _a_states__DCG__DCG _states__DCG       // The ordering of the outer most std::vector is the same as the CS_Types_t
+  _a_states__DB__DCG _states__DB;        // The ordering of the outer most std::vector is the same as the CS_Types_t
   std::string _FE_link;
   ...
 
@@ -2223,7 +2239,7 @@ template <class T>
 concept CBindable = ExtendsCRTP<Bindable, T>;
 ```
 
-This concept can easily be applied all the types in the SAA_Types_t similar to All_Json_Constructible.
+This concept can easily be applied all the types in the CS_Types_t similar to All_Json_Constructible.
 The DCG needs a function which would return the Bind objects for the input type and index.
 The function will be templated and return type (e.g. Bind_Panel) depends on the template type (e.g. EO_Panel).
 The solution is defining an alias in the CS types that stores the type of the corresponding Bind type.
@@ -2467,11 +2483,12 @@ Most of the types are expected to be FE_Importable_Exportable.
 #include <vector>
 #include <optional>
 #include <cstdint>
+#include "DCG.h"
 
 namespace sql { class Connection; class PreparedStatement; class ResultSet; }
 
 struct DB_Config {
-  std::string uri, user, password, dbName;
+  std::string uri, user, password, DB_name;
 };
 
 class DB {
@@ -2480,13 +2497,24 @@ public:
   ~DB();
 
   void bootstrap();
-  std::int64_t insert(const Material& m);
+  template<typename T>
+  void insert(DCG_t&, const DCG_Node<T>&);
+  template<typename T>
+  void save(const DCG_Node<T>&);
 
 private:
   static constexpr std::string table_name_prrefix{ "table_" };
 
+  template<typename T>
+  std::string initiate_member_vals_str_1(const std::string&);
+  template<typename T>
+  std::string initiate_member_vals_str_2(const std::string&);
+  template<typename T>
+  std::string get_DDL_str(const std::string&);
+
   void ensure_connected();
   void create_DB();
+  void create_tables_helper();
   void create_tables();
   std::unique_ptr<sql::PreparedStatement> prepare(const std::string& sql);
 
@@ -2496,7 +2524,7 @@ private:
 
 struct IDB {
   virtual void load_from_DB(const DB& db) = 0;
-  virtual void save_to_DB(const DB& db, std::int64_t) const = 0;
+  virtual void save_to_DB(const DB& db) const = 0;
   virtual ~IDB() = default;
 };
 
@@ -2525,15 +2553,102 @@ static void log_sql_error(const sql::SQLException& e, const char* where) {
     << ", SQLState " << e.getSQLStateCStr() << ")\n";
 }
 
-// ... ctor/dtor/ensure_connected/bootstrap/create* same as before ...
+// T::member_names_str: Member names accept for the MySQL DB ID. Panel::member_names_str: "thickness, side_stiffener_1, side_stiffener_2"
+// initiate_member_vals_str_1 replaces each member name with a question mark
+// initial_member_vals_str_1: Ex: "?, ?, ?"
+template<typename T>
+std::string Database::initiate_member_vals_str_1() { // an easy string manipulation funcction };
+
+// T::member_names_str: Member names accept for the MySQL DB ID. Panel::member_names_str: "thickness, side_stiffener_1, side_stiffener_2"
+// initiate_member_vals_str_2 adds '=?' after each member name and adds " WHERE _ID=?"
+// initial_member_vals_str_2: Ex: "thickness=?, side_stiffener_1=?, side_stiffener_2=? WHERE _ID=?"
+template<typename T>
+std::string Database::initiate_member_vals_str_2() { // an easy string manipulation funcction };
+
+// 
+template<typename T>
+  requires(HasIDMember<T> && HasMemberNames<T> && HasMemberTypes<T>)
+std::string Database::get_DDL_str() {
+  "CREATE TABLE IF NOT EXISTS materials (" +
+  "  _ID BIGINT PRIMARY KEY AUTO_INCREMENT," + // assumes _ID member (needs a concept)
+  "  member_name_1 VARCHAR(255) NOT NULL," + // this line shall be parameterized for the member_name_1 and VARCHAR(255) based on type T 
+  "  member_name_2 DOUBLE NOT NULL," + // this line shall be parameterized for the member_name_2 and DOUBLE based on
+  "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+  ") ENGINE=InnoDB"
+};
+
+void Database::ensure_connected() {
+  if (_connection) return;
+
+  try {
+    sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+
+    // use (uri, user, pass) for simplicity
+    _connection.reset(driver->connect(_DB_config.uri, _DB_config.user, _DB_config.password));
+
+    // connect without a default schema first.
+    // if missing call setSchema(_DB_config.DB_name) later in bootstrap().
+  } catch (const sql::SQLException& e) {
+    log_sql_error(e, "connect");
+    throw;
+  }
+}
+
+void Database::bootstrap() {
+  create_DB();
+  // switch to the app schema
+  try {
+    _connection->setSchema(_DB_config.DB_name);
+  } catch (const sql::SQLException& e) {
+    log_sql_error(e, "setSchema");
+    throw;
+  }
+  create_tables();
+}
+
+void Database::create_DB() {
+  try {
+    std::unique_ptr<sql::Statement> s(_connection->createStatement());
+    // Choose a modern utf8mb4 collation (adjust if your server version differs)
+    s->execute(
+      "CREATE DATABASE IF NOT EXISTS `" + _DB_config.DB_name + "` "
+      "DEFAULT CHARACTER SET utf8mb4 "
+      "DEFAULT COLLATE utf8mb4_0900_ai_ci"
+    );
+  } catch (const sql::SQLException& e) {
+    log_sql_error(e, "create_DB");
+    throw;
+  }
+}
+
+// Call it from bootstrap after setSchema(_DB_config.DB_name)
+template<typename Types>
+void Database::create_tables_helper() {
+  for_each_type<Types>(
+    [this](auto t) {
+      using T = typename decltype(t)::type;
+      std::unique_ptr<sql::Statement> s(_connection->createStatement());
+      s->execute(get_DDL_str<T>()); });
+}
+void Database::create_tables() {
+    create_tables_helper<CS_Types_t>();
+}
+
+std::unique_ptr<sql::PreparedStatement> Database::prepare(const std::string& MySQL_command) {
+  try {
+    return std::unique_ptr<sql::PreparedStatement>(_connection->prepareStatement(MySQL_command));
+  } catch (const sql::SQLException& e) {
+    log_sql_error(e, "prepare");
+    throw;
+  }
+}
 
 template<typename T>
-void DB::insert(const T& obj) {
+void DB::insert(DCG_t& DCG_, const DCG_Node<T>& DCG_node) {
   std::string table_name{ DB::table_name_prefix + T::type_name };
 
-  // T::member_names_str: Member names accept for the MySQL DB ID. Ex: "thickness, side_stiffener_1, side_stiffener_2"
-  // initial_member_vals_str_1: Ex: ?, ?, ? (initiate_member_vals_1 replaces each member name with a question mark)
-  std::string initial_member_vals_str_1{ initiate_member_vals_1(T::member_names_str) };
+  // MySQL string for the members
+  std::string initial_member_vals_str_1{ initiate_member_vals_str_1<T>() };
   std::string MySQL_command{
     "INSERT INTO " +
     table_name +
@@ -2557,52 +2672,39 @@ void DB::insert(const T& obj) {
       rs2->next();
       DB_key = rs2->getInt64(1);
     }
-    obj.save_to_DB(*this, DB_key);
+    DCG_.set_DB_key(DCG_node, DB_key);
+    DCG_node.save_to_DB(*this);
+    ps->executeUpdate();
   } catch (const sql::SQLException& e) {
-    log_sql_error(e, "insert " + T::type_name);
+    log_sql_error(e, "insert")
     throw;
   }
 }
 
 template<typename T>
+void DB::save(const DCG_Node<T>& DCG_node) {
   std::string table_name{ DB::table_name_prefix + T::type_name };
 
-  // T::member_names_str: Member names accept for the MySQL DB ID. Ex: "thickness, side_stiffener_1, side_stiffener_2"
-  // initial_member_vals_str_1: Ex: ?, ?, ? (initiate_member_vals_2 adds '=?' after each member name)
-  std::string initial_member_vals_str_2{ initiate_member_vals_1(T::member_names_str) };
+  // MySQL string for the members
+  std::string initial_member_vals_str_2{ initiate_member_vals_str_2<T>() };
   std::string MySQL_command{
     "UPDATE " +
     table_name +
     " SET " +
-    initial_member_vals_str_2 +
-    " WHERE id=?" };
+    initial_member_vals_str_2 };
 
   try {
     auto ps = prepare(MySQL_command);
-    auto ps = prepare(
-      "UPDATE materials SET name=?, density=?, youngs=?, poisson=? WHERE id=?");
-    ps->setString(1, m.name);
-    ps->setDouble(2, m.density);
-    ps->setDouble(3, m.youngs);
-    ps->setDouble(4, m.poisson);
-    ps->setInt64(5, m.id);
+    DCG_node.save_to_DB(*this);
     ps->executeUpdate();
-    obj.save_to_DB(*this, DB_key);
   } catch (const sql::SQLException& e) {
-    log_sql_error(e, "update_material");
+    log_sql_error(e, "update");
     throw;
   }
 }
 ```
 
 
-
-
-    ps->setString(1, m.name);
-    ps->setDouble(2, m.density);
-    ps->setDouble(3, m.youngs);
-    ps->setDouble(4, m.poisson);
-    ps->executeUpdate();
 
 
 

@@ -303,8 +303,16 @@ For example, when a material is updated, all the descendants of the material sha
 In other words, an action on an element shall be propogated through the descendants of the element.
 This could be performed using a proxy design pattern.
 However, a better/compact solution is to use a **directed graph** data structure for the memory management.
-The graph in the case of the SAA **is not acyclic** as the types have mutual dependencies by definition (e.g. panel and stiffener).
-Hence, the core data structure of the SAA is a **directed cyclic graph (DCG)**.
+There, by physical definition, exists mutual dependencies in case of the SAA.
+For example, a panel is formed by a plate supported by two side stiffeners against the axial loading while
+a stiffener is an extruded cross-section balanced by two side panels against the shear loading.
+Hence, both the panel and the stiffener depend on each other.
+However, this problem can be solved by delaying the dependencies to a higher definition.
+The SAA contains two fundamental types: engineering object (EO) and structural component (SC).
+The dependencies can be defined in the SCs (i.e. SC_Panel and SC_Stiffener)
+leaving the EOs (i.e. EO_Panel and EO_Stiffener) with the raw data (e.g. thickness).
+Now the SAA is free of the **cyclic relations**.
+Hence, the core data structure of the SAA is a **directed acyclic graph (DAG)**.
 
 Consider a geometry application (e.g. Dassault's Catia).
 The application would be simulated with a directed acyclic graph (DAG).
@@ -318,10 +326,10 @@ Catia also allows removing an element without removing the decendants which requ
 Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
-- The depth of the DCG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> buckling RF.
+- The depth of the DAG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> buckling RF.
 - No need to have background processes for the cycled or deleted nodes.
 
-**The above two points show that the DCG shall be single-threaded.**
+**The above two points show that the DAG shall be single-threaded.**
 
 The memory management is crucial in case of the SAA as it may contain large data caused by hundreds of the user types.
 The memory management is related to the efficiency of the memory access patterns affecting both the read and write operations.
@@ -370,7 +378,7 @@ In summary, this approach distributes the memory management and the design to th
 by assuming that the CS can work with the raw data and would not need to know about the design (i.e. the class hierarchy).
 However, the assumption actually is not correct.
 Below list presents a couple of the reasons why the assumption fails:
-1. The DCG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
+1. The DAG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
 2. Write operations would need temporary SP object creation in order to inspect the type invariants.
 3. The UI would need an interface for the FE: import_FE() and export_FE()
 4. The UI would need an interface for the mutability and sizeability: the state management and size()
@@ -378,7 +386,7 @@ Below list presents a couple of the reasons why the assumption fails:
 
 I will discuss on these issues later in [the software design](#sec4) section.
 The 1st reason is especially important as it means that
-a traversal through the DCG would require the construction of temporary objects (e.g. Mat1, Panel)
+a traversal through the DAG would require the construction of temporary objects (e.g. Mat1, Panel)
 if the CS involves only the raw data.
 Actually, all of the operations may require the temporary objects.
 Another solution is to apply the FOD approach to every problem but
@@ -393,24 +401,24 @@ In summary, we have three choices for the CS:
 3. use one of C++, rust and java.
 
 The 1st solution is not a choice due to the reasons already been discussed but I want to add one more point.
-Later I will review the DCG in detail and select functionally persistent DCG to manage the memory.
+Later, I will review the DAG in detail and select functionally persistent DAG to manage the memory.
 The persistent solution would require frequent copy operations for which the heap memory usage is a significant problem.
-Every action of the user may take considarable time for large DCGs if the data is spread out of the heap memory.
+Every action of the user may take considarable time for large DAGs if the data is spread out of the heap memory.
 
 I will eliminate the 2nd solution as its no better than the 3rd one.
 I also eliminate the rust solution as I dont have any experience with the rust development.
 Hence, there remains only C++ and java solutions.
 
-In order for the DCG to manage the memory it must store the whole data.
-The objects need to be contained by the DCG in contiguous allocations.
+In order for the DAG to manage the memory it must store the whole data.
+The objects need to be contained by the DAG in contiguous allocations.
 C++ provides variadic templates for varying type lists.
 Java handles the problem applying the type erasure which loses the compile-time static definition capability.
 
-C++ solution for the DCG would look like:
+C++ solution for the DAG would look like:
 
 ```
 template<typename... Ts>
-class DCG {
+class DAG {
   private:
     std::tuple<std::vector<Ts>...> _type_containers;
   ...
@@ -445,12 +453,12 @@ using TypeList = Types<Foo, Bar>;
 static constexpr TypeAt<0, TypeList> obj{};
 ```
 
-On the other hand, with java, the type containers of the DCG must be defined manually:
+On the other hand, with java, the type containers of the DAG must be defined manually:
 
 ```
 import java.util.ArrayList;
 
-class DCG{
+class DAG{
   private ArrayList<Panel> panels;
   private ArrayList<Stiffener> stiffeners;
   ...
@@ -458,7 +466,7 @@ class DCG{
 ```
 
 However, the SAA is designed to be extensible by adding new plugins defining new types.
-Hence, for each new plugin, the CS (i.e. the DCG and maybe some others) needs to be updated manually in case of java.
+Hence, for each new plugin, the CS (i.e. the DAG and maybe some others) needs to be updated manually in case of java.
 Making the client responsible from the CS is not a good design practice.
 
 **The discussions up to here concludes that C++ is the best choice for the CS side.**
@@ -499,8 +507,8 @@ Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 
 I will examine three use case scenarios:
-1. [Master User] | Import an FEM, create a DCG and insert it into the client-server MySQL DB
-2. [Ordinary User] | Check-out a DCG node from MySQL DB, inspect/size the SCs within the DCG node and save the updates to MySQL DB
+1. [Master User] | Import an FEM, create a DAG and insert it into the client-server MySQL DB
+2. [Ordinary User] | Check-out a DAG node from MySQL DB, inspect/size the SCs within the DAG node and save the updates to MySQL DB
 3. [Ordinary User] | Perform offline tradeoff
 
 There exist other scenarios as well.
@@ -517,26 +525,26 @@ Later, I will discuss on these scenarios in terms of the architecture.
 In this scenario, a master user imports an FEM.
 The core framework has IO routines for the FE data.
 The importer reads the material, load, node and element data from the FE file (e.g. a bdf file)
-and create the DCG by constructing the objects of SAA (e.g. panel and stiffener) based on this FE data.
+and create the DAG by constructing the objects of SAA (e.g. panel and stiffener) based on this FE data.
 This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
 With the import process:
 - the importer loads the FE data to be displayed by the FE graphics window
-- the importer creates a DCG involving the SAA objects (e.g. panel_11)
+- the importer creates a DAG involving the SAA objects (e.g. panel_11)
 
 The importer, constructs the SAA objects without the dependencies.
-In other words, the ancestor and descendant data blocks of the DCG is empty.
+In other words, the ancestor and descendant data blocks of the DAG is empty.
 For example, the side stiffeners of a panel object are not set yet.
 The master user needs to set these relations between the SAA objects from the UI.
-Each UI action of the master user is transfered to the core system (CS) to update the ancestor/descendant relations of the DCG.
-Finally, the master user inserts the new DCG into the MySQL DB assigning a structural configuration ID related to the imported FEM.
+Each UI action of the master user is transfered to the core system (CS) to update the ancestor/descendant relations of the DAG.
+Finally, the master user inserts the new DAG into the MySQL DB assigning a structural configuration ID related to the imported FEM.
 
 - **Primary Actor:** Master user
 - **Scope:** SAA
 - **Level:** User goal
 
 **Stakeholders and Interests**
-- **Master user**: wants to create a new DCG based on an FE data.
-- **Ordinary users**: need the new DCG to inspect/size.
+- **Master user**: wants to create a new DAG based on an FE data.
+- **Ordinary users**: need the new DAG to inspect/size.
 
 **Preconditions**
 - an existing FE data pack with a predefined format including the geometry, material and loading exists.
@@ -544,14 +552,14 @@ Finally, the master user inserts the new DCG into the MySQL DB assigning a struc
 **Main Flow**
 1. **Master user** clicks **import an FE data**.
 2. **UI** emits an event to activate the CS for the FE data extraction.
-3. **System** imports the FE file to create a new DCG linked to the input FE file.
+3. **System** imports the FE file to create a new DAG linked to the input FE file.
 4. **System** emits an event to initialize the user forms and the graphics.
 5. **UI** initializes the user forms and the graphics.
-6. **Master user** updates the elements of the DCG for the relations.
-7. **Master user** clicks **save new DCG**.
-8. **UI** emits an event to save the new DCG.
-9. **System** inserts the new DCG into the MySQL DB.
-10. **MySQL** inserts the new DCG.
+6. **Master user** updates the elements of the DAG for the relations.
+7. **Master user** clicks **save new DAG**.
+8. **UI** emits an event to save the new DAG.
+9. **System** inserts the new DAG into the MySQL DB.
+10. **MySQL** inserts the new DAG.
 
 **Alternate Flows (Errors) - 1: Error during FE import**
 - **3. System** terminates the FE Import.
@@ -565,24 +573,24 @@ Finally, the master user inserts the new DCG into the MySQL DB assigning a struc
 - **12. Master user** reports the DB error to the server IT.
 
 **Postconditions**
-- MySQL DB contains the new DCG.
+- MySQL DB contains the new DAG.
 
 **UML Diagram**\
 ![UCD-01: Master User FE Import](./uml/use_case_diagram_1.png)
 
 #### 3.6.2 Use Case scenario #2
 
-In this scenario, an ordinary user checks out a sub-DCG from MySQL DB for inspection or sizing.
-The CS loads the sub-DCG and the FEM attached to the DCG.
+In this scenario, an ordinary user checks out a sub-DAG from MySQL DB for inspection or sizing.
+The CS loads the sub-DAG and the FEM attached to the DAG.
 Then, the CS initializes the UI.
-The analysis results (i.e. the SARs and RFs) may have values if the sub-DCG has been studied before.
+The analysis results (i.e. the SARs and RFs) may have values if the sub-DAG has been studied before.
 In this case, the SARs may have **UpToDate** state.
 Otherwise, SARs have null values and the states are **OutOfDate**.
 The ordinary user has two options: inspection or sizing.
 The ordinary user runs the SAMMs for each SC in case of an inspection process.
 Otherwise, the ordinary user updates the properties of the SCs (e.g. material and geometry)
 and run the SAMMs in order to get the acceptable SARs (i.e. RFs).
-After completing the inspection/sizing, the ordinary user saves the sub-DCG with the updated SARs to MySQL DB.
+After completing the inspection/sizing, the ordinary user saves the sub-DAG with the updated SARs to MySQL DB.
 
 In this scenario, I will skip the inspection process.
 Although the SAA shall implement an optimization routine to automate the sizing,
@@ -593,22 +601,22 @@ I will prepare the scenario for a manual procedure.
 - **Level:** User goal
 
 **Stakeholders and Interests**
-- **Ordinary user**: wants to update a sub-DCG for the SARs.
-- **Project Manager**: needs quick feedback on the analysis status of the sub-DCG.
+- **Ordinary user**: wants to update a sub-DAG for the SARs.
+- **Project Manager**: needs quick feedback on the analysis status of the sub-DAG.
 
 **Preconditions**
-- the sub-DCG shall already be loaded to MySQL DB by the master user.
+- the sub-DAG shall already be loaded to MySQL DB by the master user.
 
 **The Flow (skip the error conditions for simplicity)**
-1. **Ordinary User** selects to load a sub-DCG from MySQL DB.
-2. **UI** emits an event to activate the CS for the DCG loading.
-3. **System** loads the sub-DCG from MySQL DB and the attached FEM.
+1. **Ordinary User** selects to load a sub-DAG from MySQL DB.
+2. **UI** emits an event to activate the CS for the DAG loading.
+3. **System** loads the sub-DAG from MySQL DB and the attached FEM.
 4. **System** emits an event to initialize the user forms and the FE graphics.
 5. **UI** initializes the user forms and the FE graphics.
 6. **Ordinary User** reviews the SARs to detect the SCs that need sizing.
 7. **Ordinary User** updates the properties (e.g. material and geometry) of the SCs that needs sizing.
 8. **UI** emits an event to activate the CS for each update.
-9. **System** reflects each update to the sub-DCG and sets the state of the SARs corresponding to each updated SC as **OutOfDate**.
+9. **System** reflects each update to the sub-DAG and sets the state of the SARs corresponding to each updated SC as **OutOfDate**.
 10. **Ordinary User** runs SAMMs for the updated SCs.
 11. **UI** emits an event to activate the CS to run SAMMs for the updated SCs.
 12. **System** runs SAMMs for the updated SCs.
@@ -616,9 +624,9 @@ I will prepare the scenario for a manual procedure.
 14. **System** emits an event to activate the UI for the states and SARs.
 15. **UI** refreshes the SARs for the state and values.
 16. Repeat Steps 6 to 15 to finish sizing all SCs.
-17. **Ordinary User** selects to save the sub-DCG to MySQL DB.
-18. **UI** emits an event to activate the CS for the sub-DCG save.
-19. **System** saves the sub-DCG to MySQL DB.
+17. **Ordinary User** selects to save the sub-DAG to MySQL DB.
+18. **UI** emits an event to activate the CS for the sub-DAG save.
+19. **System** saves the sub-DAG to MySQL DB.
 
 **Postconditions**
 - The SARs are **UpToDate** and safe.
@@ -636,7 +644,7 @@ Hence, the engineer usualy needs to perform a quick analysis to see the effect o
 In this case, the engineer works offline (independent of MySQL DB).
 She needs to define the SC to be examined (e.g. panel) and the auxilary objects (e.g. material, load).
 Then, she plays with the properties which she wants to examine (e.g. thickness) and runs the corresponding SAMM.
-The user neither imports an FE data nor connects to the MySQL DB for a DCG.
+The user neither imports an FE data nor connects to the MySQL DB for a DAG.
 The constructed objects will be destructed when the user finishes her session.
 
 - **Primary Actor:** Ordinary user
@@ -673,14 +681,14 @@ The constructed objects will be destructed when the user finishes her session.
 #### 3.6.4 A Quick Review on the Use Case scenarios
 
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
-- FE data is managed by the UI component (i.e. js) while the DCG data is managed by the CS.
+- FE data is managed by the UI component (i.e. js) while the DAG data is managed by the CS.
 - There is a frequent request traffic between the backend and the frontend.
 - Large data may be transfered betweeen the backend and the frontend.
-- **The DCG shall follow DOD approach to store the data.**
-- **The DCG shall define and manage a state (e.g. UpToDate) for each node in the DCG.**
-- The routines of the DCG related to the node states would be based on the ancestor/descendant relations.
+- **The DAG shall follow DOD approach to store the data.**
+- **The DAG shall define and manage a state (e.g. UpToDate) for each node in the DAG.**
+- The routines of the DAG related to the node states would be based on the ancestor/descendant relations.
 - **The OETV and the FE display components of the UI shall reflect the current node states (i.e. SCs and SARs).**
-- The CS needs a temporary DCG to manage the lifetime of the objects constructed in an offline process.
+- The CS needs a temporary DAG to manage the lifetime of the objects constructed in an offline process.
 - The SAA needs role definitions such as: System User, Admin User, Master User and Ordinary User.
 - System Users would manage the plugins and SAMMs.
 - Admin Users would manage the standard parts (e.g. material and fastener).
@@ -689,8 +697,8 @@ Below are some observations I realized by examining the UML diagrams of the use 
 - **The SP shall run asynchrously.**
 - **While the solver is running, the UI shall switch to read-only mode allowing requests for new runs.**
 - **The SP shall be defined to list the SAMMs together with the versions.**
-- **The SPs shall define the applicability (e.g. DCG type version) as well.**
-- **The DCGs shall define a configuration which contains: company policies, DCG type version and the SP version.**
+- **The SPs shall define the applicability (e.g. DAG type version) as well.**
+- **The DAGs shall define a configuration which contains: company policies, DAG type version and the SP version.**
 
 I tested Crow for the large data transfer from C++ to js.
 The results are satisfactory (i.e. some miliseconds for MBs of data).
@@ -705,15 +713,15 @@ When the user wants to undo the update operation, SAR1 should go to UpToDate but
 This is a very simple case.
 In some cases, the update may effect many nodes even recursively due to the descendant relations.
 The command design pattern would be too complicated and need many branches to cover different conditions.
-Hence, for undo/redo functionality, **I will continue with a functionally persistent DCG data structure** instead of the command pattern.
-The DCG would make use of **the structural sharing** for the memory and performance.
+Hence, for undo/redo functionality, **I will continue with a functionally persistent DAG data structure** instead of the command pattern.
+The DAG would make use of **the structural sharing** for the memory and performance.
 
-**The CS shall define two arrays of DCGs:**
-1. The 1st array stores the functionally persistent DCGs for the online process connected to the MySQL DB.
-2. The 2nd array stores the functionally persistent DCGs for the offline process.
+**The CS shall define two arrays of DAGs:**
+1. The 1st array stores the functionally persistent DAGs for the online process connected to the MySQL DB.
+2. The 2nd array stores the functionally persistent DAGs for the offline process.
 
 **The SAA shall define a user profile with a role definition.**
-**The DCGs shall manage the roles by a field defined by the DCG nodes.**
+**The DAGs shall manage the roles by a field defined by the DAG nodes.**
 
 **The SAA shall assign MySQL DBs for the standard items (e.g. material and fastener).**
 
@@ -739,17 +747,17 @@ Below are the current features of the SAA based on the previous sections:
 - The core plugins for the fundamental types (e.g. panel) are shipped with the installation
 - The core framework provides the type registration
 - Follow TDD approach for the core plugins
-- The CS data structure: Functionally persistent DCG with structural sharing
-- Core manages two DCGs: online and offline
-- The DCG manages the state for each node which is visualized by the frontend
-- DCG_Node_Handle undo/redo operations making use of the persistency of the DCG
-- DCG configuration field: the FE version (e.g. fe-v0.1), the DCG version (e.g. dcg-v0.1) and the SP version (e.g. sp-v0.1)
+- The CS data structure: Functionally persistent DAG with structural sharing
+- Core manages two DAGs: online and offline
+- The DAG manages the state for each node which is visualized by the frontend
+- DAG_Node_Handle undo/redo operations making use of the persistency of the DAG
+- DAG configuration field: the FE version (e.g. fe-v0.1), the DAG version (e.g. dcg-v0.1) and the SP version (e.g. sp-v0.1)
 - The SP keeps the SAMMs and their versions
 - The SP version: sp-v0.1
-- The SP applicability: DCG type version (e.g. dcg-v0.1)
+- The SP applicability: DAG type version (e.g. dcg-v0.1)
 - User profile with the role definition
 - DBs for the standard items like material and fastener (per project)
-- DBs for the SCL and SAR data (per DCG)
+- DBs for the SCL and SAR data (per DAG)
 
 ## 4. Software Design <a id='sec4'></a>
 
@@ -761,13 +769,13 @@ The architecture section defines three components for the SAA: the UI, the CS an
 ### 4.1. The UI <a id='sec41'></a>
 
 [Use Case Diagrams](#sec36) section inspects three scenarios from which we can deduce the expected functionality for the UI:
-- Present the current shape of the DCG via the OETV.
-- Present the data stored in the DCG via the user forms.
-- Present the node state data stored in the DCG via the OETV, user forms and the FE display.
+- Present the current shape of the DAG via the OETV.
+- Present the data stored in the DAG via the user forms.
+- Present the node state data stored in the DAG via the OETV, user forms and the FE display.
 - Present the FE data stored by the UI via the FE display.
-- Modify the shape of the DCG via the user forms.
-- Modify the data stored in the DCG via the user forms.
-- Modify the FE mapping stored in the DCG (e.g. elements of a SC) via the FE display.
+- Modify the shape of the DAG via the user forms.
+- Modify the data stored in the DAG via the user forms.
+- Modify the FE mapping stored in the DAG (e.g. elements of a SC) via the FE display.
 - Run SAs.
 
 First of all, the frontend shall define a user form for each type of the SAA (e.g. panel or stiffener).
@@ -841,7 +849,7 @@ export function registerForm(uiRegistry) {
 }
 ```
 
-The SAA manages all data via the DCG and the MySQL DB accept for the FE data which is stored by the UI.
+The SAA manages all data via the DAG and the MySQL DB accept for the FE data which is stored by the UI.
 Hence, almost every action of the user is handled by the following flow:
 - the user makes a request,
 - the UI emits a corresponding CS request,
@@ -849,16 +857,16 @@ Hence, almost every action of the user is handled by the following flow:
 - the CS returns the outputs (if exists) to the UI,
 - the UI presents the outputs (if exists).
 
-The UI needs to store the DCG node indices within the OETVNs.
+The UI needs to store the DAG node indices within the OETVNs.
 When, for example, the user clicks on an OETVN, the frontend:
-- gets the DCG node index from the OETVN,
-- emits a request from the CS to retrieve the type (e.g. panel) and data (e.g. thickness and width) belonging to the DCG node and
+- gets the DAG node index from the OETVN,
+- emits a request from the CS to retrieve the type (e.g. panel) and data (e.g. thickness and width) belonging to the DAG node and
 - presents the retreived data via the user form corresponding to the retreived type.
 
 ### 4.2. The CS <a id='sec42'></a>
 
 The CS contains 4 components:
-1. The DCG
+1. The DAG
 2. The types (i.e. the plugins)
 3. The UI interface
 4. The SP interface
@@ -867,18 +875,18 @@ Firstly, I will discuss on the above issues based on the requests by the UI.
 
 #### 4.2.1. The UI Interface <a id='sec421'></a>
 
-The CS and the DCG shall define the below interface in order to handle the UI requests:
-- create_DCG_node(data_type, json)
-- get_type_containers(DCG_node_index)
-- set_type_containers(DCG_node_index, json)
-- remove_DCG_node(DCG_node_index)
-- run_analysis(DCG_node_index)
-- get_DCG_node_indices_for_data_type(data_type)
-- calculate_properties(DCG_node_index)
+The CS and the DAG shall define the below interface in order to handle the UI requests:
+- create_DAG_node(data_type, json)
+- get_type_containers(DAG_node_index)
+- set_type_containers(DAG_node_index, json)
+- remove_DAG_node(DAG_node_index)
+- run_analysis(DAG_node_index)
+- get_DAG_node_indices_for_data_type(data_type)
+- calculate_properties(DAG_node_index)
 
 All items in the above list are obvious or have already been discussed accept for the last two functions.
 The 6th function is required during the 1st scenario inspected before when
-the master user constructs the DCG by importing an FEM.
+the master user constructs the DAG by importing an FEM.
 The core importer algorithm imports the FE data and constructs the SCs without
 setting the node relation data (e.g. side stiffeners of a panel).
 The master user needs to define the relations manually.
@@ -1044,20 +1052,20 @@ struct IUI {
 #endif
 ```
 
-The next pseudocode represents the DCG.
-The DCG makes use of the structural sharing by utilizing the [vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) data structure.
+The next pseudocode represents the DAG.
+The DAG makes use of the structural sharing by utilizing the [vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) data structure.
 As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
 
 ```
-// ~/src/system/DCG.h
+// ~/src/system/DAG.h
 
 /*
  * CAUTION:
  *   Excludes the node relations and the functions unrelated with the UI interface!!!
  */
 
-#ifndef _DCG_h
-#define _DCG_h
+#ifndef _DAG_h
+#define _DAG_h
 
 #include <memory>
 #include "core_type_traits.h"
@@ -1067,29 +1075,29 @@ using json = nlohmann::json;
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DCG {
+class DAG {
   std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
-  std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DCG_node_indices{};
+  std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DAG_node_indices{};
   std::tuple<std::shared_ptr<VectorTree<Ts>>...> _type_containers{};
   ...
 
 public:
 
-  DCG() = default;
-  DCG(
+  DAG() = default;
+  DAG(
     std::shared_ptr<VectorTree<TODO>> object_positions,
-    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DCG_node_indices,
+    std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DAG_node_indices,
     std::tuple<std::shared_ptr<VectorTree<Ts>>...> type_containers,
     ...
   )
   :
   _object_positions(object_positions),
-  _descendant_DCG_node_indices(descendant_DCG_node_indices),
+  _descendant_DAG_node_indices(descendant_DAG_node_indices),
   _type_containers(type_containers) {};
 
   // create
   template<typename T>
-  auto emplace(const json& json_) const ->  DCG<Ts...>
+  auto emplace(const json& json_) const ->  DAG<Ts...>
   {
     // get the containet for type T
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
@@ -1104,39 +1112,39 @@ public:
 
     // TODO: update node positions, ancestors/descendants, etc.
     
-    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+    return DAG<Ts...>(new_object_positions, new_descendant_DAG_node_indices, new_container_T, ...);
   };
   
   // get
   template<typename T>
-  auto get(std::size_t DCG_node_index) const -> json
+  auto get(std::size_t DAG_node_index) const -> json
   {
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
-      throw std::exception("DCG does not contain requested type.");
+      throw std::exception("DAG does not contain requested type.");
     }
 
-    const auto& obj{ container_T[DCG_node_index] };
+    const auto& obj{ container_T[DAG_node_index] };
     return obj.set_to_json();
   };
   
   // set
   template<typename T>
-  void set(std::size_t DCG_node_index, const json& json_) const -> DCG<Ts...>
+  void set(std::size_t DAG_node_index, const json& json_) const -> DAG<Ts...>
   {
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
-      throw std::exception("DCG does not contain requested type.");
+      throw std::exception("DAG does not contain requested type.");
     }
 
     // create a new container by updating the node
     auto new_container_T = container_T.apply(
-      DCG_node_index,
+      DAG_node_index,
       [&json_](auto& obj) { obj.get_from_json(json_); });
 
     // TODO: update node positions, ancestors/descendants, etc.
     
-    return DCG<Ts...>(new_object_positions, new_descendant_DCG_node_indices, new_container_T, ...);
+    return DAG<Ts...>(new_object_positions, new_descendant_DAG_node_indices, new_container_T, ...);
   };
 };
 
@@ -1153,13 +1161,13 @@ As mentioned above, the pseudocode represents only the backend/frontend interfac
 #define _CS_h
 
 #include <stack>
-#include "DCG.h"
+#include "DAG.h"
 
-// Define the type of the DCG
-using DCG_t = typename UnpackTypeList<CS_Types_t>::apply<DCG>;
+// Define the type of the DAG
+using DAG_t = typename UnpackTypeList<CS_Types_t>::apply<DAG>;
 
-// Store the DCGs for undo/redo
-std::stack<DCG_t> _DCGs();
+// Store the DAGs for undo/redo
+std::stack<DAG_t> _DAGs();
 constexpr unsigned char undo_count = 10;
 
 // UI synch
@@ -1170,34 +1178,34 @@ using _lg = std::lock_guard<std::mutex>;
 template <Json_Compatible T>
 std::size_t create(const json& json_) {
   _lg lock(_mutex);
-  const auto& DCG_ = _DCGs.top();
-  _DCGs.push_back(std::move(DCG_.emplace<T>(json_)));
-  if (_DCGs.size() > undo_count) _DCGs.pop_front();
+  const auto& DAG_ = _DAGs.top();
+  _DAGs.push_back(std::move(DAG_.emplace<T>(json_)));
+  if (_DAGs.size() > undo_count) _DAGs.pop_front();
 
-  return _DCGs.top().size() - 1;
+  return _DAGs.top().size() - 1;
 };
 
 // get
 template <Json_Compatible T>
-json get(std::size_t DCG_node_index) {
+json get(std::size_t DAG_node_index) {
   _lg lock(_mutex);
-  if (_DCGs.empty())
-    return json{{"error", "No DCGs found"}};
+  if (_DAGs.empty())
+    return json{{"error", "No DAGs found"}};
 
-  const auto& DCG_ = _DCGs.top();
-  return DCG_.get<T>(DCG_node_index);
+  const auto& DAG_ = _DAGs.top();
+  return DAG_.get<T>(DAG_node_index);
 };
 
 // set
 template <Json_Compatible T>
-void set(std::size_t DCG_node_index, const json& json_) {
+void set(std::size_t DAG_node_index, const json& json_) {
   _lg lock(_mutex);
-  if (_DCGs.empty())
-    return json{{"error", "No DCGs found"}};
+  if (_DAGs.empty())
+    return json{{"error", "No DAGs found"}};
 
-  const auto& DCG_ = _DCGs.top();
-  _DCGs.push_back(std::move(DCG_.set<T>(DCG_node_index, json_)));
-  if (_DCGs.size() > undo_count) _DCGs.pop_front();
+  const auto& DAG_ = _DAGs.top();
+  _DAGs.push_back(std::move(DAG_.set<T>(DAG_node_index, json_)));
+  if (_DAGs.size() > undo_count) _DAGs.pop_front();
 };
 
 // store creators, getters and setters to maps in order to respond the UI requests.
@@ -1260,25 +1268,25 @@ int main() {
       if (json_.is_discarded())
         return crow::response(400, "Invalid JSON");
 
-      std::size_t DCG_node_index = it->second(json_);
-      json res = {{"status", "created"}, {"DCG_node_index", DCG_node_index}};
+      std::size_t DAG_node_index = it->second(json_);
+      json res = {{"status", "created"}, {"DAG_node_index", DAG_node_index}};
       return crow::response{res.dump()};
     });
 
   // get
   CROW_ROUTE(app, "/get/<string>/<size_t>").methods("GET"_method)(
-    [](const std::string& type, std::size_t DCG_node_index) {
+    [](const std::string& type, std::size_t DAG_node_index) {
       auto it = getters.find(type);
       if (it == getters.end())
         return crow::response(400, "Unknown type");
 
-      json res = it->second(DCG_node_index);
+      json res = it->second(DAG_node_index);
       return crow::response{res.dump()};
     });
 
   // set
   CROW_ROUTE(app, "/set/<string>/<size_t>").methods("POST"_method)(
-    [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
+    [](const crow::request& req, const std::string& type, std::size_t DAG_node_index) {
       auto it = setters.find(type);
       if (it == setters.end())
         return crow::response(400, "Unknown type");
@@ -1287,7 +1295,7 @@ int main() {
       if (json_.is_discarded())
         return crow::response(400, "Invalid JSON");
 
-      it->second(DCG_node_index, json_);
+      it->second(DAG_node_index, json_);
       return crow::response{R"({"status":"updated"})"};
     });
 
@@ -1374,28 +1382,28 @@ The frontend library shall provvide simple solutions for the UI form representat
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.
 
-#### 4.2.2. The Functionally Persistent DCG <a id='sec422'></a>
+#### 4.2.2. The Functionally Persistent DAG <a id='sec422'></a>
 
-The architecture chapter underlined that we need two DCG definitions which are online and offline respectively.
-**I will skip the offline DCG in order for the simplicity of the project.**
+The architecture chapter underlined that we need two DAG definitions which are online and offline respectively.
+**I will skip the offline DAG in order for the simplicity of the project.**
 
-The DCG would additionally need some auxilary data in order to perform some actions more efficiently (e.g. traversal).
+The DAG would additionally need some auxilary data in order to perform some actions more efficiently (e.g. traversal).
 
 Lets recall the discussions in the previous section.
 The UI stores the data type as it contains a unique form for each type.
-The CS/DCG also knows the data types as it does not utilize type erasure while storing the data.
+The CS/DAG also knows the data types as it does not utilize type erasure while storing the data.
 Hence, both the UI and CS have the type information.
 The SP works with its own types and class hierarchy which will be explained later.
 However, the SP types will be wrapper classes for the CS types and the SP procedure works with a factory
 which means that the SP also keeps the type information.
 
-Additionally, I stated earlier that the DCG will follow the DOD approach to define the relations/dependencies.
-In other words, the DCG and so the CS keeps the indices instead of the pointers/references.
+Additionally, I stated earlier that the DAG will follow the DOD approach to define the relations/dependencies.
+In other words, the DAG and so the CS keeps the indices instead of the pointers/references.
 All of this discussion is related with how the indices are stored and used.
-Up to this point, I keep talking about the DCG node indices.
-However, working with DCG node indices is not reasonable
+Up to this point, I keep talking about the DAG node indices.
+However, working with DAG node indices is not reasonable
 while storing the data in type containers and holding the type information all over the application.
-**Hence, instead of the DCG node indices, I will use the indices within the type containers.**
+**Hence, instead of the DAG node indices, I will use the indices within the type containers.**
 Even further, instead of working with indices of std::size_t, I will define a templated class which stores both the type and index information.
 This approach will add significant efficiency into the design while working on:
 - the ancestor/descendant relations,
@@ -1406,17 +1414,17 @@ This approach will add significant efficiency into the design while working on:
 The current definition of the class is very simple where some functionalities will be added later to support the functions in the above list:
 
 ```
-// ~/src/system/DCG_node.h
+// ~/src/system/DAG_node.h
 
-#ifndef _DCG_node_h
-#define _DCG_node_h
+#ifndef _DAG_node_h
+#define _DAG_node_h
 
 #include "core_type_traits.h"
 
-// This class defines the index of an object within the DCG type container.
-// This class can work statically with zero overhead over the DCG containers as it holds the type information.
+// This class defines the index of an object within the DAG type container.
+// This class can work statically with zero overhead over the DAG containers as it holds the type information.
 template <typename T>
-class DCG_Node {
+class DAG_Node {
   std::size_t _index{}; // The index of the object within the type container
 };
 
@@ -1426,31 +1434,31 @@ struct type_list_to_variant {
   using type = std::variant<Wrapper<Ts>...>;
 };
 
-// Create an alias to set DCG_Node as the wrapper class
+// Create an alias to set DAG_Node as the wrapper class
 template <typename... Ts>
-using type_list_to_variant_for_DCG_node = typename type_list_to_variant<Ts..., DCG_Node>::type;
+using type_list_to_variant_for_DAG_node = typename type_list_to_variant<Ts..., DAG_Node>::type;
 
-// This type holds the variants of DCG_Node.
-// This type can be used to deal with the objects of DCG_Node where the stored value is not known statically:
-using DCG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_for_DCG_node>;
+// This type holds the variants of DAG_Node.
+// This type can be used to deal with the objects of DAG_Node where the stored value is not known statically:
+using DAG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_for_DAG_node>;
 
 #endif
 ```
 
-**From now on, i will stop using the term DCG node index and switch to type container index.**
+**From now on, i will stop using the term DAG node index and switch to type container index.**
 
 **Initial Member List**\
-Lets start by recalling the data that should be stored by the DCG:
+Lets start by recalling the data that should be stored by the DAG:
 1. ancestor and descendant relations,
-2. DCG node states,
+2. DAG node states,
 3. the structural data and
 4. the FE data (e.g. FE elements linked to a Panel instance).
 
-A corresponding member list definition for the DCG would be:
-1. _ancestors: Stores the ancestor DCG node indices for all DCG nodes.
-2. _descendants: Stores the descendant DCG node indices for all DCG nodes.
-3. _states__DCG: Stores the states for all DCG nodes.
-4. _type_containers: Stores the data for all DCG nodes.
+A corresponding member list definition for the DAG would be:
+1. _ancestors: Stores the ancestor DAG node indices for all DAG nodes.
+2. _descendants: Stores the descendant DAG node indices for all DAG nodes.
+3. _states__DAG: Stores the states for all DAG nodes.
+4. _type_containers: Stores the data for all DAG nodes.
 5. _FE_link: A descriptor for the linked FEM.
 
 **Ancestor Relations**\
@@ -1463,33 +1471,33 @@ For example, a panel type would be:
 ...
 
 class Panel {
-  DCG_Node<EO_Stiffener> _side_stiffener_1;
-  DCG_Node<EO_Stiffener> _side_stiffener_2;
+  DAG_Node<EO_Stiffener> _side_stiffener_1;
+  DAG_Node<EO_Stiffener> _side_stiffener_2;
   ...
 };
 ```
 
-**Defining the ancestor relations within the DCG would duplicate the data which breaks the design rules.**
-The DCG shall request the ancestor relations from the stored data.
-Hence, the DCG members become:
+**Defining the ancestor relations within the DAG would duplicate the data which breaks the design rules.**
+The DAG shall request the ancestor relations from the stored data.
+Hence, the DAG members become:
 1. _descendants: Stores the descendant indices.
-2. _states__DCG: Stores the states.
+2. _states__DAG: Stores the states.
 3. _type_containers: Stores the data.
 4. _FE_link: A descriptor for the linked FEM.
 
-**An interface is required in order for the DCG to get the ancestors from the types.**
+**An interface is required in order for the DAG to get the ancestors from the types.**
 
 ```
-// ~/src/system/IDCG.h
+// ~/src/system/IDAG.h
 
-#ifndef _IDCG_h
-#define _IDCG_h
+#ifndef _IDAG_h
+#define _IDAG_h
 
 #include <vector>
 
-struct IDCG {
-  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
-  virtual ~IDCG() = default;
+struct IDAG {
+  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
+  virtual ~IDAG() = default;
 };
 
 #endif
@@ -1511,17 +1519,17 @@ Correspondingly, the source file defined before for the sample EO_Panel class be
 
 #include <nlohmann/json.hpp>
 #include "~/src/system/IUI.h"
-#include "~/src/system/IDCG.h"
-#include "~/src/system/DCG_Node.h"
+#include "~/src/system/IDAG.h"
+#include "~/src/system/DAG_Node.h"
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IUI, IDCG {
+struct EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width;
   double _height;
-  DCG_Node<EO_Stiffener> _side_stiffener_1;
-  DCG_Node<EO_Stiffener> _side_stiffener_2;
+  DAG_Node<EO_Stiffener> _side_stiffener_1;
+  DAG_Node<EO_Stiffener> _side_stiffener_2;
 
   // Notice that EO_Panel satisfies Has_Type_Name!!!
   static inline std::string type_name = "EO_Panel";
@@ -1539,8 +1547,8 @@ struct EO_Panel : public IUI, IDCG {
     thickness = json_["thickness"];
     width = json_["width"];
     height = json_["height"];
-    _side_stiffener_1 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
-    _side_stiffener_2 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
+    _side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
+    _side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
   };
 
   // Notice that EO_Panel satisfies Json_Serializable!!!
@@ -1548,8 +1556,8 @@ struct EO_Panel : public IUI, IDCG {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width")) width = json_["width"];
     if (json_.contains("height")) height = json_["height"];
-    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
-    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
+    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
+    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
   }
 
   // Notice that EO_Panel satisfies Json_Serializable!!!
@@ -1563,11 +1571,11 @@ struct EO_Panel : public IUI, IDCG {
     };
   }
 
-  // IDCG interface function: get_ancestors
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const {
-    std::vector<IDCG const*> ancestors{};
-    ancestors.push_back(_side_stiffener_1.get_object(DCG_));
-    ancestors.push_back(_side_stiffener_2.get_object(DCG_));
+  // IDAG interface function: get_ancestors
+  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> ancestors{};
+    ancestors.push_back(_side_stiffener_1.get_object(DAG_));
+    ancestors.push_back(_side_stiffener_2.get_object(DAG_));
     return ancestors;
   };
 };
@@ -1575,24 +1583,24 @@ struct EO_Panel : public IUI, IDCG {
 #endif
 ```
 
-DCG_Node class needs to define get_object method.
+DAG_Node class needs to define get_object method.
 
 ```
-// ~/src/system/DCG_Node.h
+// ~/src/system/DAG_Node.h
 
-#ifndef _DCG_Node_h
-#define _DCG_Node_h
+#ifndef _DAG_Node_h
+#define _DAG_Node_h
 
 #include "core_type_traits.h"
-#include "IDCG.h"
+#include "IDAG.h"
 
-// This class defines the index of an object within the DCG type container.
-// This class can work statically with zero overhead over the DCG containers as it holds the type information.
+// This class defines the index of an object within the DAG type container.
+// This class can work statically with zero overhead over the DAG containers as it holds the type information.
 template <typename T>
-class DCG_Node {
+class DAG_Node {
   std::size_t _index{};
-  IDCG const* get_object(DCG_t const* DCG_) const {
-    const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(DCG_->_type_containers);
+  IDAG const* get_object(DAG_t const* DAG_) const {
+    const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(DAG_->_type_containers);
     return &(type_container->operator[](_index));
   };
 };
@@ -1604,33 +1612,33 @@ struct type_list_to_variant {
   using type = std::variant<Wrapper<Ts>...>;
 };
 
-// Create an alias to set DCG_Node as the wrapper class
+// Create an alias to set DAG_Node as the wrapper class
 template <typename... Ts>
-using type_list_to_variant_for_DCG_node = typename type_list_to_variant<Ts..., DCG_Node>::type;
+using type_list_to_variant_for_DAG_node = typename type_list_to_variant<Ts..., DAG_Node>::type;
 
-// This type holds the variants of DCG_Node.
-// This type can be used to deal with the objects of DCG_Node where the stored value is not known statically:
-using DCG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_for_DCG_node>;
+// This type holds the variants of DAG_Node.
+// This type can be used to deal with the objects of DAG_Node where the stored value is not known statically:
+using DAG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_for_DAG_node>;
 
 #endif
 ```
 
 **The Dynamic Behaviour**\
-The static definition of the DCG is problematic in case of the dynamically dominated behaviours.
+The static definition of the DAG is problematic in case of the dynamically dominated behaviours.
 As edge case examples, the descendants of the root node or the ancestors of the tail node cannot be defined statically.
 Another example would be Material class such that too many objects of too many types would depend on material objects.
 In such cases, an algorithm is required to access statically defined data (e.g. _type_containers) with the runtime information.
 The efficiency of this algorithm is crucial as it would help central algorithms used frequently (e.g. the descendant traversal for the state propogation).
 **I will create a function hierarchy to apply the FP solutions to the problem.**
 A higher level templated function is defined where each specialization would bind to the corresponding type container (e.g. container for Panel objects).
-Then, the functions of the DCG (e.g. DFS traversal) would be routed by this templated higher level function.
+Then, the functions of the DAG (e.g. DFS traversal) would be routed by this templated higher level function.
 The two functions in the below pseudocode serve for this purpose: with_type_object and with_type_container.
 
 ```
-// ~/src/system/DCG.h
+// ~/src/system/DAG.h
 
-#ifndef _DCG_h
-#define _DCG_h
+#ifndef _DAG_h
+#define _DAG_h
 
 #include <tuple>
 #include <vector>
@@ -1646,28 +1654,28 @@ using json = nlohmann::json;
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DCG {
+class DAG {
   // Type utilities
-  using _a_DCG = DCG<Ts...>;
+  using _a_DAG = DAG<Ts...>;
   using _a_type_tuple = std::tuple<Ts...>;
   using _a_type_containers = std::tuple<std::shared_ptr<VectorTree<Ts>>...>;
-  using _a_DCG_node_handles__obj = std::vector<DCG_Node_Handle>;
-  using _a_DCG_node_handles__type = std::shared_ptr<VectorTree<_a_DCG_node_handles__obj>>;
-  using _a_DCG_node_handles__DCG = std::vector<_a_DCG_node_handles__type>;
-  using _a_states__DCG__type = std::shared_ptr<VectorTree<enum_DCG_node_states>>;
-  using _a_states__DCG__DCG = std::vector<_a_states__DCG__type>;
+  using _a_DAG_node_handles__obj = std::vector<DAG_Node_Handle>;
+  using _a_DAG_node_handles__type = std::shared_ptr<VectorTree<_a_DAG_node_handles__obj>>;
+  using _a_DAG_node_handles__DAG = std::vector<_a_DAG_node_handles__type>;
+  using _a_states__DAG__type = std::shared_ptr<VectorTree<enum_DAG_node_states>>;
+  using _a_states__DAG__DAG = std::vector<_a_states__DAG__type>;
   static constexpr std::size_t _type_list_size = sizeof...(Ts);
 
-  // The DCG node handle defines the position of an object:
+  // The DAG node handle defines the position of an object:
   //   type: represents the index of the type within CS_Types_t.
   //   index: represents the index of the object within the corresponding type container.
-  struct DCG_Node_Handle { std::uint32_t type; std::uint32_t index; };
+  struct DAG_Node_Handle { std::uint32_t type; std::uint32_t index; };
 
   // Members
-  // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DCG[N]
+  // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DAG[N]
   _a_type_containers _type_containers;   // SoA: Type indexing is same as the other members
-  _a_DCG_node_handles__DCG _descendants; // [type][index] -> children
-  _a_states__DCG__DCG _states__DCG;       // The ordering of the outer most std::vector is the same as the CS_Types_t
+  _a_DAG_node_handles__DAG _descendants; // [type][index] -> children
+  _a_states__DAG__DAG _states__DAG;       // The ordering of the outer most std::vector is the same as the CS_Types_t
   std::string _FE_link;
   ...
 
@@ -1688,19 +1696,19 @@ class DCG {
   template<class F>
   decltype(auto) with_type_container(std::size_t type_id, F&& f) {
     using R = std::common_type_t<std::invoke_result_t<F, std::vector<Ts>&>...>;
-    using Fn = R(*)(DCG&, F&&);
+    using Fn = R(*)(DAG&, F&&);
 
     static constexpr std::array<Fn, _type_list_size> function_array{
-      +[](DCG& DCG_, F&& f)->R { return std::forward<F>(f)(
-        std::get<std::shared_ptr<VectorTree<Ts>>>(DCG_._type_containers)); }...
+      +[](DAG& DAG_, F&& f)->R { return std::forward<F>(f)(
+        std::get<std::shared_ptr<VectorTree<Ts>>>(DAG_._type_containers)); }...
     };
 
     return function_array[type_id](*this, std::forward<F>(f));
   }
 
-  // FP: Transforms the input function to be applicable to the object corresponding to the input DCG_Node_Handle.
+  // FP: Transforms the input function to be applicable to the object corresponding to the input DAG_Node_Handle.
   template<class F>
-  decltype(auto) with_type_object(DCG_Node_Handle h, F&& f) {
+  decltype(auto) with_type_object(DAG_Node_Handle h, F&& f) {
     return with_type_container(h.type, [&](auto type_container) -> decltype(auto) {
       return std::forward<F>(f)(type_container->operator[](h.index));
     });
@@ -1708,65 +1716,65 @@ class DCG {
 
 public:
 
-  DCG() : _descendants(_type_list_size) {}  // TODO: prepare outer dimensions
+  DAG() : _descendants(_type_list_size) {}  // TODO: prepare outer dimensions
 
   // TODO: Sample emplace function to demonstrate the solution for the the dynamic type selection.
   // TODO: Shall be updated for functional persistency.
   template<class T, class... Args>
-  auto emplace(Args&&... args) const -> _a_DCG
+  auto emplace(Args&&... args) const -> _a_DAG
   {
     auto& type_container = std::get<std::shared_ptr<VectorTree<T>>>(_type_containers);
     type_container = std::make_shared<VectorTree<T>(type_container->emplace_back(std::forward<Args>(args)...));
     const std::uint32_t idx  = static_cast<std::uint32_t>(type_container->size() - 1);
     const std::uint32_t tid  = static_cast<std::uint32_t>(get_type_id<T>());
 
-    auto& descendant_DCG_nodes__T = _descendants[tid];
-    if (descendant_DCG_nodes__T.size() <= idx) descendant_DCG_nodes__T.resize(type_container->size());
+    auto& descendant_DAG_nodes__T = _descendants[tid];
+    if (descendant_DAG_nodes__T.size() <= idx) descendant_DAG_nodes__T.resize(type_container->size());
 
     // TODO: update node positions, ancestors/descendants, etc.
 
-    return _a_DCG(new_type_containers, new_states, new_descendants, ...);
+    return _a_DAG(new_type_containers, new_states, new_descendants, ...);
   }
   
   // get
   template<typename T>
-  auto get(std::size_t DCG_node_index) const -> json
+  auto get(std::size_t DAG_node_index) const -> json
   {
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
-      throw std::exception("DCG does not contain requested type.");
+      throw std::exception("DAG does not contain requested type.");
     }
 
-    const auto& obj{ container_T[DCG_node_index] };
+    const auto& obj{ container_T[DAG_node_index] };
     return obj.set_to_json();
   };
   
   // set
   template<typename T>
-  void set(std::size_t DCG_node_index, const json& json_) const -> _a_DCG
+  void set(std::size_t DAG_node_index, const json& json_) const -> _a_DAG
   {
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
-      throw std::exception("DCG does not contain requested type.");
+      throw std::exception("DAG does not contain requested type.");
     }
 
     // create a new container by updating the node
     auto new_container_T = container_T.apply(
-      DCG_node_index,
+      DAG_node_index,
       [&json_](auto& obj) { obj.get_from_json(json_); });
 
     // TODO: update node positions, ancestors/descendants, etc.
     
-    return _a_DCG(new_type_containers, new_states, new_descendants, ...);
+    return _a_DAG(new_type_containers, new_states, new_descendants, ...);
   };
 
-  // TODO: The DCG will have inner Iterator and ConstIterator classes, this function is to demonstrate the solution for the the dynamic type selection.
-  // TODO: The iteration needs a visited node definition as the DCG is a cyclic graph.
+  // TODO: The DAG will have inner Iterator and ConstIterator classes, this function is to demonstrate the solution for the dynamic type selection.
+  // TODO: The iteration needs a visited node definition as the DAG holds many-to-one relations.
   template<class F>
-  void dfs(DCG_Node_Handle root, F&& visit) {
-    std::vector<DCG_Node_Handle> stack{root};
+  void dfs(DAG_Node_Handle root, F&& visit) {
+    std::vector<DAG_Node_Handle> stack{root};
     while (!stack.empty()) {
-      DCG_Node_Handle h = stack.back(); stack.pop_back();
+      DAG_Node_Handle h = stack.back(); stack.pop_back();
       with_type_object(h, [&](auto& obj) { visit(obj, h); });
       auto& kids = _descendants[h.type].size() > h.index ? _descendants[h.type][h.index] : _empty_vector;
       // push children (LIFO)
@@ -1775,7 +1783,7 @@ public:
   }
 
 private:
-  static inline std::vector<DCG_Node_Handle> _empty_vector{};
+  static inline std::vector<DAG_Node_Handle> _empty_vector{};
 };
 ```
 
@@ -1783,39 +1791,39 @@ Having stated the problem of the static typing in case of dynamic behaviours, le
 **The above design assumes that the descendant relations are all runtime dependent which is actually not correct.**
 In fact, for most of the types, the types of the descendants of an object are predefined and have a short list.
 For example, for the SCs the list contains only the SAs defined for the SC.
-The most problematic types are the auxilary types (e.g. material and fastener) which would not be expected to exist alot in a DCG.
+The most problematic types are the auxilary types (e.g. material and fastener) which would not be expected to exist alot in a DAG.
 In summary, the descendants can also be moved to the type definitions.
 Keep in mind that, having the static definitions would improve the other components of the SAA.
 For example, if the SCs would have the SAs defined statically, the state managemeent for the SCs and the SAs would become generic.
 
 ```
-// ~/src/system/DCG.h
+// ~/src/system/DAG.h
 
 ...
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DCG {
+class DAG {
   // Type utilities
-  using _a_DCG = DCG<Ts...>;
+  using _a_DAG = DAG<Ts...>;
   using _a_type_tuple = std::tuple<Ts...>;
   using _a_type_containers = std::tuple<std::shared_ptr<VectorTree<Ts>>...>;
-  using _a_DCG_node_handles__obj = std::vector<DCG_Node_Handle>;
-  using _a_DCG_node_handles__type = std::shared_ptr<VectorTree<_a_DCG_node_handles__obj>>;
-  using _a_DCG_node_handles__DCG = std::vector<_a_DCG_node_handles__type>;
-  using _a_states__DCG__type = std::shared_ptr<VectorTree<enum_DCG_node_states>>;
-  using _a_states__DCG__DCG = std::vector<_a_states__DCG__type>;
+  using _a_DAG_node_handles__obj = std::vector<DAG_Node_Handle>;
+  using _a_DAG_node_handles__type = std::shared_ptr<VectorTree<_a_DAG_node_handles__obj>>;
+  using _a_DAG_node_handles__DAG = std::vector<_a_DAG_node_handles__type>;
+  using _a_states__DAG__type = std::shared_ptr<VectorTree<enum_DAG_node_states>>;
+  using _a_states__DAG__DAG = std::vector<_a_states__DAG__type>;
   static constexpr std::size_t _type_list_size = sizeof...(Ts);
 
-  // The DCG node handle defines the position of an object:
+  // The DAG node handle defines the position of an object:
   //   type: represents the index of the type within CS_Types_t.
   //   index: represents the index of the object within the corresponding type container.
-  struct DCG_Node_Handle { std::uint32_t type; std::uint32_t index; };
+  struct DAG_Node_Handle { std::uint32_t type; std::uint32_t index; };
 
   // Members
-  // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DCG[N]
+  // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DAG[N]
   _a_type_containers _type_containers;   // SoA: Type indexing is same as the other members
-  _a_states__DCG__DCG _states__DCG;      // The ordering of the outer most std::vector is the same as the CS_Types_t
+  _a_states__DAG__DAG _states__DAG;      // The ordering of the outer most std::vector is the same as the CS_Types_t
   std::string _FE_link;
   ...
 
@@ -1824,19 +1832,19 @@ class DCG {
 };
 ```
 
-Moving the descendants to the type definitions requires an update for IDCG interface:
+Moving the descendants to the type definitions requires an update for IDAG interface:
 
 ```
-// ~/src/system/IDCG.h
+// ~/src/system/IDAG.h
 
-#ifndef _IDCG_h
-#define _IDCG_h
+#ifndef _IDAG_h
+#define _IDAG_h
 
 #include <vector>
 
-struct IDCG {
-  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
-  virtual std::vector<IDCG const*> get_descendants(DCG_t const* DCG_) const = 0;
+struct IDAG {
+  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
+  virtual std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const = 0;
 };
 
 #endif
@@ -1858,19 +1866,19 @@ The descendants are moved to the type definitions:
 
 #include <nlohmann/json.hpp>
 #include "~/src/system/IUI.h"
-#include "~/src/system/IDCG.h"
-#include "~/src/system/DCG_node.h"
+#include "~/src/system/IDAG.h"
+#include "~/src/system/DAG_node.h"
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IUI, IDCG {
+struct EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width;
   double _height;
-  DCG_Node<EO_Stiffener> _side_stiffener_1;
-  DCG_Node<EO_Stiffener> _side_stiffener_2;
-  DCG_Node<SA_Panel_Buckling> _panel_pressure;
-  DCG_Node<SA_Panel_Pressure> _panel_buckling;
+  DAG_Node<EO_Stiffener> _side_stiffener_1;
+  DAG_Node<EO_Stiffener> _side_stiffener_2;
+  DAG_Node<SA_Panel_Buckling> _panel_pressure;
+  DAG_Node<SA_Panel_Pressure> _panel_buckling;
 
   // Notice that EO_Panel satisfies Has_Type_Name!!!
   static inline std::string type_name = "EO_Panel";
@@ -1888,8 +1896,8 @@ struct EO_Panel : public IUI, IDCG {
     thickness = json_["thickness"];
     width = json_["width"];
     height = json_["height"];
-    _side_stiffener_1 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
-    _side_stiffener_2 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
+    _side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
+    _side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
   };
 
   // Notice that EO_Panel satisfies Json_Serializable!!!
@@ -1897,8 +1905,8 @@ struct EO_Panel : public IUI, IDCG {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width")) width = json_["width"];
     if (json_.contains("height")) height = json_["height"];
-    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
-    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = DCG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
+    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
+    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
   }
 
   // Notice that EO_Panel satisfies Json_Serializable!!!
@@ -1912,21 +1920,21 @@ struct EO_Panel : public IUI, IDCG {
     };
   }
 
-  // IDCG interface function: get_ancestors
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const {
-    std::vector<IDCG const*> ancestors{};
-    ancestors.push_back(_side_stiffener_1.get_object(DCG_));
-    ancestors.push_back(_side_stiffener_2.get_object(DCG_));
+  // IDAG interface function: get_ancestors
+  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> ancestors{};
+    ancestors.push_back(_side_stiffener_1.get_object(DAG_));
+    ancestors.push_back(_side_stiffener_2.get_object(DAG_));
     return ancestors;
   };
 
-  // IDCG interface function: get_descendants
-  std::vector<IDCG const*> get_descendants(DCG_t const* DCG_) const {
-    std::vector<IDCG const*> descendants{};
-    descendants.push_back(_side_stiffener_1.get_object(DCG_));
-    descendants.push_back(_side_stiffener_2.get_object(DCG_));
-    descendants.push_back(_panel_pressure.get_object(DCG_));
-    descendants.push_back(_panel_buckling.get_object(DCG_));
+  // IDAG interface function: get_descendants
+  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> descendants{};
+    descendants.push_back(_side_stiffener_1.get_object(DAG_));
+    descendants.push_back(_side_stiffener_2.get_object(DAG_));
+    descendants.push_back(_panel_pressure.get_object(DAG_));
+    descendants.push_back(_panel_buckling.get_object(DAG_));
     return descendants;
   };
 };
@@ -1934,32 +1942,32 @@ struct EO_Panel : public IUI, IDCG {
 #endif
 ```
 
-I excluded the root and the tail node definitions and the iterators (const aand non-const) of the DCG intensionally.
+I excluded the root and the tail node definitions and the iterators (const aand non-const) of the DAG intensionally.
 [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes these issues in detail.
 **Its worth to note only that the relations of both the root and the tail nodes are runtime dependent.**
 Hence, the descendants of the root node and the ancestors of the tail node
 should be treated with the high level FP functions (i.e. with_type_container and with_type_object).
 
-**DCG node state enumeration: enum_DCG_node_states**\
-The node state data management is the most important responsibility of the DCG in order for the user to follow the states of the SAs and SCs.
-Below are the possible states for a DCG node:
+**DAG node state enumeration: enum_DAG_node_states**\
+The node state data management is the most important responsibility of the DAG in order for the user to follow the states of the SAs and SCs.
+Below are the possible states for a DAG node:
 - up to date,
 - out of date,
 - failed by the invariant,
 - failed due to the ancestors.
 
-The 1st two are obvious where the 1st one is the only positive state for a DCG node.
+The 1st two are obvious where the 1st one is the only positive state for a DAG node.
 The 3rd one simulates the invariant of the types.
 For example, a joint would fail from the knife edge condition if the following law breaks:
 - edge distance >= 2 * D + 1 where D is the nominal diameter of the fastener.
 
-The last one simulates the ancestor/descendant relations of the DCG.
-If a DCG node fails, the descendants would fail as well.
+The last one simulates the ancestor/descendant relations of the DAG.
+If a DAG node fails, the descendants would fail as well.
 
-When the state of a node is changed, the DCG shall propogate the state change through the descendants up to the leaf nodes.
+When the state of a node is changed, the DAG shall propogate the state change through the descendants up to the leaf nodes.
 For example, consider the user updates the web thickness of a stiffener.
 The SARs connected to the stiffener would need to become out-of-date obviously.
-But, that is not all the DCG needs to do.
+But, that is not all the DAG needs to do.
 Other SCs using the stiffener would also be affected by the operation such as the panels having the stiffener as the side stiffener.
 A side stiffener must satisfy a condition to support a panel.
 This is called the restrain requirement.
@@ -1967,25 +1975,25 @@ In other words, a stiffener must have at least a treshold inertia to support a p
 The treshold inertia depends both on the panel and stiffener properties.
 If the restrain condition fails, the assumption related with the panel support (i.e. enhanced simply supported panel) fails as well.
 In other words, the restrain condition is actually one of the invariants of the panel simulating the support condition.
-In summary, an update on a node shall be propogated by the DCG inspecting the following two for each descendant node:
+In summary, an update on a node shall be propogated by the DAG inspecting the following two for each descendant node:
 - the invariant and
 - the final state.
 
-**Considering the state propogation the IDCG interface becomes:**
+**Considering the state propogation the IDAG interface becomes:**
 
 ```
-// ~/src/system/IDCG.h
+// ~/src/system/IDAG.h
 
-#ifndef _IDCG_h
-#define _IDCG_h
+#ifndef _IDAG_h
+#define _IDAG_h
 
 #include <vector>
 
-struct IDCG {
-  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
-  virtual enum_DCG_node_states reevaluate_state__DCG(DCG_t const* DCG_) const = 0;
-  virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
-  virtual bool inspect_ancestors(DCG_t const* DCG_) const = 0;
+struct IDAG {
+  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
+  virtual enum_DAG_node_states reevaluate_state__DAG(DAG_t const* DAG_) const = 0;
+  virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
+  virtual bool inspect_ancestors(DAG_t const* DAG_) const = 0;
 };
 
 #endif
@@ -1994,46 +2002,46 @@ struct IDCG {
 EO_Panel shall implemented new interface functions but I will skip it.
 
 **MySQL DB**\
-The DCG has another interface which is the MySQL DB.
-Consider an ordinary user checks out a sub-DCG from the MySQL DB, works on it and saves it into the MySQL DB.
+The DAG has another interface which is the MySQL DB.
+Consider an ordinary user checks out a sub-DAG from the MySQL DB, works on it and saves it into the MySQL DB.
 The user modifications may include some nodes but data corresponding to some other nodes may remain the same.
-Hence, the DCG needs to determine the modified nodes.
+Hence, the DAG needs to determine the modified nodes.
 This requires another state parameter:
 - DB_state: bool
 
-When a DCG is loaded or constructed, it needs to initialize array of DB_states sized by the number of the nodes.
+When a DAG is loaded or constructed, it needs to initialize array of DB_states sized by the number of the nodes.
 Initially all nodes are non-updated so that the array is filled up with the default false value.
-Each user action with an update makes the update state true for the corresponding DCG node.
-Hence, the members of the DCG becomes:
+Each user action with an update makes the update state true for the corresponding DAG node.
+Hence, the members of the DAG becomes:
 
 ```
-// ~/src/system/DCG.h
+// ~/src/system/DAG.h
 
 ...
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DCG {
+class DAG {
   // Type utilities
-  using _a_DCG = DCG<Ts...>;
+  using _a_DAG = DAG<Ts...>;
   using _a_type_tuple = std::tuple<Ts...>;
   using _a_type_containers = std::tuple<std::shared_ptr<VectorTree<Ts>>...>;
-  using _a_DCG_node_handles__obj = std::vector<DCG_Node_Handle>;
-  using _a_DCG_node_handles__type = std::shared_ptr<VectorTree<_a_DCG_node_handles__obj>>;
-  using _a_DCG_node_handles__DCG = std::vector<_a_DCG_node_handles__type>;
-  using _a_states__DCG__type = std::shared_ptr<VectorTree<enum_DCG_node_states>>;
-  using _a_states__DCG__DCG = std::vector<_a_states__DCG__type>;
+  using _a_DAG_node_handles__obj = std::vector<DAG_Node_Handle>;
+  using _a_DAG_node_handles__type = std::shared_ptr<VectorTree<_a_DAG_node_handles__obj>>;
+  using _a_DAG_node_handles__DAG = std::vector<_a_DAG_node_handles__type>;
+  using _a_states__DAG__type = std::shared_ptr<VectorTree<enum_DAG_node_states>>;
+  using _a_states__DAG__DAG = std::vector<_a_states__DAG__type>;
   using _a_states__DB__type = std::shared_ptr<std::vector<bool>>;
-  using _a_states__DB__DCG = std::vector<_a_states__DB__type>;
+  using _a_states__DB__DAG = std::vector<_a_states__DB__type>;
   static constexpr std::size_t _type_list_size = sizeof...(Ts);
 
   ...
 
   // Members
-  // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DCG[N]
+  // Invariant: Keep the ordering for all outermost containers: std::get<N>(_type_containers) corresponds to _descendants[N] and _states__DAG[N]
   _a_type_containers _type_containers;   // SoA: Type indexing is same as the other members
-  _a_states__DCG__DCG _states__DCG       // The ordering of the outer most std::vector is the same as the CS_Types_t
-  _a_states__DB__DCG _states__DB;        // The ordering of the outer most std::vector is the same as the CS_Types_t
+  _a_states__DAG__DAG _states__DAG       // The ordering of the outer most std::vector is the same as the CS_Types_t
+  _a_states__DB__DAG _states__DB;        // The ordering of the outer most std::vector is the same as the CS_Types_t
   std::string _FE_link;
   ...
 
@@ -2044,40 +2052,40 @@ class DCG {
 
 **Other States**\
 The following lists the whole state data required by the SAA algorithms:
-- DCG_state        : per DCG  : read-only and read-write
-- user_state       : per DCG  : owner, viewer, approver, etc.
-- config_state     : per DCG  : design, sizing, inspection and frozen
-- read_write_state : per DCG  : bool
+- DAG_state        : per DAG  : read-only and read-write
+- user_state       : per DAG  : owner, viewer, approver, etc.
+- config_state     : per DAG  : design, sizing, inspection and frozen
+- read_write_state : per DAG  : bool
 - structural_state : per node : safe and fail
-- DCG_node_state   : per node : already defined
+- DAG_node_state   : per node : already defined
 
-I will not redefine the DCG for all of these states as its straight forward.
+I will not redefine the DAG for all of these states as its straight forward.
 
 **State Management**\
-The DCG is responsible from the management of the state of the data (i.e. enum_DCG_node_states).
-Previously, I defined IDCG interface for this purpose which requires reevaluate_state__DCG, inspect_invariant and inspect_ancestors function definitions.
+The DAG is responsible from the management of the state of the data (i.e. enum_DAG_node_states).
+Previously, I defined IDAG interface for this purpose which requires reevaluate_state__DAG, inspect_invariant and inspect_ancestors function definitions.
 However, not all the types of the SAA follows this path for the state inspection.
 Some may not have any ancestors (e.g. standard items like material), some may even not hold any invariant.
 Hence, we have 3 base types considering the updateability of the SAA types:
 - Non_Updatable: No update issue. inspect_invariant returns true.
-- Ancestor_Updatable: No function definition. reevaluate_state__DCG calls inspect_ancestors.
-- Invariant_Updatable: Requires inspect_invariant. reevaluate_state__DCG calls inspect_invariant and inspect_ancestors.
+- Ancestor_Updatable: No function definition. reevaluate_state__DAG calls inspect_ancestors.
+- Invariant_Updatable: Requires inspect_invariant. reevaluate_state__DAG calls inspect_invariant and inspect_ancestors.
 
-Obviously, IDCG interface treats all SAA types the same in terms of the updateability issue.
+Obviously, IDAG interface treats all SAA types the same in terms of the updateability issue.
 I will define 3 abstract classes and move the updateability to those classes to obey the single responsibiliity rule.
-The IDCG interface becomes:
+The IDAG interface becomes:
 
 ```
-// ~/src/system/IDCG.h
+// ~/src/system/IDAG.h
 
-#ifndef _IDCG_h
-#define _IDCG_h
+#ifndef _IDAG_h
+#define _IDAG_h
 
 #include <vector>
 
-struct IDCG {
-  virtual std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const = 0;
-  virtual bool reevaluate_state__DCG(DCG_t const* DCG_) const = 0;
+struct IDAG {
+  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
+  virtual bool reevaluate_state__DAG(DAG_t const* DAG_) const = 0;
 };
 
 #endif
@@ -2087,41 +2095,41 @@ I will involve the updateability interface later.
 The code snippet for the updateability interface would be:
 
 ```
-#include "IDCG.h"
+#include "IDAG.h"
 
-struct INon_Updatable : public IDCG {
-  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return true; };
+struct INon_Updatable : public IDAG {
+  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return true; };
 };
 
-struct IAncestor_Updatable : public IDCG {
-  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return inspect_ancestors(DCG_); };
-  bool inspect_ancestors(DCG_t const* DCG_) const {
-    auto ancestors{ get_ancestors(DCG_) };
+struct IAncestor_Updatable : public IDAG {
+  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return inspect_ancestors(DAG_); };
+  bool inspect_ancestors(DAG_t const* DAG_) const {
+    auto ancestors{ get_ancestors(DAG_) };
     for (auto ancestor : ancestors) {
-      if (!ancestor->get_state__DCG()) return false;
+      if (!ancestor->get_state__DAG()) return false;
     }
     return true;
   };
 };
 
-struct IInvariant_Updatable : public IDCG {
-  bool reevaluate_state__DCG(DCG_t const* DCG_) const {
-    auto inspection{ inspect_ancestors(DCG_) };
+struct IInvariant_Updatable : public IDAG {
+  bool reevaluate_state__DAG(DAG_t const* DAG_) const {
+    auto inspection{ inspect_ancestors(DAG_) };
     if (!inspection) return false;
-    return inspect_invariant(DCG_);
+    return inspect_invariant(DAG_);
   };
-  bool inspect_ancestors(DCG_t const* DCG_) const {
-    auto ancestors{ get_ancestors(DCG_) };
+  bool inspect_ancestors(DAG_t const* DAG_) const {
+    auto ancestors{ get_ancestors(DAG_) };
     for (auto ancestor : ancestors) {
-      if (!ancestor->get_state__DCG(DCG_)) return false;
+      if (!ancestor->get_state__DAG(DAG_)) return false;
     }
     return true;
   };
-  virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
+  virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
 };
 ```
 
-**Other Issues About the DCG**\
+**Other Issues About the DAG**\
 [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes
 many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
@@ -2137,8 +2145,8 @@ We have the following architecture for the SAA:
 The CS/SP interface requires the communication between C++ and python in both directions.
 I will use pybind11 for this interface as it allows flexible and efficient access from both sides.
 
-The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DCG.
-However, the SP should not need to access the DCG for the security puposes.
+The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DAG.
+However, the SP should not need to access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types: Ex: EO_Material, EO_Panel and SA_Panel_Buckling.
 - The CS defines the python binding (i.e. pybind11) types: Ex: Bind_Material, Bind_Panel and Bind_Panel_Buckling.
@@ -2151,11 +2159,11 @@ Hence, the SP would need the Py_Stiffener wrapper.
 
 The pprocess flow for this strategy is as follows:
 1. The user requests an analysis on an SC with type and index,
-2. The CS asks to the DCG to create a temporary Bind SC object corresponding to the type and index,
+2. The CS asks to the DAG to create a temporary Bind SC object corresponding to the type and index,
 3. The CS exposes the Bind object to python and requests an SP analysis,
 4. If needed, the SP analysis function creates a Python object (e.g. Py_Panel) wrapping the Bind object,
 5. The SP analysis function performs the calculations and updates the results (i.e. Bind SAR object composed by the Bind SC object),
-6. The CS reads the results and updates CS SAR object stored by the DCG or MySQL DB,
+6. The CS reads the results and updates CS SAR object stored by the DAG or MySQL DB,
 7. The CS releases all temporary shared objects.
 
 The flow involves the the construction of Bind objects and executing python functions.
@@ -2165,7 +2173,7 @@ The **executor** involves the whole flow above.
 The **executor** is a templated function and shall be registered like the other CS utilities (i.e. create<T>, get<T> and set<T>).
 The **executor** asks the CS types to construct Bind objects.
 Hence, the CS types shall implement a method returning the Bind object which requires an interface while
-the DCG needs a function which would return the Bind objects for the input type and index.
+the DAG needs a function which would return the Bind objects for the input type and index.
 The function will be templated and the return type (e.g. Bind_Panel) depends on the template type (e.g. EO_Panel).
 The solution is defining an alias within the CS types that stores the type of the corresponding Bind type.
 This alias would be used in many steps of the above flow.
@@ -2178,27 +2186,27 @@ The concept would look like:
 
 ...
 
-// CAUTION: CBindable depends on the DCG which will depend on CBindable: circular dependency
+// CAUTION: CBindable depends on the DAG which will depend on CBindable: circular dependency
 // TODO: Dependency inversion:
-//   Create IDCG_Base which defines create_bind_object method
-//   Inherit DCG<Ts...> from this interface
-//   Use IDCG_Base in this file instead of DCG_t
+//   Create IDAG_Base which defines create_bind_object method
+//   Inherit DAG<Ts...> from this interface
+//   Use IDAG_Base in this file instead of DAG_t
 template <typename T>
 concept CBindable = requires (T obj) {
   typename T::bind_type;
-  { obj.create_bind_object(DCG_t const* DCG_) } -> std::same_as<std::shared_ptr<typename T::bind_type>>;
+  { obj.create_bind_object(DAG_t const* DAG_) } -> std::same_as<std::shared_ptr<typename T::bind_type>>;
 };
 
 ...
 ```
 
-Notice that the caution in the above header detects the circular dependency between the DCG and CBindable.
+Notice that the caution in the above header detects the circular dependency between the DAG and CBindable.
 **TODO explains the solution which is quite an easy application of the dependency inversion and I will not go into the details.**
 
 The CS types shall satisfy CBindable which can be examined by a concept like Json_Constructible used before:
 This concept can easily be applied to all the types in the CS_Types_t similar to All_Json_Constructible.
 
-The factory function of the DCG is:
+The factory function of the DAG is:
 
 ```
 ...
@@ -2226,14 +2234,14 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
   double _thickness;
   double _width;
   double _height;
-  DCG_Node<EO_Stiffener> _side_stiffener_1;
-  DCG_Node<EO_Stiffener> _side_stiffener_2;
+  DAG_Node<EO_Stiffener> _side_stiffener_1;
+  DAG_Node<EO_Stiffener> _side_stiffener_2;
   
   ...
 
-  std::shared_ptr<bind_type> create_bind_object(IDCG_Base const* DCG_) const {
-    auto side_stiffener_1{ DCG_->create_bind_object<EO_Stiffener>(_side_stiffener_1._index) };
-    auto side_stiffener_2{ DCG_->create_bind_object<EO_Stiffener>(_side_stiffener_2._index) };
+  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
+    auto side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_side_stiffener_1._index) };
+    auto side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_side_stiffener_2._index) };
     return std::make_shared<bind_type>(thickness, width, height, side_stiffener_1, side_stiffener_2);
   };
 
@@ -2344,11 +2352,11 @@ template<typename T>
 void execute(std::size_t type_container_index, const std::string& function_name) {
   py::scoped_interpreter guard{};  // Start Python interpreter
 
-  // get the DCG
-  auto DCG_{ get_current_DCG() };
+  // get the DAG
+  auto DAG_{ get_current_DAG() };
 
   // create the Bind object
-  auto bind_object{ DCG_.get_bind_object<T>(type_container_index) };
+  auto bind_object{ DAG_.get_bind_object<T>(type_container_index) };
 
   // find the module containing the requested function
   auto module_name{ get_module(function_name) };
@@ -2384,12 +2392,12 @@ Similarly, main.cpp needs an update for the registration of the executor:
 
   // executor
   CROW_ROUTE(app, "/execute/<string>/<size_t>").methods("POST"_method)(
-    [](const crow::request& req, const std::string& type, std::size_t DCG_node_index) {
+    [](const crow::request& req, const std::string& type, std::size_t DAG_node_index) {
       auto it = executors.find(type);
       if (it == executors.end())
         return crow::response(400, "Unknown type");
 
-      it->second(DCG_node_index);
+      it->second(DAG_node_index);
       return crow::response{R"({"status":"updated"})"};
     });
 
@@ -2414,7 +2422,7 @@ In terms of the FE interface, we can mainly define 3 types:
 2. IFE_Exportable: export_FE()
 3. IFE_Importable_Exportable: import_FE() and export_FE()
 
-The FE importability is required for all types existing in an online DCG.
+The FE importability is required for all types existing in an online DAG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
 Hence The three types would represent the following cases:
 1. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
@@ -2428,18 +2436,18 @@ Hence The three types would represent the following cases:
 #define _FE_h
 
 struct IFE_Importable {
-  virtual import_FE() = 0;
+  virtual void import_FE() = 0;
   virtual ~IFE_Importable() = default;
 };
 
 struct IFE_Exportable {
-  virtual export_FE() const = 0;
+  virtual void export_FE() const = 0;
   virtual ~IFE_Exportable() = default;
 };
 
 struct IFE_Importable_Exportable {
-  virtual import_FE() = 0;
-  virtual export_FE() const = 0;
+  virtual void import_FE() = 0;
+  virtual void export_FE() const = 0;
   virtual ~IFE_Importable_Exportable() = default;
 };
 
@@ -2475,11 +2483,11 @@ public:
 
   void bootstrap();
   template<typename T>
-  void load(const DCG_t&, const DCG_Node<T>&);
+  void load(const DAG_t&, const DAG_Node<T>&);
   template<typename T>
-  void insert(DCG_t&, const DCG_Node<T>&);
+  void insert(DAG_t&, const DAG_Node<T>&);
   template<typename T>
-  void save(const DCG_Node<T>&);
+  void save(const DAG_Node<T>&);
 
 private:
   static constexpr std::string table_name_prrefix{ "table_" };
@@ -2618,7 +2626,7 @@ std::unique_ptr<sql::PreparedStatement> Database::prepare(const std::string& MyS
 }
 
 template<typename T>
-void DB::insert(DCG_t& DCG_, const DCG_Node<T>& DCG_node) {
+void DB::insert(DAG_t& DAG_, const DAG_Node<T>& DAG_node) {
   std::string table_name{ DB::table_name_prefix + T::type_name };
 
   // MySQL string for the members
@@ -2646,8 +2654,8 @@ void DB::insert(DCG_t& DCG_, const DCG_Node<T>& DCG_node) {
       rs2->next();
       DB_key = rs2->getInt64(1);
     }
-    DCG_.set_DB_key(DCG_node, DB_key);
-    DCG_node.save_to_DB(*this);
+    DAG_.set_DB_key(DAG_node, DB_key);
+    DAG_node.save_to_DB(*this);
     ps->executeUpdate();
   } catch (const sql::SQLException& e) {
     log_sql_error(e, "insert")
@@ -2656,7 +2664,7 @@ void DB::insert(DCG_t& DCG_, const DCG_Node<T>& DCG_node) {
 }
 
 template<typename T>
-void DB::save(const DCG_Node<T>& DCG_node) {
+void DB::save(const DAG_Node<T>& DAG_node) {
   std::string table_name{ DB::table_name_prefix + T::type_name };
 
   // MySQL string for the members
@@ -2670,7 +2678,7 @@ void DB::save(const DCG_Node<T>& DCG_node) {
 
   try {
     auto ps = prepare(MySQL_command);
-    DCG_node.save_to_DB(*this);
+    DAG_node.save_to_DB(*this);
     ps->executeUpdate();
   } catch (const sql::SQLException& e) {
     log_sql_error(e, "update");
@@ -2711,13 +2719,13 @@ In this document, I mentioned about the following base types for the SAA:
 - structural analysis result (SAR).
 
 All of these interfaces shall satisfy the above interfaces in order to:
-- be stored by the DCG,
+- be stored by the DAG,
 - suffice the UI interactions,
 - suffice the SP interactions and
 - suffice the DB interactions.
 - suffice the FE interactions.
 
-Hence, the CS shall form a class hierarchy which roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDCG).
+Hence, the CS shall form a class hierarchy which roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDAG).
 
 ```
 // ~/src/system/ICS.h
@@ -2725,7 +2733,7 @@ Hence, the CS shall form a class hierarchy which roots to a base class visualizi
 #ifndef _ICS_h
 #define _ICS_h
 
-struct ICS : public IUI, IDCG, IDB {
+struct ICS : public IUI, IDAG, IDB {
   virtual ~ICS() = default;
 };
 
@@ -2741,7 +2749,7 @@ The ICS interface becomes:
 #ifndef _ICS_h
 #define _ICS_h
 
-#include "IDCG.h"
+#include "IDAG.h"
 
 // ---------------------------------------------
 // FE interface
@@ -2756,10 +2764,12 @@ template<>
 struct ICS_0<FE_Importable_t> : public IFE_Importable {
   virtual ~ICS_0() = default;
 };
+
 template<>
 struct ICS_0<FE_Exportable_t> : public FE_Exportable_t {
   virtual ~ICS_0() = default;
 };
+
 template<>
 struct ICS_0<FE_Importable_Exportable_t> : public FE_Importable_Exportable_t {
   virtual ~ICS_0() = default;
@@ -2768,117 +2778,274 @@ struct ICS_0<FE_Importable_Exportable_t> : public FE_Importable_Exportable_t {
 // ---------------------------------------------
 // Updateability interface
 
-
-
 struct Non_Updatable_t;
 struct Ancestor_Updatable_t;
 struct Invariant_Updatable_t;
 
+template<typename FEType, typename UpdateableType>
+struct I_CS {};
 
-
-
-struct INon_Updatable : public IDCG {
-  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return true; };
+template<typename FEType>
+struct I_CS<FEType, Non_Updatable_t> : public ICS_0<FEType> {
+  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return true; };
+  virtual ~I_CS() = default;
 };
 
-struct IAncestor_Updatable : public IDCG {
-  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return inspect_ancestors(DCG_); };
-  bool inspect_ancestors(DCG_t const* DCG_) const {
-    auto ancestors{ get_ancestors(DCG_) };
+template<typename FEType>
+struct I_CS<FEType, Ancestor_Updatable_t> : public ICS_0<FEType> {
+  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return inspect_ancestors(DAG_); };
+  bool inspect_ancestors(DAG_t const* DAG_) const {
+    auto ancestors{ get_ancestors(DAG_) };
     for (auto ancestor : ancestors) {
-      if (!ancestor->get_state__DCG()) return false;
+      if (!ancestor->get_state__DAG()) return false;
     }
     return true;
   };
+  virtual ~I_CS() = default;
 };
 
-struct IInvariant_Updatable : public IDCG {
-  bool reevaluate_state__DCG(DCG_t const* DCG_) const {
-    auto inspection{ inspect_ancestors(DCG_) };
+template<typename FEType>
+struct I_CS<FEType, Invariant_Updatable_t> : public ICS_0<FEType> {
+  bool reevaluate_state__DAG(DAG_t const* DAG_) const {
+    auto inspection{ inspect_ancestors(DAG_) };
     if (!inspection) return false;
-    return inspect_invariant(DCG_);
+    return inspect_invariant(DAG_);
   };
-  bool inspect_ancestors(DCG_t const* DCG_) const {
-    auto ancestors{ get_ancestors(DCG_) };
+  bool inspect_ancestors(DAG_t const* DAG_) const {
+    auto ancestors{ get_ancestors(DAG_) };
     for (auto ancestor : ancestors) {
-      if (!ancestor->get_state__DCG(DCG_)) return false;
+      if (!ancestor->get_state__DAG(DAG_)) return false;
     }
     return true;
   };
-  virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
-};
-
-
-
-
-
-
-
-
-struct Non_Updatable;
-struct FE_Exportable_t;
-struct FE_Importable_Exportable_t;
-
-template<typename T>
-struct ICS_0 {};
-
-template<>
-struct ICS_0<FE_Importable_t> : public IFE_Importable {
-  virtual ~ICS_0() = default;
-};
-template<>
-struct ICS_0<FE_Exportable_t> : public FE_Exportable_t {
-  virtual ~ICS_0() = default;
-};
-template<>
-struct ICS_0<FE_Importable_Exportable_t> : public FE_Importable_Exportable_t {
-  virtual ~ICS_0() = default;
+  virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
+  virtual ~I_CS() = default;
 };
 
 #endif
 ```
 
-
-
-
+Now, we have a templated interface for all CS types.
+Additionally, the CS types shall satisfy the following concepts in order to deal the UI, DB and SP interactions:
+- Has_Type_Name<T>
+- Json_Compatible<T>
+- Has_Member_Names<T>
+- Has_Member_Types<T>
+- CBindable<T>
 
 **The EOs**\
-The EOs represents the physical elements such as material, panel, stiffener, etc.
-In other words, the SAs performed on the SCs actually examines the physical elements stored within the EOs involved in the SCs.
+The EOs represent the physical elements such as material, panel, stiffener, etc.
+In other words, the SAs performed on the SCs actually examines the physical elements stored within the EOs.
 Hence, the most important feature of the EOs is that they allow us to size the structure to handle the applied loading.
 In other words, the EOs extends an interface related to the structural sizing:
 
 ```
-// ~/src/system/Abstract_EO_Base.h
+// ~/src/system/IEO.h
 
-#ifndef _Abstract_EO_Base_h
-#define _Abstract_EO_Base_h
+#ifndef _IEO_h
+#define _IEO_h
 
-template<typename T>
-  requires(Has_Type_Name<T> && Json_Compatible<T>)
-struct Abstract_EO_Base : public Abstract_CS_Base<Abstract_EO_Base<T>> {
-  virtual ~Abstract_EO_Base() = default;
+struct Non_Sizeable_t;
+struct Auto_Sizeable_t;
+struct Manual_Sizeable_t;
+
+template<typename FEType, typename UpdateableType, typename SizeableType>
+struct IEO : public ICS<FEType, UpdateableType> {};
+
+template<typename FEType, typename UpdateableType>
+struct IEO<FEType, UpdateableType, Non_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  void size_for_RF() { ; };
+  virtual ~IEO() = default;
+};
+
+template<typename FEType, typename UpdateableType>
+struct IEO<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
+  virtual ~IEO() = default;
+};
+
+template<typename FEType, typename UpdateableType>
+struct IEO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  virtual void size_for_RF() = 0;
+  virtual ~IEO() = default;
 };
 
 #endif
 ```
 
+Defining the EO interface, the full version of EO_Panel can be defined:
 
+```
+// ~/src/plugins/core/panel/EO_Panel.h
 
-template<typename T>
-  requires(Has_Type_Name<T> && Json_Compatible<T> && Has_Member_Names<T> && Has_Member_Types<T> && CBindable<T>)
+#ifndef _EO_Panel_h
+#define _EO_Panel_h
 
+#include "~/src/system/IEO.h"
+#include "~/src/plugins/core/mat1/EO_Mat1.h"
+#include "~/src/plugins/core/stiffener/EO_Stiffener.h"
+#include "SA_Panel_Buckling.h"
+#include "SA_Panel_Pressure.h"
 
+using json = nlohmann::json;
 
-struct IUI {
-struct IDCG {
-concept Has_Type_Name = std::constructible_from<T, const json&>;
-concept Json_Compatible = std::constructible_from<T, const json&>;
-struct Abstract_Non_Updatable : public IDCG {
-struct Abstract_Ancestor_Updatable : public IDCG {
-struct Abstract_Invariant_Updatable : public IDCG {
-concept CBindable {
+struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
+  std::size_t _type_container_index;
+  double _thickness;
+  double _width;
+  double _height;
+  DAG_Node<EO_Mat1> _mat1;
+  DAG_Node<EO_Stiffener> _side_stiffener_1;
+  DAG_Node<EO_Stiffener> _side_stiffener_2;
+  DAG_Node<SA_Panel_Buckling> _panel_pressure;
+  DAG_Node<SA_Panel_Pressure> _panel_buckling;
 
+  // Notice that EO_Panel satisfies Has_Type_Name concept.
+  static inline std::string type_name = "EO_Panel";
+
+  // Notice that EO_Panel satisfies Has_Member_Names concept.
+  static inline auto member_names = std::vector<std::string>{
+    "_type_container_index",
+    "_thickness",
+    "_width",
+    "_height",
+    "_mat1",
+    "_side_stiffener_1",
+    "_side_stiffener_2",
+    "_panel_pressure",
+    "_panel_buckling"};
+
+  // Notice that EO_Panel satisfies Has_Member_Types concept.
+  static inline std::string member_names = std::vector<std::string>{
+    "std::size_t",
+    "double",
+    "double",
+    "double",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node"};
+
+  // Notice that EO_Panel satisfies Json_Constructible concept.
+  EO_Panel(std::size_t type_container_index, const json& json_) {
+    if (
+        !json_.contains("_thickness") ||
+        !json_.contains("_width") ||
+        !json_.contains("_height") ||
+        !json_.contains("_mat1") ||
+        !json_.contains("_side_stiffener_1") ||
+        !json_.contains("_side_stiffener_2") ||
+        !json_.contains("_panel_pressure") ||
+        !json_.contains("_panel_buckling"))
+      throw std::exception("Wrong inputs for EO_Panel type.");
+    
+    _type_container_index = type_container_index;
+    _thickness = json_["_thickness"];
+    _width = json_["_width"];
+    _height = json_["_height"];
+    _mat1_ = DAG_Node<EO_Mat1>(json_["_mat1"]);
+    _side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
+    _side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
+    _panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_panel_pressure"]);
+    _panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_panel_buckling"]);
+  };
+
+  // IUI interface function: get_type_name
+  inline std::string get_type_name() const { return "EO_Panel"; };
+
+  // IUI interface function: get_from_json
+  void get_from_json(const json& json_) {
+    if (json_.contains("_thickness")) _thickness = json_["_thickness"];
+    if (json_.contains("_width")) _width = json_["_width"];
+    if (json_.contains("_height")) _height = json_["_height"];
+    if (json_.contains("_mat_1")) _mat_1 = json_["_mat_1"];
+    if (json_.contains("_side_stiffener_1")) _side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_1"]);
+    if (json_.contains("_side_stiffener_2")) _side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_side_stiffener_2"]);
+    if (json_.contains("_panel_pressure")) _panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_panel_pressure"]);
+    if (json_.contains("_panel_buckling")) _panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_panel_buckling"]);
+  }
+
+  // IUI interface function: set_to_json
+  json set_to_json() const {
+    return {
+      {"_thickness", _thickness},
+      {"_width", _width},
+      {"_height", _height},
+      {"_mat_1", _mat_1._index},
+      {"_side_stiffener_1", _side_stiffener_1._index},
+      {"_side_stiffener_2", _side_stiffener_2._index},
+      {"_panel_pressure", _panel_pressure._index},
+      {"_panel_buckling", _panel_buckling._index}
+    };
+  }
+
+  // IDAG interface function: get_DAG_node
+  inline DAG_Node<EO_Panel> get_DAG_node() const { return DAG_Node<EO_Panel>(_type_container_index); };
+
+  // IDAG interface function: get_ancestors
+  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> ancestors{};
+    ancestors.push_back(_mat1.get_object(DAG_));
+    ancestors.push_back(_side_stiffener_1.get_object(DAG_));
+    ancestors.push_back(_side_stiffener_2.get_object(DAG_));
+    return ancestors;
+  };
+
+  // IDAG interface function: get_descendants
+  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> descendants{};
+    descendants.push_back(_side_stiffener_1.get_object(DAG_));
+    descendants.push_back(_side_stiffener_2.get_object(DAG_));
+    descendants.push_back(_panel_pressure.get_object(DAG_));
+    descendants.push_back(_panel_buckling.get_object(DAG_));
+    return descendants;
+  };
+
+  // Notice that EO_Panel satisfies CBindable concept.
+  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
+    auto mat1{ DAG_->create_bind_object<Mat1>(_mat1._index) };
+    auto side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_side_stiffener_1._index) };
+    auto side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_side_stiffener_2._index) };
+    auto panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_panel_pressure._index) };
+    auto panel_buckling{ DAG_->create_bind_object<SA_Panel_Pressure>(_panel_buckling._index) };
+    return std::make_shared<bind_type>(
+      thickness,
+      width,
+      height,
+      mat1,
+      side_stiffener_1,
+      side_stiffener_2,
+      panel_pressure,
+      panel_buckling);
+  };
+  
+  // FE interface function: import_FE
+  virtual void import_FE() {
+    // TODO
+  };
+  
+  // FE interface function: export_FE
+  virtual void export_FE() {
+    // TODO
+  };
+
+  // Updateability interface function: inspect_invariant
+  bool inspect_invariant(DAG_t const* DAG_) const {
+    // TODO
+  };
+};
+
+#endif
+```
+
+**The SCs**\
+An SC is a combination of the EOs in order to perform the SAs.
+In other words, the SAs are performed on the SCs.
+Hence, the SCs are mostly related with the analysis requirements such as reporting
+
+```
+// ~/src/system/IEO.h
 
 
 
@@ -2899,7 +3066,7 @@ Currently we have the following architecture:
 Additionally, the CS is developed with C++ while the SP is developed with python.
 Hence, the procedure to run an SA is as follows:
 - The user selects an SA for the analysis run,
-- UI emits an analysis request for the DCG_node of the SA,
+- UI emits an analysis request for the DAG_node of the SA,
 - the CS prepares the analysis dataset and requests an analysis from the SP,
 - the SP constructs SP objects from the CS dataset,
 - the SP runs the SAMMs with the constructed objects,
@@ -2913,18 +3080,18 @@ The process flow contains
 
 **In order to handle the above procedure, the SP shall define the following interface:**
 - **run_analysis(SC):** The interface for the analysis execution.
-- **DCG_to_SP(type_tag, DCG_node):** The factory pattern high level function to create SP objects from DCG raw data.
-- **SP_to_DCG(type_tag):** The reversed factory pattern high level function to extract DCG raw data from the SP objects.
-- **register_DCG_to_SPs(type_tag, method_for_DCG_to_SP):** The high level function registration for the factory methods.
-- **register_SP_to_DCGs(type_tag, method_for_SP_to_DCG):** The high level function registration for the inverse factory methods.
+- **DAG_to_SP(type_tag, DAG_node):** The factory pattern high level function to create SP objects from DAG raw data.
+- **SP_to_DAG(type_tag):** The reversed factory pattern high level function to extract DAG raw data from the SP objects.
+- **register_DAG_to_SPs(type_tag, method_for_DAG_to_SP):** The high level function registration for the factory methods.
+- **register_SP_to_DAGs(type_tag, method_for_SP_to_DAG):** The high level function registration for the inverse factory methods.
 
-DCG_to_SP function shall call get_type_containers to get the DCG raw data for the input DCG_node.
+DAG_to_SP function shall call get_type_containers to get the DAG raw data for the input DAG_node.
 
 **The plugins shall define the factory and the inverse factory methods as well as the registers:**
-- **create_T(DCG_node):** Creates a SP object of type T. called by DCG_to_SP.
-- **extract_T(t):** Extract DCG raw data from t object of type T. called by SP_to_DCG.
-- **register_DCG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
-- **register_SP_to_DCG(type_tag, extract_T):** The low level function registration for the inverse factory method.
+- **create_T(DAG_node):** Creates a SP object of type T. called by DAG_to_SP.
+- **extract_T(t):** Extract DAG raw data from t object of type T. called by SP_to_DAG.
+- **register_DAG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
+- **register_SP_to_DAG(type_tag, extract_T):** The low level function registration for the inverse factory method.
 
 
 

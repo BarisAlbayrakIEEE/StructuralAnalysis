@@ -2064,8 +2064,8 @@ Hence, we have 3 base types considering the updateability of the SAA types:
 - Invariant_Updatable: Requires inspect_invariant. reevaluate_state__DCG calls inspect_invariant and inspect_ancestors.
 
 Obviously, IDCG interface treats all SAA types the same in terms of the updateability issue.
-Deriving from IDCG interface, I will define 3 abstract classes to obey the single responsibiliity rule.
-The IDCG interface becomes.
+I will define 3 abstract classes and move the updateability to those classes to obey the single responsibiliity rule.
+The IDCG interface becomes:
 
 ```
 // ~/src/system/IDCG.h
@@ -2083,23 +2083,17 @@ struct IDCG {
 #endif
 ```
 
-The abstract base classes drived from the IDCG interface:
+I will involve the updateability interface later.
+The code snippet for the updateability interface would be:
 
 ```
-// ~/src/system/Updateable.h
-
-#ifndef _Updateable_h
-#define _Updateable_h
-
 #include "IDCG.h"
 
-// Abstract as get_ancestors is not defined.
-struct Abstract_Non_Updatable : public IDCG {
+struct INon_Updatable : public IDCG {
   bool reevaluate_state__DCG(DCG_t const* DCG_) const { return true; };
 };
 
-// Abstract as get_ancestors is not defined.
-struct Abstract_Ancestor_Updatable : public IDCG {
+struct IAncestor_Updatable : public IDCG {
   bool reevaluate_state__DCG(DCG_t const* DCG_) const { return inspect_ancestors(DCG_); };
   bool inspect_ancestors(DCG_t const* DCG_) const {
     auto ancestors{ get_ancestors(DCG_) };
@@ -2110,8 +2104,7 @@ struct Abstract_Ancestor_Updatable : public IDCG {
   };
 };
 
-// Abstract as get_ancestors andd inspect_invariant are not defined.
-struct Abstract_Invariant_Updatable : public IDCG {
+struct IInvariant_Updatable : public IDCG {
   bool reevaluate_state__DCG(DCG_t const* DCG_) const {
     auto inspection{ inspect_ancestors(DCG_) };
     if (!inspection) return false;
@@ -2126,33 +2119,6 @@ struct Abstract_Invariant_Updatable : public IDCG {
   };
   virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
 };
-
-#endif
-```
-
-The Panel class becomes:
-
-```
-// ~/src/plugins/core/panel/EO_Panel.h
-
-...
-
-struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
-  
-  ...
-
-  std::vector<IDCG const*> get_ancestors(DCG_t const* DCG_) const {
-    ...
-  };
-  bool inspect_invariant(DCG_t const* DCG_) const {
-    ...
-  };
-
-  ...
-
-};
-
-...
 ```
 
 **Other Issues About the DCG**\
@@ -2198,53 +2164,39 @@ A better solution is assigning an **executor process** at the CS level (like cre
 The **executor** involves the whole flow above.
 The **executor** is a templated function and shall be registered like the other CS utilities (i.e. create<T>, get<T> and set<T>).
 The **executor** asks the CS types to construct Bind objects.
-Hence, the CS types shall implement a method returning the Bind object which requires an interface.
-The best solution for this interface is a CRTP base class as it can evaluate the return type at compile time.
+Hence, the CS types shall implement a method returning the Bind object which requires an interface while
+the DCG needs a function which would return the Bind objects for the input type and index.
+The function will be templated and the return type (e.g. Bind_Panel) depends on the template type (e.g. EO_Panel).
+The solution is defining an alias within the CS types that stores the type of the corresponding Bind type.
+This alias would be used in many steps of the above flow.
 
-The CRTP base class looks like:
+The best solution for this interface is a concept as it can evaluate the return type at compile time.
+The concept would look like:
 
 ```
-// ~/src/system/Bindable.h
+// ~/src/system/core_type_traits.h
 
-#ifndef _Bindable_h
-#define _Bindable_h
+...
 
-#include <memory>
-
-// CAUTION: Bindable depends on the DCG which will depend on Bindable: circular dependency
+// CAUTION: CBindable depends on the DCG which will depend on CBindable: circular dependency
 // TODO: Dependency inversion:
 //   Create IDCG_Base which defines create_bind_object method
 //   Inherit DCG<Ts...> from this interface
 //   Use IDCG_Base in this file instead of DCG_t
-template<typename T>
-  requires(Has_Bind_Type<T>)
-struct Bindable {
-  std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
-    return static_cast<T const*>(this)->create_bind_object(DCG_);
-  };
+template <typename T>
+concept CBindable = requires (T obj) {
+  typename T::bind_type;
+  { obj.create_bind_object(DCG_t const* DCG_) } -> std::same_as<std::shared_ptr<typename T::bind_type>>;
 };
 
-#endif
+...
 ```
 
-Notice that the caution in the above header detects the circular dependency between the DCG and Bindable.
+Notice that the caution in the above header detects the circular dependency between the DCG and CBindable.
 **TODO explains the solution which is quite an easy application of the dependency inversion and I will not go into the details.**
 
-The CS types shall inherit from the Bindable which can be examined by a concept like Json_Constructible used before:
-
-```
-template <template <class> class Base, class T>
-concept ExtendsCRTP = std::derived_from<T, Base<T>>;
-
-template <class T>
-concept CBindable = ExtendsCRTP<Bindable, T>;
-```
-
-This concept can easily be applied all the types in the CS_Types_t similar to All_Json_Constructible.
-The DCG needs a function which would return the Bind objects for the input type and index.
-The function will be templated and return type (e.g. Bind_Panel) depends on the template type (e.g. EO_Panel).
-The solution is defining an alias in the CS types that stores the type of the corresponding Bind type.
-This alias would be used in many steps of the above flow.
+The CS types shall satisfy CBindable which can be examined by a concept like Json_Constructible used before:
+This concept can easily be applied to all the types in the CS_Types_t similar to All_Json_Constructible.
 
 The factory function of the DCG is:
 
@@ -2254,7 +2206,7 @@ The factory function of the DCG is:
   template <typename T>
   std::shared_ptr<typename T::bind_type> create_bind_object(std::size_t index) {
     const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(_type_containers);
-    cons auto& CS_object = type_container->operator[](index);
+    const auto& CS_object = type_container->operator[](index);
     return CS_object.create_bind_object(this);
   };
 
@@ -2268,7 +2220,7 @@ The CS panel class becomes:
 
 ...
 
-struct EO_Panel : public IUI, Bindable, Abstract_Invariant_Updatable {
+struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
   using bind_type = Bind_Panel;
 
   double _thickness;
@@ -2458,16 +2410,41 @@ The 2nd, the 3rd and the 4th are quite standard processes which would not put to
 #### 4.2.4. The FE Interface <a id='sec424'></a>
 
 In terms of the FE interface, we can mainly define 3 types:
-1. FE_Importable: import_FE()
-2. FE_Exportable: export_FE()
-3. FE_Importable_Exportable: import_FE() and export_FE()
+1. IFE_Importable: import_FE()
+2. IFE_Exportable: export_FE()
+3. IFE_Importable_Exportable: import_FE() and export_FE()
 
 The FE importability is required for all types existing in an online DCG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
 Hence The three types would represent the following cases:
-1. FE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
-2. FE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
-3. FE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
+1. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
+2. IFE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
+3. IFE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
+
+```
+// ~/src/system/FE.h
+
+#ifndef _FE_h
+#define _FE_h
+
+struct IFE_Importable {
+  virtual import_FE() = 0;
+  virtual ~IFE_Importable() = default;
+};
+
+struct IFE_Exportable {
+  virtual export_FE() const = 0;
+  virtual ~IFE_Exportable() = default;
+};
+
+struct IFE_Importable_Exportable {
+  virtual import_FE() = 0;
+  virtual export_FE() const = 0;
+  virtual ~IFE_Importable_Exportable() = default;
+};
+
+#endif
+```
 
 Most of the types are expected to be FE_Importable_Exportable.
 
@@ -2743,24 +2720,127 @@ All of these interfaces shall satisfy the above interfaces in order to:
 Hence, the CS shall form a class hierarchy which roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDCG).
 
 ```
-// ~/src/system/Abstract_CS_Base.h
+// ~/src/system/ICS.h
 
-#ifndef _Abstract_CS_Base_h
-#define _Abstract_CS_Base_h
+#ifndef _ICS_h
+#define _ICS_h
 
-template<typename T>
-  requires(Has_Type_Name<T> && Json_Compatible<T> && Has_Member_Names<T> && Has_Member_Types<T>)
-struct Abstract_CS_Base : public IUI, IDCG, IDB, Bindable<T> {
-  virtual ~Abstract_CS_Base() = default;
-  std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
-    return static_cast<T const*>(this)->create_bind_object(DCG_);
-  };
+struct ICS : public IUI, IDCG, IDB {
+  virtual ~ICS() = default;
 };
 
 #endif
 ```
 
 Additionally, each CS type shall extend one of the abstract classes defined for the FE and the updateability.
+The ICS interface becomes:
+
+```
+// ~/src/system/ICS.h
+
+#ifndef _ICS_h
+#define _ICS_h
+
+#include "IDCG.h"
+
+// ---------------------------------------------
+// FE interface
+struct FE_Importable_t;
+struct FE_Exportable_t;
+struct FE_Importable_Exportable_t;
+
+template<typename T>
+struct ICS_0 {};
+
+template<>
+struct ICS_0<FE_Importable_t> : public IFE_Importable {
+  virtual ~ICS_0() = default;
+};
+template<>
+struct ICS_0<FE_Exportable_t> : public FE_Exportable_t {
+  virtual ~ICS_0() = default;
+};
+template<>
+struct ICS_0<FE_Importable_Exportable_t> : public FE_Importable_Exportable_t {
+  virtual ~ICS_0() = default;
+};
+
+// ---------------------------------------------
+// Updateability interface
+
+
+
+struct Non_Updatable_t;
+struct Ancestor_Updatable_t;
+struct Invariant_Updatable_t;
+
+
+
+
+struct INon_Updatable : public IDCG {
+  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return true; };
+};
+
+struct IAncestor_Updatable : public IDCG {
+  bool reevaluate_state__DCG(DCG_t const* DCG_) const { return inspect_ancestors(DCG_); };
+  bool inspect_ancestors(DCG_t const* DCG_) const {
+    auto ancestors{ get_ancestors(DCG_) };
+    for (auto ancestor : ancestors) {
+      if (!ancestor->get_state__DCG()) return false;
+    }
+    return true;
+  };
+};
+
+struct IInvariant_Updatable : public IDCG {
+  bool reevaluate_state__DCG(DCG_t const* DCG_) const {
+    auto inspection{ inspect_ancestors(DCG_) };
+    if (!inspection) return false;
+    return inspect_invariant(DCG_);
+  };
+  bool inspect_ancestors(DCG_t const* DCG_) const {
+    auto ancestors{ get_ancestors(DCG_) };
+    for (auto ancestor : ancestors) {
+      if (!ancestor->get_state__DCG(DCG_)) return false;
+    }
+    return true;
+  };
+  virtual bool inspect_invariant(DCG_t const* DCG_) const = 0;
+};
+
+
+
+
+
+
+
+
+struct Non_Updatable;
+struct FE_Exportable_t;
+struct FE_Importable_Exportable_t;
+
+template<typename T>
+struct ICS_0 {};
+
+template<>
+struct ICS_0<FE_Importable_t> : public IFE_Importable {
+  virtual ~ICS_0() = default;
+};
+template<>
+struct ICS_0<FE_Exportable_t> : public FE_Exportable_t {
+  virtual ~ICS_0() = default;
+};
+template<>
+struct ICS_0<FE_Importable_Exportable_t> : public FE_Importable_Exportable_t {
+  virtual ~ICS_0() = default;
+};
+
+#endif
+```
+
+
+
+
 
 **The EOs**\
 The EOs represents the physical elements such as material, panel, stiffener, etc.
@@ -2778,10 +2858,6 @@ template<typename T>
   requires(Has_Type_Name<T> && Json_Compatible<T>)
 struct Abstract_EO_Base : public Abstract_CS_Base<Abstract_EO_Base<T>> {
   virtual ~Abstract_EO_Base() = default;
-  std::shared_ptr<typename T::bind_type> create_bind_object(DCG_t const* DCG_) const {
-    return static_cast<T const*>(this)->create_bind_object(DCG_);
-  };
-
 };
 
 #endif
@@ -2789,6 +2865,8 @@ struct Abstract_EO_Base : public Abstract_CS_Base<Abstract_EO_Base<T>> {
 
 
 
+template<typename T>
+  requires(Has_Type_Name<T> && Json_Compatible<T> && Has_Member_Names<T> && Has_Member_Types<T> && CBindable<T>)
 
 
 
@@ -2799,7 +2877,7 @@ concept Json_Compatible = std::constructible_from<T, const json&>;
 struct Abstract_Non_Updatable : public IDCG {
 struct Abstract_Ancestor_Updatable : public IDCG {
 struct Abstract_Invariant_Updatable : public IDCG {
-struct Bindable {
+concept CBindable {
 
 
 

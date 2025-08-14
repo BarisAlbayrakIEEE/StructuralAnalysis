@@ -2528,36 +2528,57 @@ static void log_sql_error(const sql::SQLException& e, const char* where) {
 // ... ctor/dtor/ensure_connected/bootstrap/create* same as before ...
 
 template<typename T>
-std::int64_t DB::insert(const T& m) {
-  std::string table_name{ table_name_prefix + T::type_name };
-  unsigned char member_count{ count_comma_in_string(T::member_names_string) + 1 };
-  std::string initial_member_vals{ initiate_member_vals(member_count) };
+void DB::insert(const T& obj) {
+  std::string table_name{ DB::table_name_prefix + T::type_name };
+
+  // T::member_names_str: Member names accept for the MySQL DB ID. Ex: "thickness, side_stiffener_1, side_stiffener_2"
+  // initial_member_vals_str_1: Ex: ?, ?, ? (initiate_member_vals_1 replaces each member name with a question mark)
+  std::string initial_member_vals_str_1{ initiate_member_vals_1(T::member_names_str) };
   std::string MySQL_command{
     "INSERT INTO " +
     table_name +
-    "(" +
-    T::member_names_string +
-    ") VALUES " +
-    initial_member_vals };
+    " (" +
+    T::member_names_str +
+    ") VALUES (" +
+    initial_member_vals_str_1 +
+    ")" };
 
   try {
     auto ps = prepare(MySQL_command);
-    std::unique_ptr<sql::ResultSet> rs(ps->getGeneratedKeys());
-    std::int64_t DB_key{};
-    if (rs && rs->next()) DB_key = rs->getInt64(1);
-    std::unique_ptr<sql::Statement> s(_connection->createStatement());
-    auto r = std::unique_ptr<sql::ResultSet>(s->executeQuery("SELECT LAST_INSERT_ID()"));
-    r->next(); DB_key = r->getInt64(1);
 
-    T.save_to_DB(*this, DB_key);
+    std::int64_t DB_key{};
+    std::unique_ptr<sql::ResultSet> rs1(ps->getGeneratedKeys());
+    if (rs1 && rs1->next()) {
+      DB_key = rs1->getInt64(1);
+    }
+    else {
+      std::unique_ptr<sql::Statement> rs2(_connection->createStatement());
+      auto rs2 = std::unique_ptr<sql::ResultSet>(s->executeQuery("SELECT LAST_INSERT_ID()"));
+      rs2->next();
+      DB_key = rs2->getInt64(1);
+    }
+    obj.save_to_DB(*this, DB_key);
   } catch (const sql::SQLException& e) {
-    log_sql_error(e, "insert" + T::type_name); throw;
+    log_sql_error(e, "insert " + T::type_name);
+    throw;
   }
 }
 
-void DB::update_material(const Material& m) {
-  if (m.id <= 0) throw std::invalid_argument("update_material: invalid id");
+template<typename T>
+  std::string table_name{ DB::table_name_prefix + T::type_name };
+
+  // T::member_names_str: Member names accept for the MySQL DB ID. Ex: "thickness, side_stiffener_1, side_stiffener_2"
+  // initial_member_vals_str_1: Ex: ?, ?, ? (initiate_member_vals_2 adds '=?' after each member name)
+  std::string initial_member_vals_str_2{ initiate_member_vals_1(T::member_names_str) };
+  std::string MySQL_command{
+    "UPDATE " +
+    table_name +
+    " SET " +
+    initial_member_vals_str_2 +
+    " WHERE id=?" };
+
   try {
+    auto ps = prepare(MySQL_command);
     auto ps = prepare(
       "UPDATE materials SET name=?, density=?, youngs=?, poisson=? WHERE id=?");
     ps->setString(1, m.name);
@@ -2566,7 +2587,11 @@ void DB::update_material(const Material& m) {
     ps->setDouble(4, m.poisson);
     ps->setInt64(5, m.id);
     ps->executeUpdate();
-  } catch (const sql::SQLException& e) { log_sql_error(e, "update_material"); throw; }
+    obj.save_to_DB(*this, DB_key);
+  } catch (const sql::SQLException& e) {
+    log_sql_error(e, "update_material");
+    throw;
+  }
 }
 ```
 

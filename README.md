@@ -865,7 +865,7 @@ The CS contains 4 components:
 
 Firstly, I will discuss on the above issues based on the requests by the UI.
 
-#### 4.2.1. The UI Interface Requirements <a id='sec421'></a>
+#### 4.2.1. The UI Interface <a id='sec421'></a>
 
 The CS and the DCG shall define the below interface in order to handle the UI requests:
 - create_DCG_node(data_type, json)
@@ -2145,7 +2145,7 @@ many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
 However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and the deign.
 
-#### 4.2.3. The SP Interface Requirements <a id='sec423'></a>
+#### 4.2.3. The SP Interface <a id='sec423'></a>
 
 We have the following architecture for the SAA:
 - The UI is developed in js.
@@ -2438,7 +2438,7 @@ Lets exemine the components of this strategy:
 The 2nd, the 3rd and the 4th are quite standard processes which would not put too much load on the client.
 **The CS safely implements all the connections and the patterns required for C++/Python interaction.**
 
-#### 4.2.4. The FE Interface Requirements <a id='sec424'></a>
+#### 4.2.4. The FE Interface <a id='sec424'></a>
 
 In terms of the FE interface, we can mainly define 3 types:
 1. FE_Importable: import_FE()
@@ -2454,7 +2454,137 @@ Hence The three types would represent the following cases:
 
 Most of the types are expected to be FE_Importable_Exportable.
 
-#### 4.2.5. A General Overview of the Types <a id='sec425'></a>
+#### 4.2.5. The MySQL DB Interface <a id='sec425'></a>
+
+```
+// ~/src/system/db.h
+
+#ifndef _db_h
+#define _db_h
+
+#include <string>
+#include <memory>
+#include <vector>
+#include <optional>
+#include <cstdint>
+
+namespace sql { class Connection; class PreparedStatement; class ResultSet; }
+
+struct DB_Config {
+  std::string uri, user, password, dbName;
+};
+
+class DB {
+public:
+  explicit DB(const DB_Config& cfg);
+  ~DB();
+
+  void bootstrap();
+  std::int64_t insert(const Material& m);
+
+private:
+  static constexpr std::string table_name_prrefix{ "table_" };
+
+  void ensure_connected();
+  void create_DB();
+  void create_tables();
+  std::unique_ptr<sql::PreparedStatement> prepare(const std::string& sql);
+
+  DB_Config _DB_config;
+  std::unique_ptr<sql::Connection> _connection;
+};
+
+struct IDB {
+  virtual void load_from_DB(const DB& db) = 0;
+  virtual void save_to_DB(const DB& db, std::int64_t) const = 0;
+  virtual ~IDB() = default;
+};
+
+#endif
+
+
+
+
+// ~/src/system/db.cpp
+
+#include <iostream>
+#include <stdexcept>
+#include <mysql/jdbc.h>
+#include <cppconn/driver.h>
+#include <cppconn/connection.h>
+#include <cppconn/statement.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/resultset.h>
+#include <cppconn/exception.h>
+#include "db.h"
+
+static void log_sql_error(const sql::SQLException& e, const char* where) {
+  std::cerr
+    << "[MySQL][" << where << "] " << e.what()
+    << " (code " << e.getErrorCode()
+    << ", SQLState " << e.getSQLStateCStr() << ")\n";
+}
+
+// ... ctor/dtor/ensure_connected/bootstrap/create* same as before ...
+
+template<typename T>
+std::int64_t DB::insert(const T& m) {
+  std::string table_name{ table_name_prefix + T::type_name };
+  unsigned char member_count{ count_comma_in_string(T::member_names_string) + 1 };
+  std::string initial_member_vals{ initiate_member_vals(member_count) };
+  std::string MySQL_command{
+    "INSERT INTO " +
+    table_name +
+    "(" +
+    T::member_names_string +
+    ") VALUES " +
+    initial_member_vals };
+
+  try {
+    auto ps = prepare(MySQL_command);
+    std::unique_ptr<sql::ResultSet> rs(ps->getGeneratedKeys());
+    std::int64_t DB_key{};
+    if (rs && rs->next()) DB_key = rs->getInt64(1);
+    std::unique_ptr<sql::Statement> s(_connection->createStatement());
+    auto r = std::unique_ptr<sql::ResultSet>(s->executeQuery("SELECT LAST_INSERT_ID()"));
+    r->next(); DB_key = r->getInt64(1);
+
+    T.save_to_DB(*this, DB_key);
+  } catch (const sql::SQLException& e) {
+    log_sql_error(e, "insert" + T::type_name); throw;
+  }
+}
+
+void DB::update_material(const Material& m) {
+  if (m.id <= 0) throw std::invalid_argument("update_material: invalid id");
+  try {
+    auto ps = prepare(
+      "UPDATE materials SET name=?, density=?, youngs=?, poisson=? WHERE id=?");
+    ps->setString(1, m.name);
+    ps->setDouble(2, m.density);
+    ps->setDouble(3, m.youngs);
+    ps->setDouble(4, m.poisson);
+    ps->setInt64(5, m.id);
+    ps->executeUpdate();
+  } catch (const sql::SQLException& e) { log_sql_error(e, "update_material"); throw; }
+}
+```
+
+
+
+
+    ps->setString(1, m.name);
+    ps->setDouble(2, m.density);
+    ps->setDouble(3, m.youngs);
+    ps->setDouble(4, m.poisson);
+    ps->executeUpdate();
+
+
+
+
+
+
+#### 4.2.6. The CS Class Hierarchy <a id='sec426'></a>
 
 In this document, I mentioned about the following base types for the SAA:
 - engineering object (EO),

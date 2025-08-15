@@ -2430,6 +2430,12 @@ Most of the types are expected to be FE_Importable_Exportable.
 
 #### 4.2.5. The MySQL DB Interface <a id='sec425'></a>
 
+The below database class is simple enough to implement the DB access algorithms such as:
+- DB and table creation,
+- loading an item from the DB,
+- inserting a new item into the DB and
+- saving an item over an existing field.
+
 ```
 // ~/src/system/DB.h
 
@@ -2919,6 +2925,16 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
   };
 
+  // Notice that EO_Panel satisfies CBindable concept.
+  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
+    auto EO_mat1{ DAG_->create_bind_object<EO_Mat1>(_EO_mat1._index) };
+    return std::make_shared<bind_type>(
+      _thickness,
+      _width_a,
+      _width_b,
+      EO_mat1);
+  };
+
   // IUI interface function: get_type_name
   inline std::string get_type_name() const { return "EO_Panel"; };
 
@@ -2958,28 +2974,18 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       _SC_side_stiffener_1.get_object(DAG_),
       _SC_side_stiffener_2.get_object(DAG_) };
   };
-
-  // Notice that EO_Panel satisfies CBindable concept.
-  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_mat1{ DAG_->create_bind_object<EO_Mat1>(_EO_mat1._index) };
-    return std::make_shared<bind_type>(
-      _thickness,
-      _width_a,
-      _width_b,
-      EO_mat1);
-  };
   
-  // FE interface function: import_FE
+  // FE interface function for FE_Importable_Exportable_t: import_FE
   virtual void import_FE() {
     // TODO
   };
   
-  // FE interface function: export_FE
+  // FE interface function for FE_Importable_Exportable_t: export_FE
   virtual void export_FE() {
     // TODO
   };
 
-  // Updateability interface function: inspect_invariant
+  // Updateability interface function for Invariant_Updatable_t: inspect_invariant
   bool inspect_invariant(DAG_t const* DAG_) const {
     // TODO
   };
@@ -3003,6 +3009,15 @@ However, the SCs defines which SAs would be applied to the SC.
 For example, while sizing the EOs involved in an SC, all SAs assigned to the SC must be evaluated.
 Hence, the SCs also shall define the procedures to run the analyses.
 This is the structural inspectability window for the SCs which involves the structural sizing as well.
+
+The structural sizing interfaace within the SCs is conceptually different than the one defined within the EOs.
+An SC involve a nomber of EOs.
+The structural sizing within the SC is the orchestration of the sizing procedures of the involved EOs.
+It considers the behaviours of the EOs and the assigned SAs at the same time.
+For example, sizing for SC_Panel shall consider the involved panel and striffener at the same time.
+The side stiffener may not provide enough support which causes a failure.
+Hence, both the panel and the stiffener shall be considered while sizing.
+Besides, the sizing strategy corresponding to the panel pressure analysis would be different than the one corresponding to the panel buckling analysis.
 
 The SAA shall have a wide range of reporting facilities.
 Some of them would be a part of "in progress" utilities while some others satisfies the "documentation" requirements.
@@ -3041,30 +3056,32 @@ Considering the above discussions, the interface for the SCs is as follows:
 #ifndef _ISC_h
 #define _ISC_h
 
-#include "ICS.h"
-
-struct Non_Sizeable_t;
-struct Auto_Sizeable_t;
-struct Manual_Sizeable_t;
+#include "IEO.h"
 
 template<typename FEType, typename UpdateableType, typename SizeableType>
 struct ISC : public ICS<FEType, UpdateableType> {};
 
-template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Non_Sizeable_t> : public ICS<FEType, UpdateableType> {
-  void size_for_RF() { ; };
-  virtual ~ISC() = default;
-};
+// CAUTION: SCs cannot be Non_Sizeable_t. All SCs are the subject of structural sizing.
 
+// Auto_Sizeable_t
 template<typename FEType, typename UpdateableType>
 struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
+  virtual void run_analyses() = 0;
+  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
+  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
+  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
   virtual ~ISC() = default;
 };
 
+// Manual_Sizeable_t
 template<typename FEType, typename UpdateableType>
 struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
   virtual void size_for_RF() = 0;
+  virtual void run_analyses() = 0;
+  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
+  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
+  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
   virtual ~ISC() = default;
 };
 
@@ -3079,7 +3096,7 @@ After defining the SC interface, we can implement SC_Panel:
 #ifndef _SC_Panel_h
 #define _SC_Panel_h
 
-#include "~/src/system/IEO.h"
+#include "~/src/system/ISC.h"
 #include "~/src/plugins/core/stiffener/EO_Stiffener.h"
 #include "EO_Panel.h"
 #include "SA_Panel_Buckling.h"
@@ -3087,11 +3104,8 @@ After defining the SC interface, we can implement SC_Panel:
 
 using json = nlohmann::json;
 
-struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
+struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
   std::size_t _type_container_index;
-  double _thickness;
-  double _width_a;
-  double _width_b;
   DAG_Node<EO_Panel> _EO_panel;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
@@ -3104,9 +3118,6 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // Notice that SC_Panel satisfies Has_Member_Names concept.
   static inline auto member_names = std::vector<std::string>{
     "_type_container_index",
-    "_thickness",
-    "_width_a",
-    "_width_b",
     "_EO_panel",
     "_EO_side_stiffener_1",
     "_EO_side_stiffener_2",
@@ -3116,9 +3127,6 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // Notice that SC_Panel satisfies Has_Member_Types concept.
   static inline std::string member_names = std::vector<std::string>{
     "std::size_t",
-    "double",
-    "double",
-    "double",
     "DAG_Node",
     "DAG_Node",
     "DAG_Node",
@@ -3128,9 +3136,6 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // Notice that SC_Panel satisfies Json_Constructible concept.
   SC_Panel(std::size_t type_container_index, const json& json_) {
     if (
-        !json_.contains("_thickness") ||
-        !json_.contains("_width_a") ||
-        !json_.contains("_width_b") ||
         !json_.contains("_EO_panel") ||
         !json_.contains("_EO_side_stiffener_1") ||
         !json_.contains("_EO_side_stiffener_2") ||
@@ -3139,9 +3144,6 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       throw std::exception("Wrong inputs for SC_Panel type.");
     
     _type_container_index = type_container_index;
-    _thickness = json_["_thickness"];
-    _width_a = json_["_width_a"];
-    _width_b = json_["_width_b"];
     _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
     _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
     _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
@@ -3149,14 +3151,26 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   };
 
+  // Notice that SC_Panel satisfies CBindable concept.
+  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
+    auto EO_panel{ DAG_->create_bind_object<EO_Panel>(_EO_panel._index) };
+    auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto SA_panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
+    auto SA_panel_buckling{ DAG_->create_bind_object<SA_Panel_Pressure>(_SA_panel_buckling._index) };
+    return std::make_shared<bind_type>(
+      EO_panel,
+      EO_side_stiffener_1,
+      EO_side_stiffener_2,
+      SA_panel_pressure,
+      SA_panel_buckling);
+  };
+
   // IUI interface function: get_type_name
   inline std::string get_type_name() const { return "SC_Panel"; };
 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
-    if (json_.contains("_thickness")) _thickness = json_["_thickness"];
-    if (json_.contains("_width_a")) _width_a = json_["_width_a"];
-    if (json_.contains("_width_b")) _width_b = json_["_width_b"];
     if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
     if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
     if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
@@ -3167,9 +3181,6 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // IUI interface function: set_to_json
   json set_to_json() const {
     return {
-      {"_thickness", _thickness},
-      {"_width_a", _width_a},
-      {"_width_b", _width_b},
       {"_EO_panel", _EO_panel._index},
       {"_EO_side_stiffener_1", _EO_side_stiffener_1._index},
       {"_EO_side_stiffener_2", _EO_side_stiffener_2._index},
@@ -3190,11 +3201,197 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // IDAG interface function: get_descendants
   std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
     std::vector<IDAG const*> descendants{};
-    descendants.push_back(_EO_side_stiffener_1.get_object(DAG_));
-    descendants.push_back(_EO_side_stiffener_2.get_object(DAG_));
     descendants.push_back(_SA_panel_pressure.get_object(DAG_));
     descendants.push_back(_SA_panel_buckling.get_object(DAG_));
     return descendants;
+  };
+  
+  // FE interface function for FE_Importable_Exportable_t: import_FE
+  virtual void import_FE() {
+    // TODO
+  };
+  
+  // FE interface function for FE_Importable_Exportable_t: export_FE
+  virtual void export_FE() {
+    // TODO
+  };
+
+  // Updateability interface function for Invariant_Updatable_t: inspect_invariant
+  bool inspect_invariant(DAG_t const* DAG_) const {
+    // TODO
+  };
+
+  // Sizeability interface function for Manual_Sizeable_t: size_for_RF
+  void size_for_RF() {
+    // TODO
+  };
+};
+
+#endif
+```
+
+
+
+
+
+
+
+
+
+
+
+
+**The SAs**\
+The SAs define the structural analyses.
+They hold the analysis related information such as
+- analysis type (e.g. FE or analytical, SAMM type and version, etc.)
+- analysis coefficients (e.g. the fitting factor),
+- reporting and
+- load related issues.
+
+The SAs define the structural analyses procedures.
+Hence, they are the subject of the SPs.
+However, the SCs defines which SAs would be applied to the SC.
+For example, while sizing the EOs involved in an SC, all SAs assigned to the SC must be evaluated.
+Hence, the SCs also shall define the procedures to run the analyses.
+This is the structural inspectability window for the SCs which involves the structural sizing as well.
+
+The structural sizing interfaace within the SCs is conceptually different than the one defined within the EOs.
+An SC involve a nomber of EOs.
+The structural sizing within the SC is the orchestration of the sizing procedures of the involved EOs.
+It considers the behaviours of the EOs and the assigned SAs at the same time.
+For example, sizing for SC_Panel shall consider the involved panel and striffener at the same time.
+The side stiffener may not provide enough support which causes a failure.
+Hence, both the panel and the stiffener shall be considered while sizing.
+Besides, the sizing strategy corresponding to the panel pressure analysis would be different than the one corresponding to the panel buckling analysis.
+
+The SAA shall have a wide range of reporting facilities.
+Some of them would be a part of "in progress" utilities while some others satisfies the "documentation" requirements.
+For example, the users shall be able to see the failed SCs and the critical LCs easily in order to examine/size the structure.
+The reporting facilities can be considered as the utilities but the core shall be adjusted to provide them when required.
+Hence, while designing the SCs the reporting features shall be considered.
+
+Finally, the SCs would carry the loading.
+As described before, the FE import procedures convert the FE loading (i.e. FE node/element loading) into the component loading.
+For example, a stiffener physically carries the folloowing load components:
+- the axial load (tension or compression) and
+- the bending load.
+
+The loading on each type is defined by an EO such as EO_Load__Stiffener.
+The load EOs carries data for a number of LCs assigned to the DAG.
+Hence, the load EOs store a double matrix.
+
+As mentioned before, the loading multiplies the data stored in the DAG.
+Hence, the load and the SAR data is stored in the MySQL DB.
+The DAG nodes pointing to the load EOs and SARs store only the MySQL DB keys.
+
+One last point about the loading is the critical LC selection.
+The number of LCs may rise up to thousands so that running the analyses would consume too much CPU resourses and take long time.
+Hence, one must eliminate the LCs that contains less loading than the other LCs.
+This process may be verry complex if the loading is combined or the corresponding analysis involves complex calculations.
+For example, some load components may act on the element linearly (e.g. axial loading) while some other non-linearly (e.g. bending).
+Some analyses would have complex calculations such that there is no direct relation between the loading and the RF.
+The critical LC determination process depends on the components of the loading and the analyses type.
+Hence, one must locate this process under the SC definition where both are defined.
+
+Considering the above discussions, the interface for the SCs is as follows:
+
+```
+// ~/src/system/ISA.h
+
+#ifndef _ISA_h
+#define _ISA_h
+
+#include "ISC.h"
+
+template<typename FEType, typename UpdateableType, typename SizeableType>
+struct ISA : public ICS<FEType, UpdateableType> {};
+
+// CAUTION: SCs cannot be Non_Sizeable_t. All SCs are the subject of structural sizing.
+
+// Auto_Sizeable_t
+template<typename FEType, typename UpdateableType>
+struct ISA<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
+  virtual void run_analyses() = 0;
+  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
+  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
+  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
+  virtual ~ISA() = default;
+};
+
+// Manual_Sizeable_t
+template<typename FEType, typename UpdateableType>
+struct ISA<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  virtual void size_for_RF() = 0;
+  virtual void run_analyses() = 0;
+  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
+  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
+  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
+  virtual ~ISA() = default;
+};
+
+#endif
+```
+
+After defining the SC interface, we can implement SC_Panel:
+
+```
+// ~/src/plugins/core/panel/SC_Panel.h
+
+#ifndef _SC_Panel_h
+#define _SC_Panel_h
+
+#include "~/src/system/ISA.h"
+#include "~/src/plugins/core/panel/SC_Panel.h"
+
+using json = nlohmann::json;
+
+struct SC_Panel : public ISA<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
+  std::size_t _type_container_index;
+  DAG_Node<EO_Panel> _EO_panel;
+  DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
+  DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
+  DAG_Node<SA_Panel_Buckling> _SA_panel_pressure;
+  DAG_Node<SA_Panel_Pressure> _SA_panel_buckling;
+
+  // Notice that SC_Panel satisfies Has_Type_Name concept.
+  static inline std::string type_name = "SC_Panel";
+
+  // Notice that SC_Panel satisfies Has_Member_Names concept.
+  static inline auto member_names = std::vector<std::string>{
+    "_type_container_index",
+    "_EO_panel",
+    "_EO_side_stiffener_1",
+    "_EO_side_stiffener_2",
+    "_SA_panel_pressure",
+    "_SA_panel_buckling"};
+
+  // Notice that SC_Panel satisfies Has_Member_Types concept.
+  static inline std::string member_names = std::vector<std::string>{
+    "std::size_t",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node"};
+
+  // Notice that SC_Panel satisfies Json_Constructible concept.
+  SC_Panel(std::size_t type_container_index, const json& json_) {
+    if (
+        !json_.contains("_EO_panel") ||
+        !json_.contains("_EO_side_stiffener_1") ||
+        !json_.contains("_EO_side_stiffener_2") ||
+        !json_.contains("_SA_panel_pressure") ||
+        !json_.contains("_SA_panel_buckling"))
+      throw std::exception("Wrong inputs for SC_Panel type.");
+    
+    _type_container_index = type_container_index;
+    _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
+    _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
+    _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   };
 
   // Notice that SC_Panel satisfies CBindable concept.
@@ -3202,31 +3399,73 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     auto EO_panel{ DAG_->create_bind_object<EO_Panel>(_EO_panel._index) };
     auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
     auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
-    auto panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
-    auto panel_buckling{ DAG_->create_bind_object<SA_Panel_Pressure>(_SA_panel_buckling._index) };
+    auto SA_panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
+    auto SA_panel_buckling{ DAG_->create_bind_object<SA_Panel_Pressure>(_SA_panel_buckling._index) };
     return std::make_shared<bind_type>(
-      thickness,
-      width_a,
-      width_b,
       EO_panel,
       EO_side_stiffener_1,
       EO_side_stiffener_2,
-      panel_pressure,
-      panel_buckling);
+      SA_panel_pressure,
+      SA_panel_buckling);
+  };
+
+  // IUI interface function: get_type_name
+  inline std::string get_type_name() const { return "SC_Panel"; };
+
+  // IUI interface function: get_from_json
+  void get_from_json(const json& json_) {
+    if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
+    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
+    if (json_.contains("_SA_panel_buckling")) _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
+  }
+
+  // IUI interface function: set_to_json
+  json set_to_json() const {
+    return {
+      {"_EO_panel", _EO_panel._index},
+      {"_EO_side_stiffener_1", _EO_side_stiffener_1._index},
+      {"_EO_side_stiffener_2", _EO_side_stiffener_2._index},
+      {"_SA_panel_pressure", _SA_panel_pressure._index},
+      {"_SA_panel_buckling", _SA_panel_buckling._index}
+    };
+  }
+
+  // IDAG interface function: get_ancestors
+  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> ancestors{};
+    ancestors.push_back(_EO_panel.get_object(DAG_));
+    ancestors.push_back(_EO_side_stiffener_1.get_object(DAG_));
+    ancestors.push_back(_EO_side_stiffener_2.get_object(DAG_));
+    return ancestors;
+  };
+
+  // IDAG interface function: get_descendants
+  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> descendants{};
+    descendants.push_back(_SA_panel_pressure.get_object(DAG_));
+    descendants.push_back(_SA_panel_buckling.get_object(DAG_));
+    return descendants;
   };
   
-  // FE interface function: import_FE
+  // FE interface function for FE_Importable_Exportable_t: import_FE
   virtual void import_FE() {
     // TODO
   };
   
-  // FE interface function: export_FE
+  // FE interface function for FE_Importable_Exportable_t: export_FE
   virtual void export_FE() {
     // TODO
   };
 
-  // Updateability interface function: inspect_invariant
+  // Updateability interface function for Invariant_Updatable_t: inspect_invariant
   bool inspect_invariant(DAG_t const* DAG_) const {
+    // TODO
+  };
+
+  // Sizeability interface function for Manual_Sizeable_t: size_for_RF
+  void size_for_RF() {
     // TODO
   };
 };

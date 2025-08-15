@@ -2817,6 +2817,8 @@ In other words, the EOs extends an interface related to the structural sizing:
 #ifndef _IEO_h
 #define _IEO_h
 
+#include "ICS.h"
+
 struct Non_Sizeable_t;
 struct Auto_Sizeable_t;
 struct Manual_Sizeable_t;
@@ -3022,7 +3024,54 @@ As mentioned before, the loading multiplies the data stored in the DAG.
 Hence, the load and the SAR data is stored in the MySQL DB.
 The DAG nodes pointing to the load EOs and SARs store only the MySQL DB keys.
 
+One last point about the loading is the critical LC selection.
+The number of LCs may rise up to thousands so that running the analyses would consume too much CPU resourses and take long time.
+Hence, one must eliminate the LCs that contains less loading than the other LCs.
+This process may be verry complex if the loading is combined or the corresponding analysis involves complex calculations.
+For example, some load components may act on the element linearly (e.g. axial loading) while some other non-linearly (e.g. bending).
+Some analyses would have complex calculations such that there is no direct relation between the loading and the RF.
+The critical LC determination process depends on the components of the loading and the analyses type.
+Hence, one must locate this process under the SC definition where both are defined.
 
+Considering the above discussions, the interface for the SCs is as follows:
+
+```
+// ~/src/system/ISC.h
+
+#ifndef _ISC_h
+#define _ISC_h
+
+#include "ICS.h"
+
+struct Non_Sizeable_t;
+struct Auto_Sizeable_t;
+struct Manual_Sizeable_t;
+
+template<typename FEType, typename UpdateableType, typename SizeableType>
+struct ISC : public ICS<FEType, UpdateableType> {};
+
+template<typename FEType, typename UpdateableType>
+struct ISC<FEType, UpdateableType, Non_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  void size_for_RF() { ; };
+  virtual ~ISC() = default;
+};
+
+template<typename FEType, typename UpdateableType>
+struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
+  virtual ~ISC() = default;
+};
+
+template<typename FEType, typename UpdateableType>
+struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
+  virtual void size_for_RF() = 0;
+  virtual ~ISC() = default;
+};
+
+#endif
+```
+
+After defining the SC interface, we can implement SC_Panel:
 
 ```
 // ~/src/plugins/core/panel/SC_Panel.h

@@ -2707,16 +2707,17 @@ struct IDB {
 #endif
 ```
 
+**CAUTION**\
 At this point, I want to discuss about the raw data types used by the CS.
-All types would hold the raw data types (e.g. int, double) and DAG_Nodes.
+**All types would hold only the raw data types (e.g. int, double) and DAG_Nodes as the object relations are covered by the DAG.**
 The MySQL DB, the UI and the SP interfaces involve the transfer of the raw data.
 Currently, its impossible to automize these interactions due to the data types of the members.
-Hence, this issues are wrapped by the interfaces and concepts to be implemented in the final types (e.g. EO_Panel).
+Hence, these issues are wrapped by the interfaces and concepts to be implemented in the final types (e.g. EO_Panel).
 However, if we define a uniform intterface for the raw data, the definition of the final derived classes would be way more clear
 and the load on the clients will be quite less.
 
 The operations on the raw data includes the name, the type and the value.
-Hence, the following interface would satisfy the interface requirements:
+Hence, the following interface would satisfy these three requirements:
 
 ```
 // ~/src/system/SC_Data.h
@@ -2774,6 +2775,8 @@ template<typename T>
 struct SC_Data : public ISC_Data {
   static constexpr std::string _type_name = type_name<T>::_type_name;
   T _val{};
+
+  SC_Data() = default;
   explicit SC_Data(T val) : _val(val) {};
 
   std::string get_type_name() const { return _type_name; };
@@ -2785,6 +2788,8 @@ template<typename T>
 struct SC_Data<DAG_Node<T>> : public ISC_Data {
   static constexpr std::string _type_name = type_name<T>::_type_name;
   DAG_Node<T> _val{};
+
+  SC_Data() = default;
   explicit SC_Data(DAG_Node<T> val) : _val(val) {};
 
   std::string get_type_name() const { return _type_name; };
@@ -2795,7 +2800,12 @@ struct SC_Data<DAG_Node<T>> : public ISC_Data {
 #endif
 ```
 
-With this uniform interface, the CS panel class becomes:
+The CS types shall define the members with SC_Data.
+Additionally, the CS types shall define two members:
+- for the names of the members and
+- the pointers to the members.
+
+The CS panel class becomes:
 
 ```
 // ~/src/plugins/core/panel/EO_Panel.h
@@ -2810,11 +2820,13 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
     "_EO_side_stiffener_1",
     "_EO_side_stiffener_2" };
 
-  SC_Data<double> _thickness;
-  SC_Data<double> _width_a;
-  SC_Data<double> _width_b;
-  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
-  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  SC_Data<double> _thickness{};
+  SC_Data<double> _width_a{};
+  SC_Data<double> _width_b{};
+  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+
+  std::vector<ISC_Data*> _member_ptrs{}; // to be filed in the constructor. An interface function (e.g. set_member_ptrs) would ensure the safety.
 
   ...
 
@@ -2823,8 +2835,14 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
 ...
 ```
 
-The ISC_Data interface together with _member_names field allow the CS perform most of the UI, the MySQL DB and the SP interactions.
-For example, the IUI functions get_from_json and set_to_json are not required anymore.
+The ISC_Data interface together with _member_names and _member_ptrs fields allow the CS to perform most of the UI, MySQL DB and SP interactions.
+The final derived CS types would not need to define/satisfy the ffollowing interface:
+- Has_Member_Types concept,
+- Json_Compatible concept,
+- CBindable concept,
+- IUI interface function: get_from_json,
+- IUI interface function: set_to_json.
+
 SC_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
 For example, for a panel, the thickness is sizeable while the widths are not.
 Hence, SC_Data would be improved with a sizeability interface.
@@ -3142,7 +3160,6 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 ```
 
 As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS by using CS_Data:
-- Has_Member_Names concept,
 - Has_Member_Types concept,
 - Json_Compatible concept,
 - CBindable concept,

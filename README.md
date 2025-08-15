@@ -2389,17 +2389,19 @@ The 2nd, the 3rd and the 4th are quite standard processes which would not put to
 
 #### 4.2.4. The FE Interface <a id='sec424'></a>
 
-In terms of the FE interface, we can mainly define 3 types:
-1. IFE_Importable: import_FE(const std::string& FE_file_path)
-2. IFE_Exportable: export_FE(const std::string& FE_file_path) const
-3. IFE_Importable_Exportable: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
+In terms of the FE interface, we can mainly define 4 types:
+1. IFE_Non: No FE utility
+2. IFE_Importable: import_FE(const std::string& FE_file_path)
+3. IFE_Exportable: export_FE(const std::string& FE_file_path) const
+4. IFE_Importable_Exportable: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
 
 The FE importability is required for all types existing in an online DAG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
 Hence The three types would represent the following cases:
-1. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
-2. IFE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
-3. IFE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
+1. IFE_Non: Cannot involve in an FE import/export process.
+2. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
+3. IFE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
+4. IFE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
 ```
 // ~/src/system/FE.h
@@ -2731,12 +2733,18 @@ The ICS interface becomes:
 
 // ---------------------------------------------
 // FE interface
+struct FE_Non_t;
 struct FE_Importable_t;
 struct FE_Exportable_t;
 struct FE_Importable_Exportable_t;
 
 template<typename T>
 struct ICS_0 {};
+
+template<>
+struct ICS_0<FE_Non_t> : public IFE_Non {
+  virtual ~ICS_0() = default;
+};
 
 template<>
 struct ICS_0<FE_Importable_t> : public IFE_Importable {
@@ -3310,15 +3318,28 @@ Considering the above discussions, the interface for the SAs is as follows:
 
 #include "ISC.h"
 
-struct NAS101;
-struct NAS105;
-struct NAS106;
+struct NAS101_t{};
+struct NAS105_t{};
+struct NAS106_t{};
 
-template<typename FE_ExecutableType>
-struct FE_Executable{};
-struct SAMM_Executable{};
-template<typename FE_ExecutableType>
-struct FE_SAMM_Executable{};
+template<typename NASType>
+struct NASTRAN{};
+
+struct NASTRAN<NAS101_t>{
+  static void export_FE_for_SA(const std::string& FE_file_path, const char** args) {
+    // TODO: FE export routine for the SA part
+  };
+};
+struct NASTRAN<NAS105_t>{
+  static void export_FE_for_SA(const std::string& FE_file_path, const char** args) {
+    // TODO: FE export routine for the SA part
+  };
+};
+struct NASTRAN<NAS106_t>{
+  static void export_FE_for_SA(const std::string& FE_file_path, const char** args) {
+    // TODO: FE export routine for the SA part
+  };
+};
 
 struct FEA{
   static void run_FE_analysis(const std::string& FE_file_path) {
@@ -3329,25 +3350,26 @@ struct FEA{
   };
 };
 
-template<typename FEType, typename UpdateableType>
-struct ISA_FE_Base : public ICS<FEType, UpdateableType> {
-  virtual void run_analyses() = 0;
-  virtual void create_report() = 0;
-  virtual std::vector<std::size_t> get_effective_LCs() = 0;
-  virtual std::size_t get_critical_LC() = 0;
+template<typename FE_ExecutableType>
+struct FE_Executable{};
+struct SAMM_Executable{};
 
-  // Helper function for export_FE: write SA portion of the FE file
-  virtual void export_FE_for_SA(const std::string& FE_file_path) const = 0;
+// SA Interface: Base template
+template<typename UpdateableType, typename ExecutableType>
+struct ISA {};
+
+// SA Interface: FE_Executable<NASType> specialization
+template<typename UpdateableType, typename NASType>
+struct ISA<UpdateableType, FE_Executable<NASType>> : public ICS<FE_Exportable_t, UpdateableType> {
+  // Helper function for run_analysis: define the FE file path
+  virtual std::string get_FE_file_path() const = 0;
 
   // Helper function for export_FE: write SC portin of the FE file
   virtual void export_FE_for_SC(const std::string& FE_file_path) const = 0;
 
-  // Helper function for run_analysis: define the FE file path
-  virtual std::string get_FE_file_path() const = 0;
-
   // FE interface function for FE_Exportable_t: export_FE
   void export_FE(const std::string& FE_file_path) const {
-    export_FE_for_SA(FE_file_path);
+    NASTRAN<NASType>::export_FE_for_SA(FE_file_path);
     export_FE_for_SC(FE_file_path);
   };
 
@@ -3358,75 +3380,44 @@ struct ISA_FE_Base : public ICS<FEType, UpdateableType> {
     FEA::run_FE_analysis(FE_file_path);
     return FEA::extract_FE_analysis_results(FE_file_path);
   };
+
+  virtual void create_report() = 0;
+  virtual std::vector<std::size_t> get_effective_LCs() = 0;
+  virtual std::size_t get_critical_LC() = 0;
 };
 
-// SA Interface: Base template
-template<typename UpdateableType, typename ExecutableType>
-struct ISA {};
 
-// SA Interface: FE_Executable<NAS101> specialization
-template<typename UpdateableType>
-struct ISA<UpdateableType, FE_Executable<NAS101>> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
-  // Helper function for export_FE: write SA portion of the FE file
-  void export_FE_for_SA(const std::string& FE_file_path) const {
-    // TODO: FE export routine for this specialization
-  };
 
-  virtual ~ISA() = default;
-};
 
-// SA Interface: FE_Executable<NAS105> specialization
-template<typename UpdateableType>
-struct ISA<UpdateableType, FE_Executable<NAS105>> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
-  // Helper function for export_FE: write SA portion of the FE file
-  void export_FE_for_SA(const std::string& FE_file_path) const {
-    // TODO: FE export routine for this specialization
-  };
 
-  virtual ~ISA() = default;
-};
 
-// SA Interface: FE_Executable<NAS106> specialization
-template<typename UpdateableType>
-struct ISA<UpdateableType, FE_Executable<NAS106>> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
-  // Helper function for export_FE: write SA portion of the FE file
-  void export_FE_for_SA(const std::string& FE_file_path) const {
-    // TODO: FE export routine for this specialization
-  };
-
-  virtual ~ISA() = default;
-};
 
 // SA Interface: SAMM_Executable specialization
-template<typename UpdateableType>
-struct ISA<UpdateableType, SAMM_Executable> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
-  // Helper function for export_FE: write SA portion of the FE file
-  void export_FE_for_SA(const std::string& FE_file_path) const {
-    // TODO: FE export routine for this specialization
+template<typename UpdateableType, typename NASType>
+struct ISA<UpdateableType, SAMM_Executable> : public ICS<FE_Non_t, UpdateableType> {
+  // Helper function for run_analysis: define the FE file path
+  virtual std::string get_FE_file_path() const = 0;
+
+  // Helper function for export_FE: write SC portin of the FE file
+  virtual void export_FE_for_SC(const std::string& FE_file_path) const = 0;
+
+  // FE interface function for FE_Exportable_t: export_FE
+  void export_FE(const std::string& FE_file_path) const {
+    NASTRAN<NASType>::export_FE_for_SA(FE_file_path);
+    export_FE_for_SC(FE_file_path);
   };
 
-  virtual ~ISA() = default;
-};
+  // interface function: run_analysis
+  std::vector<double> run_analysis(const std::string& FE_file_path) const {
+    auto FE_file_path{ get_FE_file_path() };
+    export_FE(FE_file_path);
+    FEA::run_FE_analysis(FE_file_path);
+    return FEA::extract_FE_analysis_results(FE_file_path);
+  };
 
-
-
-
-
-
-
-
-
-
-
-// Manual_Sizeable_t
-template<typename FEType, typename UpdateableType>
-struct ISA<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
-  virtual void size_for_RF() = 0;
-  virtual void run_analyses() = 0;
-  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
-  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
-  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
-  virtual ~ISA() = default;
+  virtual void create_report() = 0;
+  virtual std::vector<std::size_t> get_effective_LCs() = 0;
+  virtual std::size_t get_critical_LC() = 0;
 };
 
 #endif

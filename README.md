@@ -1380,7 +1380,7 @@ A final point about the UI is related with the standard items.
 The SAA contains many standard items such as material and fastener.
 The UI representation of the standard items can be handled by simple forms listing the values.
 For example, an isotropic material has a number of members/properties such as E1, E2, etc.
-Similarly, the SCL 2D data where the loading (e.g. Fxx, Fyy, etc.) is defined per LC.
+Similarly, the SCL holds 2D data where the loading (e.g. Fxx, Fyy, etc.) is defined per LC.
 The frontend library shall provvide simple solutions for the UI form representation of these standard items.
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.

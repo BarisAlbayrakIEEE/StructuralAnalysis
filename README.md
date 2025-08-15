@@ -1,16 +1,16 @@
 **Contents**
-1.     [About The Project](#sec1)\
-2.     [Problem Definition: Stress Analysis of the Structural Components](#sec2)\
-3.     [Software Architecture](#sec3)\
-3.1.   [An Overview of the Problem](#sec31)\
-3.2.   [The Target Market](#sec32)\
-3.3.   [The Architecture: The 1st Overview](#sec33)\
-3.3.1. [Deployment Model](#sec331)\
-3.3.2. [User Model](#sec332)\
-3.3.3. [Data & Persistency](#sec333)\
-3.3.4. [Data & Persistency](#sec334)\
-3.3.5. [Concurrency](#sec335)\
-3.3.6. [Summary of the 1st Overview](#sec336)\
+1.[About The Project](#sec1)
+2.[Problem Definition: Stress Analysis of the Structural Components](#sec2)
+3.[Software Architecture](#sec3)\
+3.1.[An Overview of the Problem](#sec31)\
+3.2.[The Target Market](#sec32)\
+3.3.[The Architecture: The 1st Overview](#sec33)\
+3.3.1.[Deployment Model](#sec331)\
+3.3.2.[User Model](#sec332)\
+3.3.3.[Data & Persistency](#sec333)\
+3.3.4.[Data & Persistency](#sec334)\
+3.3.5.[Concurrency](#sec335)\
+3.3.6.[Summary of the 1st Overview](#sec336)\
 3.4.   [The Frontend](#sec34)\
 3.5.   [Data Types & Data Structures](#sec35)\
 3.6.   [Use Case Diagrams](#sec36)\

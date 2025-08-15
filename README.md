@@ -2903,19 +2903,18 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
         !json_.contains("_width_b") ||
         !json_.contains("_EO_mat1") ||
         !json_.contains("_SC_panel") ||
-        !(json_.contains("_SC_side_stiffener_1") && json_.contains("_SC_side_stiffener_2")))
+        !json_.contains("_SC_side_stiffener_1") ||
+        !json_.contains("_SC_side_stiffener_2"))
       throw std::exception("Wrong inputs for EO_Panel type.");
     
     _type_container_index = type_container_index;
     _thickness = json_["_thickness"];
     _width_a = json_["_width_a"];
     _width_b = json_["_width_b"];
-    _EO_mat1_ = DAG_Node<EO_Mat1>(json_["_EO_mat1"]);
-    _SC_panel = DAG_Node<EO_Stiffener>(json_["_SC_panel"]);
-    if (json_.contains("_SC_side_stiffener_1"))
-      _SC_side_stiffener_1 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_1"]);
-    if (json_.contains("_SC_side_stiffener_2"))
-      _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
+    _EO_mat1 = DAG_Node<EO_Mat1>(json_["_EO_mat1"]);
+    _SC_panel = DAG_Node<SC_Panel>(json_["_SC_panel"]);
+    _SC_side_stiffener_1 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_1"]);
+    _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
   };
 
   // IUI interface function: get_type_name
@@ -2926,7 +2925,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     if (json_.contains("_thickness")) _thickness = json_["_thickness"];
     if (json_.contains("_width_a")) _width_a = json_["_width_a"];
     if (json_.contains("_width_b")) _width_b = json_["_width_b"];
-    if (json_.contains("_EO_mat1")) _EO_mat1 = json_["_EO_mat1"];
+    if (json_.contains("_EO_mat1")) _EO_mat1 = DAG_Node<EO_Mat1>(json_["_EO_mat1"]);
     if (json_.contains("_SC_panel")) _SC_panel = DAG_Node<SC_Panel>(json_["_SC_panel"]);
     if (json_.contains("_SC_side_stiffener_1")) _SC_side_stiffener_1 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_1"]);
     if (json_.contains("_SC_side_stiffener_2")) _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
@@ -2960,7 +2959,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
   // Notice that EO_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_mat1{ DAG_->create_bind_object<Mat1>(_EO_mat1._index) };
+    auto EO_mat1{ DAG_->create_bind_object<EO_Mat1>(_EO_mat1._index) };
     return std::make_shared<bind_type>(
       _thickness,
       _width_a,
@@ -2990,11 +2989,38 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 **The SCs**\
 An SC is a combination of the EOs in order to perform the SAs.
 In other words, the SAs are performed on the SCs.
-Hence, the SCs are mostly related with the analysis requirements such as reporting
+Hence, the properties and behaviours of the SCs are related with the analysis requirements:
+- structural inspectability,
+- structural sizing,
+- reporting and
+- load related issues.
 
+The SAs define the structural analyses procedures.
+Hence, they are the subject of the SPs.
+However, the SCs defines which SAs would be applied to the SC.
+For example, while sizing the EOs involved in an SC, all SAs assigned to the SC must be evaluated.
+Hence, the SCs also shall define the procedures to run the analyses.
+This is the structural inspectability window for the SCs which involves the structural sizing as well.
 
+The SAA shall have a wide range of reporting facilities.
+Some of them would be a part of "in progress" utilities while some others satisfies the "documentation" requirements.
+For example, the users shall be able to see the failed SCs and the critical LCs easily in order to examine/size the structure.
+The reporting facilities can be considered as the utilities but the core shall be adjusted to provide them when required.
+Hence, while designing the SCs the reporting features shall be considered.
 
+Finally, the SCs would carry the loading.
+As described before, the FE import procedures convert the FE loading (i.e. FE node/element loading) into the component loading.
+For example, a stiffener physically carries the folloowing load components:
+- the axial load (tension or compression) and
+- the bending load.
 
+The loading on each type is defined by an EO such as EO_Load__Stiffener.
+The load EOs carries data for a number of LCs assigned to the DAG.
+Hence, the load EOs store a double matrix.
+
+As mentioned before, the loading multiplies the data stored in the DAG.
+Hence, the load and the SAR data is stored in the MySQL DB.
+The DAG nodes pointing to the load EOs and SARs store only the MySQL DB keys.
 
 
 
@@ -3032,7 +3058,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "_thickness",
     "_width_a",
     "_width_b",
-    "_EO_mat1",
+    "_EO_panel",
     "_EO_side_stiffener_1",
     "_EO_side_stiffener_2",
     "_SA_panel_pressure",
@@ -3056,7 +3082,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
         !json_.contains("_thickness") ||
         !json_.contains("_width_a") ||
         !json_.contains("_width_b") ||
-        !json_.contains("_EO_mat1") ||
+        !json_.contains("_EO_panel") ||
         !json_.contains("_EO_side_stiffener_1") ||
         !json_.contains("_EO_side_stiffener_2") ||
         !json_.contains("_SA_panel_pressure") ||
@@ -3067,7 +3093,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     _thickness = json_["_thickness"];
     _width_a = json_["_width_a"];
     _width_b = json_["_width_b"];
-    _EO_mat1_ = DAG_Node<EO_Mat1>(json_["_EO_mat1"]);
+    _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
     _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
     _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
     _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
@@ -3082,7 +3108,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     if (json_.contains("_thickness")) _thickness = json_["_thickness"];
     if (json_.contains("_width_a")) _width_a = json_["_width_a"];
     if (json_.contains("_width_b")) _width_b = json_["_width_b"];
-    if (json_.contains("_EO_mat1")) _EO_mat1 = json_["_EO_mat1"];
+    if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
     if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
     if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
     if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
@@ -3095,7 +3121,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       {"_thickness", _thickness},
       {"_width_a", _width_a},
       {"_width_b", _width_b},
-      {"_EO_mat1", _EO_mat1._index},
+      {"_EO_panel", _EO_panel._index},
       {"_EO_side_stiffener_1", _EO_side_stiffener_1._index},
       {"_EO_side_stiffener_2", _EO_side_stiffener_2._index},
       {"_SA_panel_pressure", _SA_panel_pressure._index},
@@ -3106,7 +3132,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // IDAG interface function: get_ancestors
   std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
     std::vector<IDAG const*> ancestors{};
-    ancestors.push_back(_EO_mat1.get_object(DAG_));
+    ancestors.push_back(_EO_panel.get_object(DAG_));
     ancestors.push_back(_EO_side_stiffener_1.get_object(DAG_));
     ancestors.push_back(_EO_side_stiffener_2.get_object(DAG_));
     return ancestors;
@@ -3124,7 +3150,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
   // Notice that SC_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_mat1{ DAG_->create_bind_object<Mat1>(_EO_mat1._index) };
+    auto EO_panel{ DAG_->create_bind_object<EO_Panel>(_EO_panel._index) };
     auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
     auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
     auto panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
@@ -3133,7 +3159,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       thickness,
       width_a,
       width_b,
-      EO_mat1,
+      EO_panel,
       EO_side_stiffener_1,
       EO_side_stiffener_2,
       panel_pressure,

@@ -928,7 +928,7 @@ Other functions such as remove can easily be defined similarly.
 
 Firstly, I will start with the type traits metafunctions to support static type definitions.
 The type traits involve the following functionality:
-1. **This is the most important part of the CS: Defining the types (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
+1. **This is the most important part of the CS: Defining the type list (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
 3. Two metafunctions to apply the template parameters of a type list to classes and functions respectively.
 

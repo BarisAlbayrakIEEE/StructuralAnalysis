@@ -3471,5 +3471,12 @@ Similarly, I will skip the SARs.
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 
+The design of the SP is based on a single behaviour: performing the analytical strength calculations.
+The design strategy would be based on the FOD approach for the efficiency.
+The companies would have libraries already existing for the strength calculations.
+The FOD strategy would allow involving the already existing libraries easily.
 
-
+The SP would be designed independently from the CS.
+Hence, it has its' own types and class hierachy.
+Most probably, the client would like to design the SP.
+I will skip this part of the SAA.

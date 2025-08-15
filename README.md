@@ -1,33 +1,33 @@
 **Contents**
-1. [About The Project](#sec1)
-2. [Problem Definition: Stress Analysis of the Structural Components](#sec2)
-3. [Software Architecture](#sec3)\
-3.1. [An Overview of the Problem](#sec31)\
-3.2. [The Target Market](#sec32)\
-3.3. [The Architecture: The 1st Overview](#sec33)\
-3.3.1. [Deployment Model](#sec331)\
-3.3.2. [User Model](#sec332)\
-3.3.3. [Data & Persistency](#sec333)\
-3.3.4. [Data & Persistency](#sec334)\
-3.3.5. [Concurrency](#sec335)\
-3.3.6. [Summary of the 1st Overview](#sec336)\
-3.4. [The Frontend](#sec34)\
-3.5. [Data Types & Data Structures](#sec35)\
-3.6. [Use Case Diagrams](#sec36)\
-3.6.1. [Use Case scenario #1](#sec361)\
-3.6.2. [Use Case scenario #2](#sec362)\
-3.6.3. [Use Case scenario #3](#sec363)\
-3.6.4. [A Quick Review on the Use Case scenarios](#sec364)\
-3.7. [The Architecture: Summary](#sec37)
-4. [Software Design](#sec4)\
-4.1. [The UI](#sec41)\
-4.2. [The CS](#sec42)\
-4.2.1. [The UI Interface](#sec421)\
-4.2.2. [The Functionally Persistent DAG](#sec422)\
-4.2.3. [The SP Interface](#sec423)\
-4.2.4. [The FE Interface](#sec424)\
-4.2.5. [The MySQL DB Interface](#sec425)\
-4.2.6. [The CS Class Hierarchy](#sec426)
+- [1. About The Project](#sec1)
+- [2. Problem Definition: Stress Analysis of the Structural Components](#sec2)
+- [3. Software Architecture](#sec3)
+-   [3.1. An Overview of the Problem](#sec31)
+-   [3.2. The Target Market](#sec32)
+-   [3.3. The Architecture: The 1st Overview](#sec33)
+-     [3.3.1. Deployment Model](#sec331)
+-     [3.3.2. User Model](#sec332)
+-     [3.3.3. Data & Persistency](#sec333)
+-     [3.3.4. Data & Persistency](#sec334)
+-     [3.3.5. Concurrency](#sec335)
+-     [3.3.6. Summary of the 1st Overview](#sec336)
+-   [3.4. The Frontend](#sec34)
+-   [3.5. Data Types & Data Structures](#sec35)
+-   [3.6. Use Case Diagrams](#sec36)
+-     [3.6.1. Use Case scenario #1](#sec361)
+-     [3.6.2. Use Case scenario #2](#sec362)
+-     [3.6.3. Use Case scenario #3](#sec363)
+-     [3.6.4. A Quick Review on the Use Case scenarios](#sec364)
+-   [3.7. The Architecture: Summary](#sec37)
+- [4. Software Design](#sec4)
+-   [4.1. The UI](#sec41)
+-   [4.2. The CS](#sec42)
+-     [4.2.1. The UI Interface](#sec421)
+-     [4.2.2. The Functionally Persistent DAG](#sec422)
+-     [4.2.3. The SP Interface](#sec423)
+-     [4.2.4. The FE Interface](#sec424)
+-     [4.2.5. The MySQL DB Interface](#sec425)
+-     [4.2.6. The CS Class Hierarchy](#sec426)
 
 **Nomenclature**
 - **SC:** Structural Component

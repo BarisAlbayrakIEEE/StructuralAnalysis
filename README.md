@@ -2929,44 +2929,47 @@ struct CS_Data<DAG_Node<T>> : public ICS_Data {
   void set_val(std::size_t index) { _val._index = index; };
 };
 
-using CS_0D_bool   = CS_Data<bool>;
-using CS_0D_char   = CS_Data<char>;
-using CS_0D_uchar  = CS_Data<unsigned char>;
-using CS_0D_int    = CS_Data<int>;
-using CS_0D_uint   = CS_Data<unsigned int>;
-using CS_0D_long   = CS_Data<long>;
-using CS_0D_ulong  = CS_Data<unsigned long>;
-using CS_0D_ll     = CS_Data<long long>;
-using CS_0D_ull    = CS_Data<unsigned long long>;
-using CS_0D_double = CS_Data<double>;
-using CS_0D_ld     = CS_Data<long double>;
-using CS_0D_str    = CS_Data<std::string>;
+using CS_DT_0D_bool   = CS_Data<bool>;
+using CS_DT_0D_char   = CS_Data<char>;
+using CS_DT_0D_uchar  = CS_Data<unsigned char>;
+using CS_DT_0D_int    = CS_Data<int>;
+using CS_DT_0D_uint   = CS_Data<unsigned int>;
+using CS_DT_0D_long   = CS_Data<long>;
+using CS_DT_0D_ulong  = CS_Data<unsigned long>;
+using CS_DT_0D_ll     = CS_Data<long long>;
+using CS_DT_0D_ull    = CS_Data<unsigned long long>;
+using CS_DT_0D_double = CS_Data<double>;
+using CS_DT_0D_ld     = CS_Data<long double>;
+using CS_DT_0D_str    = CS_Data<std::string>;
 
-using CS_1D_bool   = CS_Data<std::vector<bool>>;
-using CS_1D_char   = CS_Data<std::vector<char>>;
-using CS_1D_uchar  = CS_Data<std::vector<unsigned char>>;
-using CS_1D_int    = CS_Data<std::vector<int>>;
-using CS_1D_uint   = CS_Data<std::vector<unsigned int>>;
-using CS_1D_long   = CS_Data<std::vector<long>>;
-using CS_1D_ulong  = CS_Data<std::vector<unsigned long>>;
-using CS_1D_ll     = CS_Data<std::vector<long long>>;
-using CS_1D_ull    = CS_Data<std::vector<unsigned long long>>;
-using CS_1D_double = CS_Data<std::vector<double>>;
-using CS_1D_ld     = CS_Data<std::vector<long double>>;
-using CS_1D_str    = CS_Data<std::vector<std::string>>;
+using CS_DT_1D_bool   = CS_Data<std::vector<bool>>;
+using CS_DT_1D_char   = CS_Data<std::vector<char>>;
+using CS_DT_1D_uchar  = CS_Data<std::vector<unsigned char>>;
+using CS_DT_1D_int    = CS_Data<std::vector<int>>;
+using CS_DT_1D_uint   = CS_Data<std::vector<unsigned int>>;
+using CS_DT_1D_long   = CS_Data<std::vector<long>>;
+using CS_DT_1D_ulong  = CS_Data<std::vector<unsigned long>>;
+using CS_DT_1D_ll     = CS_Data<std::vector<long long>>;
+using CS_DT_1D_ull    = CS_Data<std::vector<unsigned long long>>;
+using CS_DT_1D_double = CS_Data<std::vector<double>>;
+using CS_DT_1D_ld     = CS_Data<std::vector<long double>>;
+using CS_DT_1D_str    = CS_Data<std::vector<std::string>>;
 
-using CS_2D_bool   = CS_Data<std::vector<std::vector<bool>>>;
-using CS_2D_char   = CS_Data<std::vector<std::vector<char>>>;
-using CS_2D_uchar  = CS_Data<std::vector<std::vector<unsigned char>>>;
-using CS_2D_int    = CS_Data<std::vector<std::vector<int>>>;
-using CS_2D_uint   = CS_Data<std::vector<std::vector<unsigned int>>>;
-using CS_2D_long   = CS_Data<std::vector<std::vector<long>>>;
-using CS_2D_ulong  = CS_Data<std::vector<std::vector<unsigned long>>>;
-using CS_2D_ll     = CS_Data<std::vector<std::vector<long long>>>;
-using CS_2D_ull    = CS_Data<std::vector<std::vector<unsigned long long>>>;
-using CS_2D_double = CS_Data<std::vector<std::vector<double>>>;
-using CS_2D_ld     = CS_Data<std::vector<std::vector<long double>>>;
-using CS_2D_str    = CS_Data<std::vector<std::vector<std::string>>>;
+using CS_DT_2D_bool   = CS_Data<std::vector<std::vector<bool>>>;
+using CS_DT_2D_char   = CS_Data<std::vector<std::vector<char>>>;
+using CS_DT_2D_uchar  = CS_Data<std::vector<std::vector<unsigned char>>>;
+using CS_DT_2D_int    = CS_Data<std::vector<std::vector<int>>>;
+using CS_DT_2D_uint   = CS_Data<std::vector<std::vector<unsigned int>>>;
+using CS_DT_2D_long   = CS_Data<std::vector<std::vector<long>>>;
+using CS_DT_2D_ulong  = CS_Data<std::vector<std::vector<unsigned long>>>;
+using CS_DT_2D_ll     = CS_Data<std::vector<std::vector<long long>>>;
+using CS_DT_2D_ull    = CS_Data<std::vector<std::vector<unsigned long long>>>;
+using CS_DT_2D_double = CS_Data<std::vector<std::vector<double>>>;
+using CS_DT_2D_ld     = CS_Data<std::vector<std::vector<long double>>>;
+using CS_DT_2D_str    = CS_Data<std::vector<std::vector<std::string>>>;
+
+template<typenamee T>
+using CS_DT_DN = CS_Data<DAG_Node<T>>;
 
 #endif
 ```
@@ -2991,11 +2994,11 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
     "_EO_side_stiffener_1",
     "_EO_side_stiffener_2" };
 
-  CS_Data<double> _thickness{};
-  CS_Data<double> _width_a{};
-  CS_Data<double> _width_b{};
-  CS_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
-  CS_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_DT_double _thickness{};
+  CS_DT_double _width_a{};
+  CS_DT_double _width_b{};
+  CS_DT_DN<EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
 
   std::vector<ICS_Data*> _member_ptrs{}; // to be filed in the constructor. An interface function (e.g. set_member_ptrs) would ensure the safety.
 
@@ -3006,7 +3009,7 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
 ...
 ```
 
-The ICS_Data interface together with _member_names and _member_ptrs fields allow the CS to perform most of the UI, MySQL DB and SP interactions.
+The ICS_Data interface together with _member_names and _member_ptrs fields allow the CS to perform the UI, MySQL DB and SP interactions.
 The final derived CS types would not need to define/satisfy the ffollowing interface:
 - Has_Member_Types concept,
 - Json_Compatible concept,

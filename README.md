@@ -1679,7 +1679,7 @@ class DAG {
 
 
   // Returns the type id corresponding to the index of the type parameter T.
-  template<class T>
+  template<typename T>
   static consteval std::size_t get_type_id() {
     return []<std::size_t... Is(std::index_sequence<Is..>) {
       std::size_t id = _type_list_size;
@@ -1690,7 +1690,7 @@ class DAG {
 
   // FP: Transforms the input function to be applicable to the type container corresponding to the input type id.
   // std::size_t type_id corresponds to the index of a type within CS_Types_t.
-  template<class F>
+  template<typename F>
   decltype(auto) with_type_container(std::size_t type_id, F&& f) {
     using R = std::common_type_t<std::invoke_result_t<F, std::vector<Ts>&>...>;
     using Fn = R(*)(DAG&, F&&);
@@ -1704,7 +1704,7 @@ class DAG {
   }
 
   // FP: Transforms the input function to be applicable to the object corresponding to the input DAG_Node_Handle.
-  template<class F>
+  template<typename F>
   decltype(auto) with_type_object(DAG_Node_Handle h, F&& f) {
     return with_type_container(h.type, [&](auto type_container) -> decltype(auto) {
       return std::forward<F>(f)(type_container->operator[](h.index));
@@ -1717,7 +1717,7 @@ public:
 
   // TODO: Sample emplace function to demonstrate the solution for the the dynamic type selection.
   // TODO: Shall be updated for functional persistency.
-  template<class T, class... Args>
+  template<typename T, class... Args>
   auto emplace(Args&&... args) const -> _a_DAG
   {
     auto& type_container = std::get<std::shared_ptr<VectorTree<T>>>(_type_containers);
@@ -1767,7 +1767,7 @@ public:
 
   // TODO: The DAG will have inner Iterator and ConstIterator classes, this function is to demonstrate the solution for the dynamic type selection.
   // TODO: The iteration needs a visited node definition as the DAG holds many-to-one relations.
-  template<class F>
+  template<typename F>
   void dfs(DAG_Node_Handle root, F&& visit) {
     std::vector<DAG_Node_Handle> stack{root};
     while (!stack.empty()) {
@@ -2717,93 +2717,263 @@ Hence, these issues are wrapped by the interfaces and concepts to be implemented
 However, if we define a uniform intterface for the raw data, the definition of the final derived classes would be way more clear
 and the load on the clients will be quite less.
 
-The operations on the raw data includes the name, the type and the value.
+The operations on the fundamental data includes the name, the type and the value.
 Hence, the following interface would satisfy these three requirements:
 
 ```
-// ~/src/system/SC_Data.h
+// ~/src/system/CS_Data.h
 
-#ifndef _SC_Data_h
-#define _SC_Data_h
+#ifndef _CS_Data_h
+#define _CS_Data_h
 
-template<class T>
-struct type_name {
-  static constexpr std::string _type_name = [] {
+using _a_CS_data_var_0D = std::variant<
+  bool,
+  char,
+  unsigned char,
+  int,
+  unsigned int,
+  long,
+  unsigned long,
+  long long,
+  unsigned long long,
+  double,
+  long double,
+  std::string>;
+using _a_CS_data_var_1D = std::variant<
+  std::vector<bool>,
+  std::vector<char>,
+  std::vector<unsigned char>,
+  std::vector<int>,
+  std::vector<unsigned int>,
+  std::vector<long>,
+  std::vector<unsigned long>,
+  std::vector<long long>,
+  std::vector<unsigned long long>,
+  std::vector<double>,
+  std::vector<long double>,
+  std::vector<std::string>>;
+using _a_CS_data_var_2D = std::variant<
+  std::vector<std::vector<bool>>,
+  std::vector<std::vector<char>>,
+  std::vector<std::vector<unsigned char>>,
+  std::vector<std::vector<int>>,
+  std::vector<std::vector<unsigned int>>,
+  std::vector<std::vector<long>>,
+  std::vector<std::vector<unsigned long>>,
+  std::vector<std::vector<long long>>,
+  std::vector<std::vector<unsigned long long>>,
+  std::vector<std::vector<double>>,
+  std::vector<std::vector<long double>>,
+  std::vector<std::vector<std::string>>>;
+
+const std::string CS_string_separator = "$"
+const std::string CS_string_0D_array  = "0D"
+const std::string CS_string_1D_array  = "1D"
+const std::string CS_string_2D_array  = "2D"
+const std::string CS_string_DAG_node  = "DAG_Node"
+
+const std::string CS_string_bool      = "bool"
+const std::string CS_string_char      = "char"
+const std::string CS_string_uchar     = "unsigned char"
+const std::string CS_string_int       = "int"
+const std::string CS_string_uint      = "unsigned int"
+const std::string CS_string_long      = "long"
+const std::string CS_string_ulong     = "unsigned long"
+const std::string CS_string_ll        = "long long"
+const std::string CS_string_ull       = "unsigned long long"
+const std::string CS_string_double    = "double"
+const std::string CS_string_ld        = "long double"
+const std::string CS_string_str       = "string"
+const std::string CS_string_1d_bool   = CS_string_1D_array + CS_string_separator + CS_string_bool
+const std::string CS_string_1d_char   = CS_string_1D_array + CS_string_separator + CS_string_char
+const std::string CS_string_1d_uchar  = CS_string_1D_array + CS_string_separator + CS_string_uchar
+const std::string CS_string_1d_int    = CS_string_1D_array + CS_string_separator + CS_string_int
+const std::string CS_string_1d_uint   = CS_string_1D_array + CS_string_separator + CS_string_uint
+const std::string CS_string_1d_long   = CS_string_1D_array + CS_string_separator + CS_string_long
+const std::string CS_string_1d_ulong  = CS_string_1D_array + CS_string_separator + CS_string_ulong
+const std::string CS_string_1d_ll     = CS_string_1D_array + CS_string_separator + CS_string_ll
+const std::string CS_string_1d_ull    = CS_string_1D_array + CS_string_separator + CS_string_ull
+const std::string CS_string_1d_double = CS_string_1D_array + CS_string_separator + CS_string_double
+const std::string CS_string_1d_ld     = CS_string_1D_array + CS_string_separator + CS_string_ld
+const std::string CS_string_1d_str    = CS_string_1D_array + CS_string_separator + CS_string_str
+const std::string CS_string_2d_bool   = CS_string_2D_array + CS_string_separator + CS_string_bool
+const std::string CS_string_2d_char   = CS_string_2D_array + CS_string_separator + CS_string_char
+const std::string CS_string_2d_uchar  = CS_string_2D_array + CS_string_separator + CS_string_uchar
+const std::string CS_string_2d_int    = CS_string_2D_array + CS_string_separator + CS_string_int
+const std::string CS_string_2d_uint   = CS_string_2D_array + CS_string_separator + CS_string_uint
+const std::string CS_string_2d_long   = CS_string_2D_array + CS_string_separator + CS_string_long
+const std::string CS_string_2d_ulong  = CS_string_2D_array + CS_string_separator + CS_string_ulong
+const std::string CS_string_2d_ll     = CS_string_2D_array + CS_string_separator + CS_string_ll
+const std::string CS_string_2d_ull    = CS_string_2D_array + CS_string_separator + CS_string_ull
+const std::string CS_string_2d_double = CS_string_2D_array + CS_string_separator + CS_string_double
+const std::string CS_string_2d_ld     = CS_string_2D_array + CS_string_separator + CS_string_ld
+const std::string CS_string_2d_str    = CS_string_2D_array + CS_string_separator + CS_string_str
+
+// The use of the fundamental types are limited by the integral types (signed and unsigned) and string!!! See the list below
+template<typename T>
+struct Type_Name_Fundamental {
+  static constexpr std::string value = [] {
     using U = std::remove_cv_t<std::remove_reference_t<T>>;
 
-    if constexpr (std::is_same_v<U, void>)                    return std::string{"void"};
-    else if constexpr (std::is_same_v<U, bool>)               return std::string{"bool"};
-    else if constexpr (std::is_same_v<U, char>)               return std::string{"char"};
-    else if constexpr (std::is_same_v<U, signed char>)        return std::string{"signed char"};
-    else if constexpr (std::is_same_v<U, unsigned char>)      return std::string{"unsigned char"};
-    else if constexpr (std::is_same_v<U, wchar_t>)            return std::string{"wchar_t"};
-#if defined(__cpp_char8_t)
-    else if constexpr (std::is_same_v<U, char8_t>)            return std::string{"char8_t"};
-#endif
-    else if constexpr (std::is_same_v<U, char16_t>)           return std::string{"char16_t"};
-    else if constexpr (std::is_same_v<U, char32_t>)           return std::string{"char32_t"};
-    else if constexpr (std::is_same_v<U, short>)              return std::string{"short"};
-    else if constexpr (std::is_same_v<U, unsigned short>)     return std::string{"unsigned short"};
-    else if constexpr (std::is_same_v<U, int>)                return std::string{"int"};
-    else if constexpr (std::is_same_v<U, unsigned int>)       return std::string{"unsigned int"};
-    else if constexpr (std::is_same_v<U, long>)               return std::string{"long"};
-    else if constexpr (std::is_same_v<U, unsigned long>)      return std::string{"unsigned long"};
-    else if constexpr (std::is_same_v<U, long long>)          return std::string{"long long"};
-    else if constexpr (std::is_same_v<U, unsigned long long>) return std::string{"unsigned long long"};
-    else if constexpr (std::is_same_v<U, float>)              return std::string{"float"};
-    else if constexpr (std::is_same_v<U, double>)             return std::string{"double"};
-    else if constexpr (std::is_same_v<U, long double>)        return std::string{"long double"};
-    else if constexpr (std::is_same_v<U, std::nullptr_t>)     return std::string{"std::nullptr_t"};
-    else                                                      return std::string{"?"};
+    if constexpr (std::is_same_v<U, bool>)                                              return CS_string_bool;
+    else if constexpr (std::is_same_v<U, char>)                                         return CS_string_char;
+    else if constexpr (std::is_same_v<U, unsigned char>)                                return CS_string_uchar;
+    else if constexpr (std::is_same_v<U, int>)                                          return CS_string_int;
+    else if constexpr (std::is_same_v<U, unsigned int>)                                 return CS_string_uint;
+    else if constexpr (std::is_same_v<U, long>)                                         return CS_string_long;
+    else if constexpr (std::is_same_v<U, unsigned long>)                                return CS_string_ulong;
+    else if constexpr (std::is_same_v<U, long long>)                                    return CS_string_ll;
+    else if constexpr (std::is_same_v<U, unsigned long long>)                           return CS_string_ull;
+    else if constexpr (std::is_same_v<U, double>)                                       return CS_string_double;
+    else if constexpr (std::is_same_v<U, long double>)                                  return CS_string_ld;
+    else if constexpr (std::is_same_v<U, std::string>)                                  return CS_string_str;
+    else                                                                                static_assert("Wrong data type for the core system (CS).");
   }();
 };
 
-const std::string CS_string_separator = "$"
-
 template<typename T>
-struct type_name<DAG_Node<T>> {
-  static constexpr std::string _type_name = "DAG_Node" + CS_string_separator + T::_type_name;
+struct Type_Name {
+  static constexpr std::string value = Type_Name_Fundamental<T>::value;
 };
 
-struct ISC_Data{
+template<typename T>
+struct Type_Name<std::vector<T>> {
+  static constexpr std::string value = CS_string_1D_array + CS_string_separator + Type_Name_Fundamental<T>::value;
+};
+
+template<typename T>
+struct Type_Name<std::vector<std::vector<T>>> {
+  static constexpr std::string value = CS_string_2D_array + CS_string_separator + Type_Name_Fundamental<T>::value;
+};
+
+template<typename T>
+struct Type_Name<DAG_Node<T>> {
+  static constexpr std::string value = CS_string_DAG_node + CS_string_separator + T::_type_name;
+};
+
+struct ICS_Data{
   virtual std::string get_type_name() const = 0;
-  virtual std::string get_val() const = 0;
+  virtual _a_CS_data_var_0D get_val_0D() const = 0;
+  virtual _a_CS_data_var_1D get_val_1D() const = 0;
+  virtual _a_CS_data_var_2D get_val_2D() const = 0;
   virtual void set_val(std::string) = 0;
-  virtual ~ISC_Data() = default;
+  virtual ~ICS_Data() = default;
 };
 
+// The data type for all CS types:
+// Base template for the fundamental types (e.g. double)
 template<typename T>
-struct SC_Data : public ISC_Data {
-  static constexpr std::string _type_name = type_name<T>::_type_name;
+struct CS_Data : public ICS_Data {
+  static constexpr std::string _type_name = Type_Name<T>::value;
   T _val{};
 
-  SC_Data() = default;
-  explicit SC_Data(T val) : _val(val) {};
+  CS_Data() = default;
+  explicit CS_Data(T val) : _val(val) {};
 
   std::string get_type_name() const { return _type_name; };
-  std::string get_val() const { return std::to_string(_val); };
-  void set_val(std::string val) { // TODO };
+  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(_val); };
+  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(0); };
+  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(0); };
+  void set_val(T val) { _val = val; };
+  void set_val(const _a_CS_data_var_0D& val) { _val = std::get<T>(val); };
 };
 
+// The data type for all CS types:
+// Template specialization for std::vector<T> where T is a fundamental type (e.g. double)
 template<typename T>
-struct SC_Data<DAG_Node<T>> : public ISC_Data {
-  static constexpr std::string _type_name = type_name<T>::_type_name;
+struct CS_Data<std::vector<T>> : public ICS_Data {
+  static constexpr std::string _type_name = Type_Name<std::vector<T>>::value;
+  std::vector<T> _val{};
+
+  CS_Data() = default;
+  explicit CS_Data(const std::vector<T>& val) : _val(val) {};
+
+  std::string get_type_name() const { return _type_name; };
+  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(0); };
+  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(_val); };
+  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(0); };
+  void set_val(const std::vector<T>& val) { _val = val; };
+};
+
+// The data type for all CS types:
+// Template specialization for std::vector<std::vector<T>> where T is a fundamental type (e.g. double)
+template<typename T>
+struct CS_Data<std::vector<std::vector<T>>> : public ICS_Data {
+  static constexpr std::string _type_name = Type_Name<std::vector<std::vector<T>>>::value;
   DAG_Node<T> _val{};
 
-  SC_Data() = default;
-  explicit SC_Data(DAG_Node<T> val) : _val(val) {};
+  CS_Data() = default;
+  explicit CS_Data(DAG_Node<T> val) : _val(val) {};
 
   std::string get_type_name() const { return _type_name; };
-  std::string get_val() const { return std::to_string(_val._index); };
-  void set_val(std::string val) { // TODO };
+  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(0); };
+  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(0); };
+  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(_val); };
+  void set_val(std::size_t index) { _val._index = index; };
 };
+
+// The data type for all CS types:
+// Template specialization for DAG_Node<T>
+template<typename T>
+struct CS_Data<DAG_Node<T>> : public ICS_Data {
+  static constexpr std::string _type_name = Type_Name<T>::value;
+  DAG_Node<T> _val{};
+
+  CS_Data() = default;
+  explicit CS_Data(std::size_t index) : _val(DAG_Node<T>(index)) {};
+
+  std::string get_type_name() const { return _type_name; };
+  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(_val._index); };
+  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(0); };
+  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(0); };
+  void set_val(std::size_t index) { _val._index = index; };
+};
+
+using CS_0D_bool   = CS_Data<bool>;
+using CS_0D_char   = CS_Data<char>;
+using CS_0D_uchar  = CS_Data<unsigned char>;
+using CS_0D_int    = CS_Data<int>;
+using CS_0D_uint   = CS_Data<unsigned int>;
+using CS_0D_long   = CS_Data<long>;
+using CS_0D_ulong  = CS_Data<unsigned long>;
+using CS_0D_ll     = CS_Data<long long>;
+using CS_0D_ull    = CS_Data<unsigned long long>;
+using CS_0D_double = CS_Data<double>;
+using CS_0D_ld     = CS_Data<long double>;
+using CS_0D_str    = CS_Data<std::string>;
+
+using CS_1D_bool   = CS_Data<std::vector<bool>>;
+using CS_1D_char   = CS_Data<std::vector<char>>;
+using CS_1D_uchar  = CS_Data<std::vector<unsigned char>>;
+using CS_1D_int    = CS_Data<std::vector<int>>;
+using CS_1D_uint   = CS_Data<std::vector<unsigned int>>;
+using CS_1D_long   = CS_Data<std::vector<long>>;
+using CS_1D_ulong  = CS_Data<std::vector<unsigned long>>;
+using CS_1D_ll     = CS_Data<std::vector<long long>>;
+using CS_1D_ull    = CS_Data<std::vector<unsigned long long>>;
+using CS_1D_double = CS_Data<std::vector<double>>;
+using CS_1D_ld     = CS_Data<std::vector<long double>>;
+using CS_1D_str    = CS_Data<std::vector<std::string>>;
+
+using CS_2D_bool   = CS_Data<std::vector<std::vector<bool>>>;
+using CS_2D_char   = CS_Data<std::vector<std::vector<char>>>;
+using CS_2D_uchar  = CS_Data<std::vector<std::vector<unsigned char>>>;
+using CS_2D_int    = CS_Data<std::vector<std::vector<int>>>;
+using CS_2D_uint   = CS_Data<std::vector<std::vector<unsigned int>>>;
+using CS_2D_long   = CS_Data<std::vector<std::vector<long>>>;
+using CS_2D_ulong  = CS_Data<std::vector<std::vector<unsigned long>>>;
+using CS_2D_ll     = CS_Data<std::vector<std::vector<long long>>>;
+using CS_2D_ull    = CS_Data<std::vector<std::vector<unsigned long long>>>;
+using CS_2D_double = CS_Data<std::vector<std::vector<double>>>;
+using CS_2D_ld     = CS_Data<std::vector<std::vector<long double>>>;
+using CS_2D_str    = CS_Data<std::vector<std::vector<std::string>>>;
 
 #endif
 ```
 
-The CS types shall define the members with SC_Data.
+The CS types shall define the members with CS_Data.
 Additionally, the CS types shall define two members:
-- for the names of the members and
+- the names of the members and
 - the pointers to the members.
 
 The CS panel class becomes:
@@ -2821,13 +2991,13 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
     "_EO_side_stiffener_1",
     "_EO_side_stiffener_2" };
 
-  SC_Data<double> _thickness{};
-  SC_Data<double> _width_a{};
-  SC_Data<double> _width_b{};
-  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
-  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_Data<double> _thickness{};
+  CS_Data<double> _width_a{};
+  CS_Data<double> _width_b{};
+  CS_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
 
-  std::vector<ISC_Data*> _member_ptrs{}; // to be filed in the constructor. An interface function (e.g. set_member_ptrs) would ensure the safety.
+  std::vector<ICS_Data*> _member_ptrs{}; // to be filed in the constructor. An interface function (e.g. set_member_ptrs) would ensure the safety.
 
   ...
 
@@ -2836,7 +3006,7 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
 ...
 ```
 
-The ISC_Data interface together with _member_names and _member_ptrs fields allow the CS to perform most of the UI, MySQL DB and SP interactions.
+The ICS_Data interface together with _member_names and _member_ptrs fields allow the CS to perform most of the UI, MySQL DB and SP interactions.
 The final derived CS types would not need to define/satisfy the ffollowing interface:
 - Has_Member_Types concept,
 - Json_Compatible concept,
@@ -2844,9 +3014,9 @@ The final derived CS types would not need to define/satisfy the ffollowing inter
 - IUI interface function: get_from_json,
 - IUI interface function: set_to_json.
 
-SC_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
+CS_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
 For example, for a panel, the thickness is sizeable while the widths are not.
-Hence, SC_Data would be improved with a sizeability interface.
+Hence, CS_Data would be improved with a sizeability interface.
 
 #### 4.2.6. The CS Class Hierarchy <a id='sec426'></a>
 

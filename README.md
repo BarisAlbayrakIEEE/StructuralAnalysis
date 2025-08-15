@@ -1235,9 +1235,9 @@ std::unordered_map<std::string, (*)(std::size_t, const json&)> setters;
 template <typename T>
   requires (Has_Type_Name<T> && Json_Compatible<T>)
 void register_CS_type() {
-  creators[T::type_name] = create<T>;
-  getters[T::type_name] = get<T>;
-  setters[T::type_name] = set<T>;
+  creators[T::_type_name] = create<T>;
+  getters[T::_type_name] = get<T>;
+  setters[T::_type_name] = set<T>;
 }
 
 // register creator, getter and setter for each type statically by calling register_CS_type recursively.
@@ -1528,7 +1528,7 @@ struct EO_Panel : public IUI, IDAG {
   DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
   // Notice that EO_Panel satisfies Has_Type_Name!!!
-  static inline std::string type_name = "EO_Panel";
+  static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
   EO_Panel(const json& json_) {
@@ -1871,7 +1871,7 @@ struct EO_Panel : public IUI, IDAG {
   DAG_Node<SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
   // Notice that EO_Panel satisfies Has_Type_Name!!!
-  static inline std::string type_name = "EO_Panel";
+  static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
   EO_Panel(const json& json_) {
@@ -2224,8 +2224,8 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind objject creation in detail.
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind objject creation in detail.
+  DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
   
   ...
 
@@ -2363,10 +2363,10 @@ void execute(std::size_t type_container_index, const std::string& function_name)
 template <typename T>
   requires (Has_Type_Name<T> && Json_Compatible<T>)
 void register_CS_type() {
-  creators[T::type_name] = create<T>;
-  getters[T::type_name] = get<T>;
-  setters[T::type_name] = set<T>;
-  executors[T::type_name] = execute<T>;
+  creators[T::_type_name] = create<T>;
+  getters[T::_type_name] = get<T>;
+  setters[T::_type_name] = set<T>;
+  executors[T::_type_name] = execute<T>;
 }
 
 ...
@@ -2625,7 +2625,7 @@ std::unique_ptr<sql::PreparedStatement> Database::prepare(const std::string& MyS
 
 template<typename T>
 void DB::insert(DAG_t& DAG_, const DAG_Node<T>& DAG_node) {
-  std::string table_name{ DB::table_name_prefix + T::type_name };
+  std::string table_name{ DB::table_name_prefix + T::_type_name };
 
   // MySQL string for the members
   std::string initial_member_vals_str_1{ initiate_member_vals_str_1<T>() };
@@ -2663,7 +2663,7 @@ void DB::insert(DAG_t& DAG_, const DAG_Node<T>& DAG_node) {
 
 template<typename T>
 void DB::save(const DAG_Node<T>& DAG_node) {
-  std::string table_name{ DB::table_name_prefix + T::type_name };
+  std::string table_name{ DB::table_name_prefix + T::_type_name };
 
   // MySQL string for the members
   std::string initial_member_vals_str_2{ initiate_member_vals_str_2<T>() };
@@ -2706,6 +2706,128 @@ struct IDB {
 
 #endif
 ```
+
+At this point, I want to discuss about the raw data types used by the CS.
+All types would hold the raw data types (e.g. int, double) and DAG_Nodes.
+The MySQL DB, the UI and the SP interfaces involve the transfer of the raw data.
+Currently, its impossible to automize these interactions due to the data types of the members.
+Hence, this issues are wrapped by the interfaces and concepts to be implemented in the final types (e.g. EO_Panel).
+However, if we define a uniform intterface for the raw data, the definition of the final derived classes would be way more clear
+and the load on the clients will be quite less.
+
+The operations on the raw data includes the name, the type and the value.
+Hence, the following interface would satisfy the interface requirements:
+
+```
+// ~/src/system/SC_Data.h
+
+#ifndef _SC_Data_h
+#define _SC_Data_h
+
+template<class T>
+struct type_name {
+  static constexpr std::string _type_name = [] {
+    using U = std::remove_cv_t<std::remove_reference_t<T>>;
+
+    if constexpr (std::is_same_v<U, void>)                    return std::string{"void"};
+    else if constexpr (std::is_same_v<U, bool>)               return std::string{"bool"};
+    else if constexpr (std::is_same_v<U, char>)               return std::string{"char"};
+    else if constexpr (std::is_same_v<U, signed char>)        return std::string{"signed char"};
+    else if constexpr (std::is_same_v<U, unsigned char>)      return std::string{"unsigned char"};
+    else if constexpr (std::is_same_v<U, wchar_t>)            return std::string{"wchar_t"};
+#if defined(__cpp_char8_t)
+    else if constexpr (std::is_same_v<U, char8_t>)            return std::string{"char8_t"};
+#endif
+    else if constexpr (std::is_same_v<U, char16_t>)           return std::string{"char16_t"};
+    else if constexpr (std::is_same_v<U, char32_t>)           return std::string{"char32_t"};
+    else if constexpr (std::is_same_v<U, short>)              return std::string{"short"};
+    else if constexpr (std::is_same_v<U, unsigned short>)     return std::string{"unsigned short"};
+    else if constexpr (std::is_same_v<U, int>)                return std::string{"int"};
+    else if constexpr (std::is_same_v<U, unsigned int>)       return std::string{"unsigned int"};
+    else if constexpr (std::is_same_v<U, long>)               return std::string{"long"};
+    else if constexpr (std::is_same_v<U, unsigned long>)      return std::string{"unsigned long"};
+    else if constexpr (std::is_same_v<U, long long>)          return std::string{"long long"};
+    else if constexpr (std::is_same_v<U, unsigned long long>) return std::string{"unsigned long long"};
+    else if constexpr (std::is_same_v<U, float>)              return std::string{"float"};
+    else if constexpr (std::is_same_v<U, double>)             return std::string{"double"};
+    else if constexpr (std::is_same_v<U, long double>)        return std::string{"long double"};
+    else if constexpr (std::is_same_v<U, std::nullptr_t>)     return std::string{"std::nullptr_t"};
+    else                                                      return std::string{"?"};
+  }();
+};
+
+const std::string CS_string_separator = "$"
+
+template<typename T>
+struct type_name<DAG_Node<T>> {
+  static constexpr std::string _type_name = "DAG_Node" + CS_string_separator + T::_type_name;
+};
+
+struct ISC_Data{
+  virtual std::string get_type_name() const = 0;
+  virtual std::string get_val() const = 0;
+  virtual void set_val(std::string) = 0;
+  virtual ~ISC_Data() = default;
+};
+
+template<typename T>
+struct SC_Data : public ISC_Data {
+  static constexpr std::string _type_name = type_name<T>::_type_name;
+  T _val{};
+  explicit SC_Data(T val) : _val(val) {};
+
+  std::string get_type_name() const { return _type_name; };
+  std::string get_val() const { return std::to_string(_val); };
+  void set_val(std::string val) { // TODO };
+};
+
+template<typename T>
+struct SC_Data<DAG_Node<T>> : public ISC_Data {
+  static constexpr std::string _type_name = type_name<T>::_type_name;
+  DAG_Node<T> _val{};
+  explicit SC_Data(DAG_Node<T> val) : _val(val) {};
+
+  std::string get_type_name() const { return _type_name; };
+  std::string get_val() const { return std::to_string(_val._index); };
+  void set_val(std::string val) { // TODO };
+};
+
+#endif
+```
+
+With this uniform interface, the CS panel class becomes:
+
+```
+// ~/src/plugins/core/panel/EO_Panel.h
+
+...
+
+struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
+  static constexpr std::vector<std::string> _member_names{
+    "_thickness",
+    "_width_a",
+    "_width_b",
+    "_EO_side_stiffener_1",
+    "_EO_side_stiffener_2" };
+
+  SC_Data<double> _thickness;
+  SC_Data<double> _width_a;
+  SC_Data<double> _width_b;
+  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  SC_Data<DAG_Node<EO_Stiffener>> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+
+  ...
+
+};
+
+...
+```
+
+The ISC_Data interface together with _member_names field allow the CS perform most of the UI, the MySQL DB and the SP interactions.
+For example, the IUI functions get_from_json and set_to_json are not required anymore.
+SC_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
+For example, for a panel, the thickness is sizeable while the widths are not.
+Hence, SC_Data would be improved with a sizeability interface.
 
 #### 4.2.6. The CS Class Hierarchy <a id='sec426'></a>
 
@@ -2905,7 +3027,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   DAG_Node<SC_Stiffener> _SC_side_stiffener_2;
 
   // Notice that EO_Panel satisfies Has_Type_Name concept.
-  static inline std::string type_name = "EO_Panel";
+  static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Has_Member_Names concept.
   static inline auto member_names = std::vector<std::string>{
@@ -2986,7 +3108,6 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       {"_SC_side_stiffener_1", _SC_side_stiffener_1._index},
       {"_SC_side_stiffener_2", _SC_side_stiffener_2._index}
     };
-  }
 
   // IDAG interface function: get_ancestors
   std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
@@ -3019,6 +3140,14 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 #endif
 ```
+
+As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS by using CS_Data:
+- Has_Member_Names concept,
+- Has_Member_Types concept,
+- Json_Compatible concept,
+- CBindable concept,
+- IUI interface function: get_from_json,
+- IUI interface function: set_to_json.
 
 **The SCs**\
 An SC is a combination of the EOs in order to perform the SAs.
@@ -3139,7 +3268,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   DAG_Node<SA_Panel_Pressure> _SA_panel_buckling;
 
   // Notice that SC_Panel satisfies Has_Type_Name concept.
-  static inline std::string type_name = "SC_Panel";
+  static inline std::string _type_name = "SC_Panel";
 
   // Notice that SC_Panel satisfies Has_Member_Names concept.
   static inline auto member_names = std::vector<std::string>{
@@ -3325,57 +3454,5 @@ Similarly, I will skip the SARs.
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 
-Currently we have the following architecture:
-- The CS stores data packed as the objects deriving from some base constructs (e.g. Json_Compatible) and SAA base types (i.e. EO, SC annd SA).
-- The SP executes the behaviours (e.g. analyses). The SP would have its own class hierarchy (e.g. BucklingPermitable).
-
-Additionally, the CS is developed with C++ while the SP is developed with python.
-Hence, the procedure to run an SA is as follows:
-- The user selects an SA for the analysis run,
-- UI emits an analysis request for the DAG_node of the SA,
-- the CS prepares the analysis dataset and requests an analysis from the SP,
-- the SP constructs SP objects from the CS dataset,
-- the SP runs the SAMMs with the constructed objects,
-- the SAMMs constructs the SARs,
-- the SP returns the SARs to the CS,
-- the CS updates the MySQL DB ffor the SARs and
-- the CS returns the analysis results to UI.
-
-The process flow contains
 
 
-**In order to handle the above procedure, the SP shall define the following interface:**
-- **run_analysis(SC):** The interface for the analysis execution.
-- **DAG_to_SP(type_tag, DAG_node):** The factory pattern high level function to create SP objects from DAG raw data.
-- **SP_to_DAG(type_tag):** The reversed factory pattern high level function to extract DAG raw data from the SP objects.
-- **register_DAG_to_SPs(type_tag, method_for_DAG_to_SP):** The high level function registration for the factory methods.
-- **register_SP_to_DAGs(type_tag, method_for_SP_to_DAG):** The high level function registration for the inverse factory methods.
-
-DAG_to_SP function shall call get_type_containers to get the DAG raw data for the input DAG_node.
-
-**The plugins shall define the factory and the inverse factory methods as well as the registers:**
-- **create_T(DAG_node):** Creates a SP object of type T. called by DAG_to_SP.
-- **extract_T(t):** Extract DAG raw data from t object of type T. called by SP_to_DAG.
-- **register_DAG_to_SP(type_tag, create_T):** The low level function registration for the factory method.
-- **register_SP_to_DAG(type_tag, extract_T):** The low level function registration for the inverse factory method.
-
-
-
-
-
-### 4.4. Additional Software Design <a id='sec44'></a>
-
-The SAA would have features such as:
-- reporting,
-- automation,
-- structural sizing,
-- etc.
-
-All of these features would require an additional interface to be inserted into the design.
-I will examine the structural sizing as an example.
-
-The SCs would be derived from the sizeability interface which would basically require a function to perform the sizing: size_for_RF.
-In terms of the structural sizing types can be qualified into the followings:
-- Non_Sizeable: No sizeability. size_for_RF does nothing.
-- Auto_Sizeable: The default sizing algorithms handle the structural sizing. size_for_RF calls the default sizing algorithms.
-- Abstract_Manual_Sizeable: Requires size_manually function. size_for_RF calls size_manually function.

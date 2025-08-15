@@ -896,8 +896,8 @@ Firstly, I will discuss on the above issues based on the requests by the UI.
 
 The CS and the DAG shall define the below interface in order to handle the UI requests:
 - create_DAG_node(data_type, json)
-- get_type_containers(DAG_node_index)
-- set_type_containers(DAG_node_index, json)
+- get_DAG_node(DAG_node_index)
+- set_DAG_node(DAG_node_index, json)
 - remove_DAG_node(DAG_node_index)
 - run_analysis(DAG_node_index)
 - get_DAG_node_indices_for_data_type(data_type)

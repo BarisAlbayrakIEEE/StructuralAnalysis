@@ -1,33 +1,15 @@
 **Contents**
-1.     [About The Project](#sec1)
-2.     [Problem Definition: Stress Analysis of the Structural Components](#sec2)
-3.     [Software Architecture](#sec3)\
-3.1.   [An Overview of the Problem](#sec31)\
-3.2.   [The Target Market](#sec32)\
-3.3.   [The Architecture: The 1st Overview](#sec33)\
-3.3.1. [Deployment Model](#sec331)\
-3.3.2. [User Model](#sec332)\
-3.3.3. [Data & Persistency](#sec333)\
-3.3.4. [Data & Persistency](#sec334)\
-3.3.5. [Concurrency](#sec335)\
-3.3.6. [Summary of the 1st Overview](#sec336)\
-3.4.   [The Frontend](#sec34)\
-3.5.   [Data Types & Data Structures](#sec35)\
-3.6.   [Use Case Diagrams](#sec36)\
-3.6.1. [Use Case scenario #1](#sec361)\
-3.6.2. [Use Case scenario #2](#sec362)\
-3.6.3. [Use Case scenario #3](#sec363)\
-3.6.4. [A Quick Review on the Use Case scenarios](#sec364)\
-3.7.   [The Architecture: Summary](#sec37)\
-4.     [Software Design](#sec4)\
-4.1.   [The UI](#sec41)\
-4.2.   [The CS](#sec42)\
-4.2.1. [The UI Interface](#sec421)\
-4.2.2. [The Functionally Persistent DAG](#sec422)\
-4.2.3. [The SP Interface](#sec423)\
-4.2.4. [The FE Interface](#sec424)\
-4.2.5. [The MySQL DB Interface](#sec425)\
-4.2.6. [The CS Class Hierarchy](#sec426)
+1.   [About The Project](#sec1)
+2.   [Problem Definition: Stress Analysis of the Structural Components](#sec2)
+3.   [Software Architecture](#sec3)\
+3.1. [An Overview of the Problem](#sec31)\
+3.2. [The Target Market](#sec32)\
+3.3. [The Architecture: The 1st Overview](#sec33)\
+3.4. [The Frontend](#sec34)\
+3.5. [Data Types & Data Structures](#sec35)\
+3.6. [Use Case Diagrams](#sec36)\
+3.7. [The Architecture: Summary](#sec37)
+4.   [Software Design](#sec4)
 
 **Nomenclature**
 - **SC:** Structural Component
@@ -182,7 +164,7 @@ I will review the following major aspects of the software architecture to make s
 - Performance
 - Concurrency
 
-#### 3.3.1. Deployment Model <a id='sec331'></a>
+#### 3.3.1. Deployment Model
 
 1. Options:
 - Desktop (native)
@@ -196,7 +178,7 @@ I will review the following major aspects of the software architecture to make s
 - Does the customer have HPCs?
 - Does the customer have a powerful server to satisfy the latency and bandwidth_a constraints?
 
-#### 3.3.2. User Model <a id='sec332'></a>
+#### 3.3.2. User Model
 
 1. Options:
 - Single user (standalone)
@@ -206,7 +188,7 @@ I will review the following major aspects of the software architecture to make s
 - Is there a need to define user credentials (e.g. role)?
 - Is central data sharing or report distribution a requirement?
 
-#### 3.3.3. Data & Persistency <a id='sec333'></a>
+#### 3.3.3. Data & Persistency
 
 1. Options:
 - Filesystem (JSON, XML, binary)
@@ -220,7 +202,7 @@ I will review the following major aspects of the software architecture to make s
 - Is cross-platform file portability important?
 - Are the available resources sufficient to manage efficient transactions from/to a DB?
 
-#### 3.3.4. Data & Persistency <a id='sec334'></a>
+#### 3.3.4. Performance
 
 1. Options:
 - Local CPU and GPU
@@ -232,7 +214,7 @@ I will review the following major aspects of the software architecture to make s
 - Is there a need to scale out to handle many simultaneous jobs?
 - Is there a need for multithreading or multi-processing or both?
 
-#### 3.3.5. Concurrency <a id='sec335'></a>
+#### 3.3.5. Concurrency
 
 The application woulld obviously need the concurrent execution in terms of:
 - Separation of responsibility (e.g. core framework and UI)
@@ -242,7 +224,7 @@ The application woulld obviously need the concurrent execution in terms of:
 Previous sections already listed some arguments related to the concurrency.
 Later, I will discuss about this important issue in detail.
 
-#### 3.3.6. Summary of the 1st Overview <a id='sec336'></a>
+#### 3.3.6. Summary of the 1st Overview
 
 Considering the discussions held in the previous sections, the first overview of the architecture would be:
 - A web-based (cloud) application supported by a local company server
@@ -538,7 +520,7 @@ and shall be revisited by the ordinary users.
 I expect that these three scenarios are sufficient to have an understanding about the SAA.
 Later, I will discuss on these scenarios in terms of the architecture.
 
-#### 3.6.1. Use Case scenario #1 <a id='sec361'></a>
+#### 3.6.1 Use Case scenario #1
 
 In this scenario, a master user imports an FEM.
 The core framework has IO routines for the FE data.
@@ -596,7 +578,7 @@ Finally, the master user inserts the new DAG into the MySQL DB assigning a struc
 **UML Diagram**\
 ![UCD-01: Master User FE Import](./uml/use_case_diagram_1.png)
 
-#### 3.6.2. Use Case scenario #2 <a id='sec362'></a>
+#### 3.6.2 Use Case scenario #2
 
 In this scenario, an ordinary user checks out a sub-DAG from MySQL DB for inspection or sizing.
 The CS loads the sub-DAG and the FEM attached to the DAG.
@@ -652,7 +634,7 @@ I will prepare the scenario for a manual procedure.
 **UML Diagram**\
 ![UCD-02: Ordinary User Sizing](./uml/use_case_diagram_2.png)
 
-#### 3.6.3. Use Case scenario #3 <a id='sec363'></a>
+#### 3.6.3 Use Case scenario #3
 
 In this scenario, an ordinary user performs tradeoff analysis offline.
 The SAs involves complex strength analysis where the engineer would not make predictions without performing the calculations.
@@ -696,7 +678,7 @@ The constructed objects will be destructed when the user finishes her session.
 **UML Diagram**\
 ![UCD-03: Ordinary User Offline Tradeoff](./uml/use_case_diagram_3.png)
 
-#### 3.6.4. A Quick Review on the Use Case scenarios <a id='sec364'></a>
+#### 3.6.4 A Quick Review on the Use Case scenarios
 
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
 - FE data is managed by the UI component (i.e. js) while the DAG data is managed by the CS.
@@ -3302,6 +3284,12 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 #endif
 ```
 
+
+
+
+
+
+
 **The SAs**\
 The SAs define the structural analyses.
 They hold the analysis related information such as
@@ -3320,8 +3308,269 @@ This requirement would be solved in cooperation with the cliient.
 The analysis coefficients would vary among the companies and projects.
 The master users shall have write access to these parameters.
 
-I will not introduce the pseudocode for the SAs as I think the design process is quite clear now.
-Similarly, I will skip the SARs.
+Considering the above discussions, the interface for the SAs is as follows:
+
+```
+// ~/src/system/ISA.h
+
+#ifndef _ISA_h
+#define _ISA_h
+
+#include "ISC.h"
+
+struct NAS101_t{};
+struct NAS105_t{};
+struct NAS106_t{};
+
+template<typename NASType>
+struct NASTRAN{};
+
+struct NASTRAN<NAS101_t>{
+  static void export_FE_for_SA(const std::string& FE_file_path, const char** args) {
+    // TODO: FE export routine for the SA part
+  };
+};
+struct NASTRAN<NAS105_t>{
+  static void export_FE_for_SA(const std::string& FE_file_path, const char** args) {
+    // TODO: FE export routine for the SA part
+  };
+};
+struct NASTRAN<NAS106_t>{
+  static void export_FE_for_SA(const std::string& FE_file_path, const char** args) {
+    // TODO: FE export routine for the SA part
+  };
+};
+
+struct FEA{
+  static void run_FE_analysis(const std::string& FE_file_path) {
+    // TODO
+  };
+  static std::vector<double> extract_FE_analysis_results(const std::string& FE_file_path) {
+    // TODO
+  };
+};
+
+template<typename FE_ExecutableType>
+struct FE_Executable{};
+struct SAMM_Executable{};
+
+// SA Interface: Base template
+template<typename UpdateableType, typename ExecutableType>
+struct ISA {};
+
+// SA Interface: FE_Executable<NASType> specialization
+template<typename UpdateableType, typename NASType>
+struct ISA<UpdateableType, FE_Executable<NASType>> : public ICS<FE_Exportable_t, UpdateableType> {
+  // Helper function for run_analysis: define the FE file path
+  virtual std::string get_FE_file_path() const = 0;
+
+  // Helper function for export_FE: write SC portin of the FE file
+  virtual void export_FE_for_SC(const std::string& FE_file_path) const = 0;
+
+  // FE interface function for FE_Exportable_t: export_FE
+  void export_FE(const std::string& FE_file_path) const {
+    NASTRAN<NASType>::export_FE_for_SA(FE_file_path);
+    export_FE_for_SC(FE_file_path);
+  };
+
+  // interface function: run_analysis
+  std::vector<double> run_analysis(const std::string& FE_file_path) const {
+    auto FE_file_path{ get_FE_file_path() };
+    export_FE(FE_file_path);
+    FEA::run_FE_analysis(FE_file_path);
+    return FEA::extract_FE_analysis_results(FE_file_path);
+  };
+
+  virtual void create_report() = 0;
+  virtual std::vector<std::size_t> get_effective_LCs() = 0;
+  virtual std::size_t get_critical_LC() = 0;
+};
+
+
+
+
+
+
+
+// SA Interface: SAMM_Executable specialization
+template<typename UpdateableType, typename NASType>
+struct ISA<UpdateableType, SAMM_Executable> : public ICS<FE_Non_t, UpdateableType> {
+  // Helper function for run_analysis: define the FE file path
+  virtual std::string get_FE_file_path() const = 0;
+
+  // Helper function for export_FE: write SC portin of the FE file
+  virtual void export_FE_for_SC(const std::string& FE_file_path) const = 0;
+
+  // FE interface function for FE_Exportable_t: export_FE
+  void export_FE(const std::string& FE_file_path) const {
+    NASTRAN<NASType>::export_FE_for_SA(FE_file_path);
+    export_FE_for_SC(FE_file_path);
+  };
+
+  // interface function: run_analysis
+  std::vector<double> run_analysis(const std::string& FE_file_path) const {
+    auto FE_file_path{ get_FE_file_path() };
+    export_FE(FE_file_path);
+    FEA::run_FE_analysis(FE_file_path);
+    return FEA::extract_FE_analysis_results(FE_file_path);
+  };
+
+  virtual void create_report() = 0;
+  virtual std::vector<std::size_t> get_effective_LCs() = 0;
+  virtual std::size_t get_critical_LC() = 0;
+};
+
+#endif
+```
+
+After defining the SC interface, we can implement SC_Panel:
+
+```
+// ~/src/plugins/core/panel/SC_Panel.h
+
+#ifndef _SC_Panel_h
+#define _SC_Panel_h
+
+#include "~/src/system/ISA.h"
+#include "~/src/plugins/core/panel/SC_Panel.h"
+
+using json = nlohmann::json;
+
+struct SC_Panel : public ISA<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
+  std::size_t _type_container_index;
+  DAG_Node<EO_Panel> _EO_panel;
+  DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
+  DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
+  DAG_Node<SA_Panel_Buckling> _SA_panel_pressure;
+  DAG_Node<SA_Panel_Pressure> _SA_panel_buckling;
+
+  // Notice that SC_Panel satisfies Has_Type_Name concept.
+  static inline std::string type_name = "SC_Panel";
+
+  // Notice that SC_Panel satisfies Has_Member_Names concept.
+  static inline auto member_names = std::vector<std::string>{
+    "_type_container_index",
+    "_EO_panel",
+    "_EO_side_stiffener_1",
+    "_EO_side_stiffener_2",
+    "_SA_panel_pressure",
+    "_SA_panel_buckling"};
+
+  // Notice that SC_Panel satisfies Has_Member_Types concept.
+  static inline std::string member_names = std::vector<std::string>{
+    "std::size_t",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node",
+    "DAG_Node"};
+
+  // Notice that SC_Panel satisfies Json_Constructible concept.
+  SC_Panel(std::size_t type_container_index, const json& json_) {
+    if (
+        !json_.contains("_EO_panel") ||
+        !json_.contains("_EO_side_stiffener_1") ||
+        !json_.contains("_EO_side_stiffener_2") ||
+        !json_.contains("_SA_panel_pressure") ||
+        !json_.contains("_SA_panel_buckling"))
+      throw std::exception("Wrong inputs for SC_Panel type.");
+    
+    _type_container_index = type_container_index;
+    _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
+    _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
+    _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
+  };
+
+  // Notice that SC_Panel satisfies CBindable concept.
+  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
+    auto EO_panel{ DAG_->create_bind_object<EO_Panel>(_EO_panel._index) };
+    auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto SA_panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
+    auto SA_panel_buckling{ DAG_->create_bind_object<SA_Panel_Pressure>(_SA_panel_buckling._index) };
+    return std::make_shared<bind_type>(
+      EO_panel,
+      EO_side_stiffener_1,
+      EO_side_stiffener_2,
+      SA_panel_pressure,
+      SA_panel_buckling);
+  };
+
+  // IUI interface function: get_type_name
+  inline std::string get_type_name() const { return "SC_Panel"; };
+
+  // IUI interface function: get_from_json
+  void get_from_json(const json& json_) {
+    if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
+    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
+    if (json_.contains("_SA_panel_buckling")) _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
+  }
+
+  // IUI interface function: set_to_json
+  json set_to_json() const {
+    return {
+      {"_EO_panel", _EO_panel._index},
+      {"_EO_side_stiffener_1", _EO_side_stiffener_1._index},
+      {"_EO_side_stiffener_2", _EO_side_stiffener_2._index},
+      {"_SA_panel_pressure", _SA_panel_pressure._index},
+      {"_SA_panel_buckling", _SA_panel_buckling._index}
+    };
+  }
+
+  // IDAG interface function: get_ancestors
+  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> ancestors{};
+    ancestors.push_back(_EO_panel.get_object(DAG_));
+    ancestors.push_back(_EO_side_stiffener_1.get_object(DAG_));
+    ancestors.push_back(_EO_side_stiffener_2.get_object(DAG_));
+    return ancestors;
+  };
+
+  // IDAG interface function: get_descendants
+  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
+    std::vector<IDAG const*> descendants{};
+    descendants.push_back(_SA_panel_pressure.get_object(DAG_));
+    descendants.push_back(_SA_panel_buckling.get_object(DAG_));
+    return descendants;
+  };
+  
+  // FE interface function for FE_Importable_Exportable_t: import_FE
+  virtual void import_FE(const std::string& FE_file_path) {
+    // TODO
+  };
+  
+  // FE interface function for FE_Importable_Exportable_t: export_FE
+  virtual void export_FE(const std::string& FE_file_path) const {
+    // TODO
+  };
+
+  // Updateability interface function for Invariant_Updatable_t: inspect_invariant
+  bool inspect_invariant(DAG_t const* DAG_) const {
+    // TODO
+  };
+
+  // Sizeability interface function for Manual_Sizeable_t: size_for_RF
+  void size_for_RF() {
+    // TODO
+  };
+};
+
+#endif
+```
+
+
+
+
+
+
+
+
+
+
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

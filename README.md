@@ -380,7 +380,7 @@ However, the assumption actually is not correct.
 Below list presents a couple of the reasons why the assumption fails:
 1. The DAG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
 2. Write operations would need temporary SP object creation in order to inspect the type invariants.
-3. The UI would need an interface for the FE: import_FE() and export_FE()
+3. The UI would need an interface for the FE: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
 4. The UI would need an interface for the mutability and sizeability: the state management and size()
 5. Extensibility fails for the user operations as designing new behaviours is cumbersome: Ex: get_all_materials() function would envolve too many branches.
 
@@ -2390,9 +2390,9 @@ The 2nd, the 3rd and the 4th are quite standard processes which would not put to
 #### 4.2.4. The FE Interface <a id='sec424'></a>
 
 In terms of the FE interface, we can mainly define 3 types:
-1. IFE_Importable: import_FE()
-2. IFE_Exportable: export_FE()
-3. IFE_Importable_Exportable: import_FE() and export_FE()
+1. IFE_Importable: import_FE(const std::string& FE_file_path)
+2. IFE_Exportable: export_FE(const std::string& FE_file_path) const
+3. IFE_Importable_Exportable: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
 
 The FE importability is required for all types existing in an online DAG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
@@ -2408,18 +2408,18 @@ Hence The three types would represent the following cases:
 #define _FE_h
 
 struct IFE_Importable {
-  virtual void import_FE() = 0;
+  virtual void import_FE(const std::string& FE_file_path) = 0;
   virtual ~IFE_Importable() = default;
 };
 
 struct IFE_Exportable {
-  virtual void export_FE() const = 0;
+  virtual void export_FE(const std::string& FE_file_path) const = 0;
   virtual ~IFE_Exportable() = default;
 };
 
 struct IFE_Importable_Exportable {
-  virtual void import_FE() = 0;
-  virtual void export_FE() const = 0;
+  virtual void import_FE(const std::string& FE_file_path) = 0;
+  virtual void export_FE(const std::string& FE_file_path) const = 0;
   virtual ~IFE_Importable_Exportable() = default;
 };
 
@@ -2976,12 +2976,12 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   };
   
   // FE interface function for FE_Importable_Exportable_t: import_FE
-  virtual void import_FE() {
+  virtual void import_FE(const std::string& FE_file_path) {
     // TODO
   };
   
   // FE interface function for FE_Importable_Exportable_t: export_FE
-  virtual void export_FE() {
+  virtual void export_FE(const std::string& FE_file_path) const {
     // TODO
   };
 
@@ -3207,12 +3207,12 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   };
   
   // FE interface function for FE_Importable_Exportable_t: import_FE
-  virtual void import_FE() {
+  virtual void import_FE(const std::string& FE_file_path) {
     // TODO
   };
   
   // FE interface function for FE_Importable_Exportable_t: export_FE
-  virtual void export_FE() {
+  virtual void export_FE(const std::string& FE_file_path) const {
     // TODO
   };
 
@@ -3225,6 +3225,52 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   void size_for_RF() {
     // TODO
   };
+
+  // ISC interface function: run_analyses
+  void run_analyses() {
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    SA_panel_pressure.run_analysis();
+    SA_panel_buckling.run_analysis();
+  };
+
+  // ISC interface function: create_report
+  void create_report() {
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    SA_panel_pressure.create_report();
+    SA_panel_buckling.create_report();
+  };
+
+  // ISC interface function: get_effective_LCs
+  std::vector<std::size_t> get_effective_LCs() {
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    auto effective_LCs_1{ SA_panel_pressure.get_effective_LCs() };
+    auto effective_LCs_2{ SA_panel_buckling.get_effective_LCs() };
+    auto effective_LCs = std::vector<std::size_t>(effective_LCs_1.size() + effective_LCs_2.size());
+    std::copy(
+      effective_LCs_1.cbegin(),
+      effective_LCs_1.cend(),
+      effective_LCs.begin()
+    );
+    std::copy(
+      effective_LCs_2.cbegin(),
+      effective_LCs_2.cend(),
+      effective_LCs.begin() + effective_LCs_1.size()
+    );
+    return effective_LCs;
+  };
+
+  // ISC interface function: get_critical_LC
+  std::size_t get_critical_LC() {
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    auto critical_LC_1{ SA_panel_pressure.get_critical_LC() };
+    auto critical_LC_2{ SA_panel_buckling.get_critical_LC() };
+    if (critical_LC_1 < critical_LC_2) return critical_LC_1
+    return critical_LC_2;
+  };
 };
 
 #endif
@@ -3236,65 +3282,25 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 
 
-
-
-
-
-
 **The SAs**\
 The SAs define the structural analyses.
 They hold the analysis related information such as
 - analysis type (e.g. FE or analytical, SAMM type and version, etc.)
-- analysis coefficients (e.g. the fitting factor),
-- reporting and
-- load related issues.
+- analysis notes and assumptions additional to the ones defined in the SAMMs (e.g. neglect axial loading),
+- analysis coefficients (e.g. the fitting factor) and
+- analysis options (e.g. multiprocess).
 
-The SAs define the structural analyses procedures.
-Hence, they are the subject of the SPs.
-However, the SCs defines which SAs would be applied to the SC.
-For example, while sizing the EOs involved in an SC, all SAs assigned to the SC must be evaluated.
-Hence, the SCs also shall define the procedures to run the analyses.
-This is the structural inspectability window for the SCs which involves the structural sizing as well.
+The 1st one defines a strategy for the analysis tool with two options: FEA or SAMM.
+Each would have different implementations so that a strategy pattern would help.
 
-The structural sizing interfaace within the SCs is conceptually different than the one defined within the EOs.
-An SC involve a nomber of EOs.
-The structural sizing within the SC is the orchestration of the sizing procedures of the involved EOs.
-It considers the behaviours of the EOs and the assigned SAs at the same time.
-For example, sizing for SC_Panel shall consider the involved panel and striffener at the same time.
-The side stiffener may not provide enough support which causes a failure.
-Hence, both the panel and the stiffener shall be considered while sizing.
-Besides, the sizing strategy corresponding to the panel pressure analysis would be different than the one corresponding to the panel buckling analysis.
+The 2nd one needs a careful study where a number of analysis options should be applied systematically.
+For example, load multipliers can be defined to adjust the loading.
+This requirement would be solved in cooperation with the cliient.
 
-The SAA shall have a wide range of reporting facilities.
-Some of them would be a part of "in progress" utilities while some others satisfies the "documentation" requirements.
-For example, the users shall be able to see the failed SCs and the critical LCs easily in order to examine/size the structure.
-The reporting facilities can be considered as the utilities but the core shall be adjusted to provide them when required.
-Hence, while designing the SCs the reporting features shall be considered.
+The analysis coefficients would vary among the companies and projects.
+The master users shall have write access to these parameters.
 
-Finally, the SCs would carry the loading.
-As described before, the FE import procedures convert the FE loading (i.e. FE node/element loading) into the component loading.
-For example, a stiffener physically carries the folloowing load components:
-- the axial load (tension or compression) and
-- the bending load.
-
-The loading on each type is defined by an EO such as EO_Load__Stiffener.
-The load EOs carries data for a number of LCs assigned to the DAG.
-Hence, the load EOs store a double matrix.
-
-As mentioned before, the loading multiplies the data stored in the DAG.
-Hence, the load and the SAR data is stored in the MySQL DB.
-The DAG nodes pointing to the load EOs and SARs store only the MySQL DB keys.
-
-One last point about the loading is the critical LC selection.
-The number of LCs may rise up to thousands so that running the analyses would consume too much CPU resourses and take long time.
-Hence, one must eliminate the LCs that contains less loading than the other LCs.
-This process may be verry complex if the loading is combined or the corresponding analysis involves complex calculations.
-For example, some load components may act on the element linearly (e.g. axial loading) while some other non-linearly (e.g. bending).
-Some analyses would have complex calculations such that there is no direct relation between the loading and the RF.
-The critical LC determination process depends on the components of the loading and the analyses type.
-Hence, one must locate this process under the SC definition where both are defined.
-
-Considering the above discussions, the interface for the SCs is as follows:
+Considering the above discussions, the interface for the SAs is as follows:
 
 ```
 // ~/src/system/ISA.h
@@ -3304,21 +3310,113 @@ Considering the above discussions, the interface for the SCs is as follows:
 
 #include "ISC.h"
 
-template<typename FEType, typename UpdateableType, typename SizeableType>
-struct ISA : public ICS<FEType, UpdateableType> {};
+struct NAS101;
+struct NAS105;
+struct NAS106;
 
-// CAUTION: SCs cannot be Non_Sizeable_t. All SCs are the subject of structural sizing.
+template<typename FE_ExecutableType>
+struct FE_Executable{};
+struct SAMM_Executable{};
+template<typename FE_ExecutableType>
+struct FE_SAMM_Executable{};
 
-// Auto_Sizeable_t
+struct FEA{
+  static void run_FE_analysis(const std::string& FE_file_path) {
+    // TODO
+  };
+  static std::vector<double> extract_FE_analysis_results(const std::string& FE_file_path) {
+    // TODO
+  };
+};
+
 template<typename FEType, typename UpdateableType>
-struct ISA<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
-  void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
+struct ISA_FE_Base : public ICS<FEType, UpdateableType> {
   virtual void run_analyses() = 0;
-  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
-  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
-  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
+  virtual void create_report() = 0;
+  virtual std::vector<std::size_t> get_effective_LCs() = 0;
+  virtual std::size_t get_critical_LC() = 0;
+
+  // Helper function for export_FE: write SA portion of the FE file
+  virtual void export_FE_for_SA(const std::string& FE_file_path) const = 0;
+
+  // Helper function for export_FE: write SC portin of the FE file
+  virtual void export_FE_for_SC(const std::string& FE_file_path) const = 0;
+
+  // Helper function for run_analysis: define the FE file path
+  virtual std::string get_FE_file_path() const = 0;
+
+  // FE interface function for FE_Exportable_t: export_FE
+  void export_FE(const std::string& FE_file_path) const {
+    export_FE_for_SA(FE_file_path);
+    export_FE_for_SC(FE_file_path);
+  };
+
+  // interface function: run_analysis
+  std::vector<double> run_analysis(const std::string& FE_file_path) const {
+    auto FE_file_path{ get_FE_file_path() };
+    export_FE(FE_file_path);
+    FEA::run_FE_analysis(FE_file_path);
+    return FEA::extract_FE_analysis_results(FE_file_path);
+  };
+};
+
+// SA Interface: Base template
+template<typename UpdateableType, typename ExecutableType>
+struct ISA {};
+
+// SA Interface: FE_Executable<NAS101> specialization
+template<typename UpdateableType>
+struct ISA<UpdateableType, FE_Executable<NAS101>> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
+  // Helper function for export_FE: write SA portion of the FE file
+  void export_FE_for_SA(const std::string& FE_file_path) const {
+    // TODO: FE export routine for this specialization
+  };
+
   virtual ~ISA() = default;
 };
+
+// SA Interface: FE_Executable<NAS105> specialization
+template<typename UpdateableType>
+struct ISA<UpdateableType, FE_Executable<NAS105>> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
+  // Helper function for export_FE: write SA portion of the FE file
+  void export_FE_for_SA(const std::string& FE_file_path) const {
+    // TODO: FE export routine for this specialization
+  };
+
+  virtual ~ISA() = default;
+};
+
+// SA Interface: FE_Executable<NAS106> specialization
+template<typename UpdateableType>
+struct ISA<UpdateableType, FE_Executable<NAS106>> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
+  // Helper function for export_FE: write SA portion of the FE file
+  void export_FE_for_SA(const std::string& FE_file_path) const {
+    // TODO: FE export routine for this specialization
+  };
+
+  virtual ~ISA() = default;
+};
+
+// SA Interface: SAMM_Executable specialization
+template<typename UpdateableType>
+struct ISA<UpdateableType, SAMM_Executable> : public ISA_FE_Base<FE_Exportable, UpdateableType> {
+  // Helper function for export_FE: write SA portion of the FE file
+  void export_FE_for_SA(const std::string& FE_file_path) const {
+    // TODO: FE export routine for this specialization
+  };
+
+  virtual ~ISA() = default;
+};
+
+
+
+
+
+
+
+
+
+
 
 // Manual_Sizeable_t
 template<typename FEType, typename UpdateableType>
@@ -3450,12 +3548,12 @@ struct SC_Panel : public ISA<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   };
   
   // FE interface function for FE_Importable_Exportable_t: import_FE
-  virtual void import_FE() {
+  virtual void import_FE(const std::string& FE_file_path) {
     // TODO
   };
   
   // FE interface function for FE_Importable_Exportable_t: export_FE
-  virtual void export_FE() {
+  virtual void export_FE(const std::string& FE_file_path) const {
     // TODO
   };
 

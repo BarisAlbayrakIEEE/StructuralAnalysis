@@ -194,7 +194,7 @@ I will review the following major aspects of the software architecture to make s
 - Do SAMMs run heavy computations?
 - Can the SAMMs be handled locally, or do they require scalable cloud CPUs/GPUs, or is a hybrid solution required?
 - Does the customer have HPCs?
-- Does the customer have a powerful server to satisfy the latency and bandwidth_a constraints?
+- Does the customer have a powerful server to satisfy the latency and bandwidth constraints?
 
 #### 3.3.2. User Model <a id='sec332'></a>
 
@@ -511,7 +511,7 @@ Hence, this approach adds boilerplate code into the CS which the client is mostl
 Later, I will explain that I will use React for the frontend development.
 The C++ backend needs to communicate with the React frontend.
 The REST API would serve very well in case of the SAA.
-If required, WebSocket would be utilized later to allow bacckend pushes or enhance the real-time communication.
+If required, WebSocket would be utilized later to allow backend pushes or enhance the real-time communication.
 
 There is one last point under this heading.
 The LC and SC data multiplies in case of the SAA as on an SC a load data (i.e. the SCL) is defined for each LC.
@@ -526,7 +526,7 @@ Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
 
 I will examine three use case scenarios:
 1. [Master User] | Import an FEM, create a DAG and insert it into the client-server MySQL DB
-2. [Ordinary User] | Check-out a DAG node from MySQL DB, inspect/size the SCs within the DAG node and save the updates to MySQL DB
+2. [Ordinary User] | Check-out a sub-DAG from MySQL DB, inspect/size the SCs within the sub-DAG and save the updates to MySQL DB
 3. [Ordinary User] | Perform offline tradeoff
 
 There exist other scenarios as well.
@@ -701,7 +701,7 @@ The constructed objects will be destructed when the user finishes her session.
 Below are some observations I realized by examining the UML diagrams of the use case scenarios:
 - FE data is managed by the UI component (i.e. js) while the DAG data is managed by the CS.
 - There is a frequent request traffic between the backend and the frontend.
-- Large data may be transfered betweeen the backend and the frontend.
+- Large data may be transfered between the backend and the frontend.
 - **The DAG shall follow DOD approach to store the data.**
 - **The DAG shall define and manage a state (e.g. UpToDate) for each node in the DAG.**
 - The routines of the DAG related to the node states would be based on the ancestor/descendant relations.
@@ -883,11 +883,12 @@ When, for example, the user clicks on an OETVN, the frontend:
 
 ### 4.2. The CS <a id='sec42'></a>
 
-The CS contains 4 components:
+The CS contains 5 components:
 1. The DAG
 2. The types (i.e. the plugins)
 3. The UI interface
 4. The SP interface
+5. The MySQL DB interface
 
 Firstly, I will discuss on the above issues based on the requests by the UI.
 

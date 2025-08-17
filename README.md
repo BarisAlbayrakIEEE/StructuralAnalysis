@@ -447,16 +447,16 @@ For example, the Nth type T within the typelist Ts would anyway be required by t
 
 ```
 // The base template to extract the Nth type from a type list
-template<std::size_t N, typename TList>
-struct TypeAt;
+template<std::size_t N, typename Types>
+struct type_at;
 
-// The 1st template specialization of TypeAt defining the variadic parameters
+// The 1st template specialization of type_at defining the variadic parameters
 template<std::size_t N, typename T, typename... Ts>
-struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
+struct type_at<N, TypeList<T, Ts...>> : type_at<N - 1, TypeList<Ts...>> {};
 
-// The 2nd template specialization of TypeAt which is the boundary of the recursion
+// The 2nd template specialization of type_at which is the boundary of the recursion
 template<typename T, typename... Ts>
-struct TypeAt<0, TypeList<T, Ts...>> {
+struct type_at<0, TypeList<T, Ts...>> {
   using type = T;
 };
 
@@ -468,7 +468,7 @@ struct Bar{};
 using TypeList = Types<Foo, Bar>;
 
 // Get and use the 0th type from the type list
-static constexpr TypeAt<0, TypeList> obj{};
+static constexpr type_at<0, TypeList> obj{};
 ```
 
 On the other hand, with java, the type containers of the DAG must be defined manually:
@@ -969,28 +969,31 @@ using CS_Types_t = TypeList<
 // -----------------------------------------------------------------------
 
 // The base template to extract the Nth type from a type list
-template<std::size_t N, typename TList>
-struct TypeAt;
+template<std::size_t N, typename Types>
+struct type_at;
 
-// The 1st template specialization of TypeAt defining the variadic parameters
+// The 1st template specialization of type_at defining the variadic parameters
 template<std::size_t N, typename T, typename... Ts>
-struct TypeAt<N, TypeList<T, Ts...>> : TypeAt<N - 1, TypeList<Ts...>> {};
+struct type_at<N, TypeList<T, Ts...>> : type_at<N - 1, TypeList<Ts...>> {};
 
-// The 2nd template specialization of TypeAt which is the boundary of the recursion
+// The 2nd template specialization of type_at which is the boundary of the recursion
 template<typename T, typename... Ts>
-struct TypeAt<0, TypeList<T, Ts...>> {
+struct type_at<0, TypeList<T, Ts...>> {
   using type = T;
 };
 
+template<std::size_t N, typename Types>
+using type_at_t = type_at<N, Types>::type;
+
 // The base template to extract the order of type T within a type list
-template <typename T, typename TList>
-struct IndexOf;
+template <typename T, typename Types>
+struct index_of;
 
 // Specialization for non-empty list
 template <typename T, typename Head, typename... Tail>
-struct IndexOf<T, TypeList<Head, Tail...>> {
+struct index_of<T, TypeList<Head, Tail...>> {
 private:
-  static constexpr std::size_t next = IndexOf<T, TypeList<Tail...>>::value;
+  static constexpr std::size_t next = index_of<T, TypeList<Tail...>>::value;
 
 public:
   static constexpr std::size_t value = std::is_same<T, Head>::value ? 0 : 1 + next;
@@ -998,7 +1001,22 @@ public:
 
 // Base case: T not found — triggers error
 template <typename T>
-struct IndexOf<T, TypeList<>>; // no definition: compile-time error if T not found
+struct index_of<T, TypeList<>>; // no definition: compile-time error if T not found
+
+template <typename T, typename Types>
+static constexpr std::size_t index_of_v = index_of<T, Types>::value;
+
+// The base template to get the size of a type list
+template<typename Types>
+struct type_list_size;
+
+template<typename... Ts>
+struct type_list_size<TypeList<Ts...>>
+  : std::integral_constant<std::size_t, sizeof...(Ts)> {};
+
+// convenient alias
+template<typename Types>
+inline constexpr std::size_t type_list_size_v = type_list_size<Types>::value;
 
 // -----------------------------------------------------------------------
 
@@ -2859,6 +2877,78 @@ struct ICS_Data{
   virtual void set_val(std::string) = 0;
   virtual ~ICS_Data() = default;
 };
+
+
+template<typename T> type_code_for_fundamental_type{};
+template<> type_code_for_fundamental_type<bool>               { static constexpr std::size_t value = 1; };
+template<> type_code_for_fundamental_type<char>               { static constexpr std::size_t value = 2; };
+template<> type_code_for_fundamental_type<unsigned char>      { static constexpr std::size_t value = 3; };
+template<> type_code_for_fundamental_type<int>                { static constexpr std::size_t value = 4; };
+template<> type_code_for_fundamental_type<unsigned int>       { static constexpr std::size_t value = 5; };
+template<> type_code_for_fundamental_type<long>               { static constexpr std::size_t value = 6; };
+template<> type_code_for_fundamental_type<unsigned long>      { static constexpr std::size_t value = 7; };
+template<> type_code_for_fundamental_type<long long>          { static constexpr std::size_t value = 8; };
+template<> type_code_for_fundamental_type<unsigned long long> { static constexpr std::size_t value = 9; };
+template<> type_code_for_fundamental_type<double>             { static constexpr std::size_t value = 10; };
+template<> type_code_for_fundamental_type<long double>        { static constexpr std::size_t value = 11; };
+template<> type_code_for_fundamental_type<std::string>        { static constexpr std::size_t value = 12; };
+template<typename T>
+type_code_for_fundamental_type<std::vector<T>>{
+  static constexpr std::size_t value = type_code_for_fundamental_type<T>::value + 12;
+};
+template<typename T>
+type_code_for_fundamental_type<std::vector<std::vector<T>>>{
+  static constexpr std::size_t value = type_code_for_fundamental_type<T>::value + 24;
+};
+
+template<typename T>
+static std::size_t type_code_for_fundamental_type_v = type_code_for_fundamental_type<T>::value;
+
+
+// The data type for all CS types:
+// Base template: the fundamental types (e.g. double)
+template<typename T>
+struct CS_Data : public ICS_Data {
+  static constexpr std::string _type_name = Type_Name<T>::value;
+  static constexpr std::size_t _type_code = type_list_size_v<CS_Types_t> + type_code_for_fundamental_type_v<T>;
+
+  T _val{};
+
+  CS_Data() = default;
+  explicit CS_Data(T val) : _val(val) {};
+
+  void set_val(T val) { _val = val; };
+  template<typename Function>
+  void apply(Function F) {
+    F(_val);
+  };
+};
+
+// The data type for all CS types:
+// Template specialization: DAG_Node<T>
+template<typename T>
+struct CS_Data<DAG_Node<T>> : public ICS_Data {
+  static constexpr std::string _type_name = T::_type_name;
+  static constexpr std::size_t _type_code = index_of_v<T, CS_Types_t>;
+
+  T _val{};
+
+  CS_Data() = default;
+  explicit CS_Data(std::size_t index) : _val(DAG_Node<T>(index)) {};
+
+  void set_val(std::size_t index) { _val._index = index; };
+  template<typename Function>
+  void apply(Function F) {
+    F(_val);
+  };
+};
+
+
+
+
+
+
+
 
 // The data type for all CS types:
 // Base template for the fundamental types (e.g. double)

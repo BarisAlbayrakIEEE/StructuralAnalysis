@@ -508,7 +508,7 @@ In summary, corresponding to a CS type, there may exist many SAMMs in the SP sid
 In other words, the additional wrapper class would be defined once and only for the types, not for the SAMMs.
 Hence, this approach adds boilerplate code into the CS which the client is mostly not involved.
 
-Later, I will explain that I will use React for the frontend development.
+I mentioned that, I will use React for the frontend development.
 The C++ backend needs to communicate with the React frontend.
 The REST API would serve very well in case of the SAA.
 If required, WebSocket would be utilized later to allow backend pushes or enhance the real-time communication.

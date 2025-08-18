@@ -24,11 +24,11 @@ interface IExecutable
 interface IReportable
 interface ILoad
 interface ISC_0
-interface "ICS_0<FEType>"
+'interface "ICS_0<FEType>"
 interface ICS_1
-interface "ICS<FEType, UpdateableType>"
-interface "IEO<FEType, UpdateableType, SizeableType>"
-interface "ISC<FEType, UpdateableType, SizeableType>"
+'interface "ICS<FEType, UpdateableType>"
+'interface "IEO<FEType, UpdateableType, SizeableType>"
+'interface "ISC<FEType, UpdateableType, SizeableType>"
 
 IFE_Non <|-- "ICS_0<FE_Non_t>"
 IFE_Importable <|-- "ICS_0<FE_Importable_t>"

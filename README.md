@@ -28,6 +28,7 @@
     - [4.2.4. The FE Interface](#sec424)
     - [4.2.5. The MySQL DB Interface](#sec425)
     - [4.2.6. The CS Class Hierarchy](#sec426)
+    - [4.2.7. The UML Diagram](#sec427)
 
 **Nomenclature**
 - **SC:** Structural Component
@@ -3428,6 +3429,11 @@ struct ILoad {
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
+struct ISC_0 : public IExecutable, IReportable, ILoad {
+  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
+  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
+}
+
 template<typename FEType, typename UpdateableType, typename SizeableType>
 struct ISC : public ICS<FEType, UpdateableType> {};
 
@@ -3435,14 +3441,14 @@ struct ISC : public ICS<FEType, UpdateableType> {};
 
 // Auto_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType>, IExecutable, IReportable, ILoad {
+struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType>, ISC_0 {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
   virtual ~ISC() = default;
 };
 
 // Manual_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType>, IExecutable, IReportable, ILoad {
+struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType>, ISC_0 {
   virtual void size_for_RF() = 0;
   virtual ~ISC() = default;
 };
@@ -3679,6 +3685,9 @@ The master users shall have write access to these parameters.
 
 I will not introduce the pseudocode for the SAs as I think the design process is quite clear now.
 Similarly, I will skip the SARs.
+
+#### 4.2.7. The UML Diagram <a id='sec427'></a>
+![The UML Diagram](./uml/CS.png)
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

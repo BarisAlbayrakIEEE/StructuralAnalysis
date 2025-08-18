@@ -2831,8 +2831,10 @@ static constexpr std::string type_name_v = type_name<T>::value;
 struct ICS_Data{
   virtual ~ICS_Data() = default;
   
-  virtual std::string get_type_name() const = 0;
-  // TODO: Define the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. get_type_name and set_to_json).
+  virtual std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
+  virtual json set_to_json() const { // TODO };
+  ...
 
 };
 
@@ -2845,9 +2847,11 @@ struct CS_Data : public ICS_Data {
 
   CS_Data() = default;
   explicit CS_Data(T val) : _val(val) {};
-  std::string get_type_name() const { return _type_name; };
   
-  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. get_type_name and set_to_json).
+  std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
+  json set_to_json() const { // TODO };
+  ...
 
 };
 
@@ -2859,10 +2863,11 @@ struct CS_Data<std::vector<T>> : public ICS_Data {
 
   CS_Data() = default;
   explicit CS_Data(const std::vector<T>& val) : _val(val) {};
-
-  std::string get_type_name() const { return type_name_v<std::vector<T>>; };
   
-  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. get_type_name and set_to_json).
+  std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
+  json set_to_json() const { // TODO };
+  ...
 
 };
 
@@ -2874,9 +2879,11 @@ struct CS_Data<std::vector<std::vector<T>>> : public ICS_Data {
 
   CS_Data() = default;
   explicit CS_Data(DAG_Node<T> val) : _val(val) {};
-  std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
   
-  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. get_type_name and set_to_json).
+  std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
+  json set_to_json() const { // TODO };
+  ...
 
 };
 
@@ -2888,9 +2895,11 @@ struct CS_Data<DAG_Node<T>> : public ICS_Data {
 
   CS_Data() = default;
   explicit CS_Data(std::size_t index) : _val(DAG_Node<T>(index)) {};
-  std::string get_type_name() const { return type_name_v<T>; };
   
-  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. get_type_name and set_to_json).
+  std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
+  json set_to_json() const { // TODO };
+  ...
 
 };
 
@@ -2952,25 +2961,35 @@ The CS panel class becomes:
 ...
 
 struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
-  static constexpr std::vector<std::string> _member_names{
-    "_thickness",
-    "_width_a",
-    "_width_b",
-    "_EO_side_stiffener_1",
-    "_EO_side_stiffener_2" };
-
   CS_DT_double _thickness{};
   CS_DT_double _width_a{};
   CS_DT_double _width_b{};
   CS_DT_DN<EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
   CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
 
-  // Pointers to the above memebrs.
-  // To be initialized having finished the CS object construction.
-  // An interface function (e.g. set_member_ptrs) would ensure the safety:
-  //   add set_member_ptrs into the ICS interface
-  //   CS factories call set_member_ptrs after constructing the object.
-  std::vector<ICS_Data*> _member_ptrs{};
+  // Get the names of the memebrs.
+  // Add get_member_names into the ICS interface.
+  std::vector<std::string> get_member_names{
+    return std::vector<std::string>{
+      "_thickness",
+      "_width_a",
+      "_width_b",
+      "_EO_side_stiffener_1",
+      "_EO_side_stiffener_2"
+    };
+  };
+
+  // Get the pointers to the above memebrs.
+  // Add get_member_ptrs into the ICS interface.
+  std::vector<ICS_Data*> get_member_ptrs{
+    return std::vector<ICS_Data*>{
+      &_thickness,
+      &_width_a,
+      &_width_b,
+      &_EO_side_stiffener_1,
+      &_EO_side_stiffener_2
+    };
+  };
 
   ...
 
@@ -2979,20 +2998,21 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
 ...
 ```
 
-The ICS_Data interface together with _member_names and _member_ptrs fields
-allow the CS to perform the UI, MySQL DB and SP interactions.
+The ICS_Data interface together with get_member_names and get_member_ptrs functions added to ICS interface
+allow the CS to perform the UI, MySQL DB and SP interactions generically.
 Within the CS, any interaction with the UI, MySQL DB and SP related with a CS object would implement the following flow:
 1. get the pointers to the members of the CS object as pointers to ICS_Data base class object and
 2. for each member, aplly the corresponding ICS_Data interface function (e.g. set_to_json).
 
 The final derived CS types would not need to define/satisfy the following interface:
-- Has_Member_Types concept,
-- Json_Compatible concept,
-- CBindable concept,
-- IUI interface function: get_from_json,
-- IUI interface function: set_to_json,
-- IDB interface function: load_from_DB,
-- IDB interface function: save_to_DB.
+- Has_Member_Types concept (as is replaced by get_member_names function of ICS interface),
+- Json_Compatible concept (as covered by ICS_Data interface),
+- CBindable concept (as covered by ICS_Data interface),
+- IUI interface function: get_from_json (as covered by ICS_Data interface),
+- IUI interface function: set_to_json (as covered by ICS_Data interface),
+- IDB interface function: load_from_DB (as covered by ICS_Data interface),
+- IDB interface function: save_to_DB (as covered by ICS_Data interface),
+- etc.
 
 CS_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
 For example, for a panel, the thickness is sizeable while the widths are not.
@@ -3199,7 +3219,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Has_Member_Names concept.
-  static inline auto member_names = std::vector<std::string>{
+  static inline auto _member_names = std::vector<std::string>{
     "_type_container_index",
     "_thickness",
     "_width_a",
@@ -3322,13 +3342,14 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS
 by defining the members with CS_Data wrapper:
-- Has_Member_Types concept,
-- Json_Compatible concept,
-- CBindable concept,
-- IUI interface function: get_from_json,
-- IUI interface function: set_to_json,
-- IDB interface function: load_from_DB,
-- IDB interface function: save_to_DB.
+- Has_Member_Types concept (as is replaced by get_member_names function of ICS interface),
+- Json_Compatible concept (as covered by ICS_Data interface),
+- CBindable concept (as covered by ICS_Data interface),
+- IUI interface function: get_from_json (as covered by ICS_Data interface),
+- IUI interface function: set_to_json (as covered by ICS_Data interface),
+- IDB interface function: load_from_DB (as covered by ICS_Data interface),
+- IDB interface function: save_to_DB (as covered by ICS_Data interface),
+- etc.
 
 **The SCs**\
 An SC is a combination of the EOs in order to perform the SAs.
@@ -3452,7 +3473,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   static inline std::string _type_name = "SC_Panel";
 
   // Notice that SC_Panel satisfies Has_Member_Names concept.
-  static inline auto member_names = std::vector<std::string>{
+  static inline auto _member_names = std::vector<std::string>{
     "_type_container_index",
     "_EO_panel",
     "_EO_side_stiffener_1",
@@ -3624,13 +3645,14 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 As mentioned before for EO_Panel, the following interface functions would be moved to the CS
 by defining the members with CS_Data wrapper:
-- Has_Member_Types concept,
-- Json_Compatible concept,
-- CBindable concept,
-- IUI interface function: get_from_json,
-- IUI interface function: set_to_json,
-- IDB interface function: load_from_DB,
-- IDB interface function: save_to_DB.
+- Has_Member_Types concept (as is replaced by get_member_names function of ICS interface),
+- Json_Compatible concept (as covered by ICS_Data interface),
+- CBindable concept (as covered by ICS_Data interface),
+- IUI interface function: get_from_json (as covered by ICS_Data interface),
+- IUI interface function: set_to_json (as covered by ICS_Data interface),
+- IDB interface function: load_from_DB (as covered by ICS_Data interface),
+- IDB interface function: save_to_DB (as covered by ICS_Data interface),
+- etc.
 
 **The SAs**\
 The SAs define the structural analyses.
@@ -3663,4 +3685,40 @@ The FOD strategy would allow involving the already existing libraries easily.
 The SP would be designed independently from the CS.
 Hence, it has its' own types and class hierachy.
 Most probably, the client would like to design the SP.
-I will skip this part of the SAA.
+I will skip the design of the SP.
+
+Lets see an example SP type definition:
+
+```
+# ~/src/plugins/core/panel/SC_Panel.py
+
+class SC_Panel:
+  def __init__(
+      self,
+      EO_panel: EO_panel,
+      EO_side_stiffener_1: EO_Stiffener,
+      EO_side_stiffener_2: EO_Stiffener,
+      EO_SCL_panel: EO_SCL_Panel,
+      SAR_panel_buckling: SAR_Panel_Buckling,
+      SAR_panel_pressure: SAR_Panel_Pressure):
+    self._EO_panel = EO_panel
+    self._EO_side_stiffener_1 = EO_side_stiffener_1
+    self._EO_side_stiffener_2 = EO_side_stiffener_2
+    self._EO_SCL_panel = EO_SCL_panel
+    self._SAR_panel_buckling = SAR_panel_buckling
+    self._SAR_panel_pressure = SAR_panel_pressure
+  
+  def calculate_buckling_coefficient(self):
+    # TODO
+  
+  def inspect_side_stiffener_restraints(self):
+    # TODO
+
+  def run_SA_panel_buckling(self):
+    # TODO
+
+  def run_SA_panel_pressure(self):
+    # TODO
+```
+
+As can be seen that the 

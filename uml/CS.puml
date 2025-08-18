@@ -1,4 +1,5 @@
 @startuml
+hide empty members
 skinparam classAttributeIconSize 0
 
 'class FE_Non_t

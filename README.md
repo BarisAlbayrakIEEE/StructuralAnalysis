@@ -352,7 +352,7 @@ We have different requirements and usage in case of the SAA:
 The memory management is crucial in case of the SAA as it may contain large data caused by hundreds of the user types.
 The memory management is related to the efficiency of the memory access patterns affecting both the read and write operations.
 The memory management policy of Python is based on the heap memory excluding the contiguous arrays.
-NumPy library provides this facility for the raw types only.
+On the other hand, NumPy library provides this facility but for only the raw types.
 This is an important opportunity and deserves attention.
 Consider designing the CS based on the np.ndarray of raw types following the DOD approach.
 A container can be defined for each type (e.g. Panel) which separates the fields using np.ndarray:

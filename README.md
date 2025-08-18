@@ -414,8 +414,8 @@ it will cause an explosion in the type tags and the boilerplate code which will 
 **The CS shall be responsible from the memory while defining a class hierarchy.**
 In that case, Python would allocate the heap memory in order to store the user defined types.
 In summary, we have three choices for the CS:
-1. use Python with the heap memory or
-2. use Cython for the CS type definitions or
+1. use Python with the heap memory,
+2. use Cython for the CS type definitions and
 3. use one of C++, rust and java.
 
 The 1st solution is not a choice due to the reasons already been discussed but I want to add one more point.

@@ -443,7 +443,7 @@ class DAG {
 ```
 
 C++ provides a powerful type traits library in order to handle type transformations statically.
-For example, the Nth type T within the typelist Ts would anyway be required by the CS:
+For example, the Nth type T within the typelist Ts that would be required by the CS:
 
 ```
 // The base template to extract the Nth type from a type list

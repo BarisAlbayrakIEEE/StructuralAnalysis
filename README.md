@@ -485,7 +485,7 @@ class DAG{
 
 However, the SAA is designed to be extensible by adding new plugins defining new types.
 Hence, for each new plugin, the CS (i.e. the DAG and maybe some others) needs to be updated manually in case of java.
-Making the client responsible from the CS is not a good design practice.
+Making the client responsible from the DAG is not a good design practice.
 
 **The discussions up to here concludes that C++ is the best choice for the CS side.**
 

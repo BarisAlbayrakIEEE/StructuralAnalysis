@@ -123,6 +123,7 @@ IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
 IUI <|-- ICS_1
 IDAG <|-- ICS_1
 IDB <|-- ICS_1
+ICSS_Data <|-- ICS_1
 
 "ICS_0<FE_Non_t>" <|-- "ICS<FE_Non_t, Non_Updatable_t>"
 "ICS_0<FE_Non_t>" <|-- "ICS<FE_Non_t, Ancestor_Updatable_t>"

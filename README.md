@@ -3091,7 +3091,7 @@ struct ICS_0<FE_Importable_Exportable_t> : public IFE_Importable_Exportable {
   virtual ~ICS_0() = default;
 };
 
-struct ICS_1 : public IUI, IDAG, IDB {};
+struct ICS_1 : public IUI, IDAG, IDB, ICS_Data {};
 
 // ---------------------------------------------
 // Updateability interface
@@ -3689,7 +3689,7 @@ I will not introduce the pseudocode for the SAs as I think the design process is
 Similarly, I will skip the SARs.
 
 #### 4.2.7. The UML Diagram <a id='sec427'></a>
-![The UML Diagram](./uml/CS.png)
+<img src="uml/CS.svg" alt="UML Diagram" width="100%">
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

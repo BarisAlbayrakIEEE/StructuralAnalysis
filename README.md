@@ -3091,6 +3091,8 @@ struct ICS_0<FE_Importable_Exportable_t> : public IFE_Importable_Exportable {
   virtual ~ICS_0() = default;
 };
 
+struct ICS_1 : public IUI, IDAG, IDB {};
+
 // ---------------------------------------------
 // Updateability interface
 
@@ -3099,16 +3101,16 @@ struct Ancestor_Updatable_t;
 struct Invariant_Updatable_t;
 
 template<typename FEType, typename UpdateableType>
-struct I_CS {};
+struct ICS {};
 
 template<typename FEType>
-struct I_CS<FEType, Non_Updatable_t> : public ICS_0<FEType> {
+struct ICS<FEType, Non_Updatable_t> : public ICS_0<FEType>, ICS_1 {
   bool reevaluate_state__DAG(DAG_t const* DAG_) const { return true; };
-  virtual ~I_CS() = default;
+  virtual ~ICS() = default;
 };
 
 template<typename FEType>
-struct I_CS<FEType, Ancestor_Updatable_t> : public ICS_0<FEType> {
+struct ICS<FEType, Ancestor_Updatable_t> : public ICS_0<FEType>, ICS_1 {
   bool reevaluate_state__DAG(DAG_t const* DAG_) const { return inspect_ancestors(DAG_); };
   bool inspect_ancestors(DAG_t const* DAG_) const {
     auto ancestors{ get_ancestors(DAG_) };
@@ -3117,11 +3119,11 @@ struct I_CS<FEType, Ancestor_Updatable_t> : public ICS_0<FEType> {
     }
     return true;
   };
-  virtual ~I_CS() = default;
+  virtual ~ICS() = default;
 };
 
 template<typename FEType>
-struct I_CS<FEType, Invariant_Updatable_t> : public ICS_0<FEType> {
+struct ICS<FEType, Invariant_Updatable_t> : public ICS_0<FEType>, ICS_1 {
   bool reevaluate_state__DAG(DAG_t const* DAG_) const {
     auto inspection{ inspect_ancestors(DAG_) };
     if (!inspection) return false;
@@ -3135,7 +3137,7 @@ struct I_CS<FEType, Invariant_Updatable_t> : public ICS_0<FEType> {
     return true;
   };
   virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
-  virtual ~I_CS() = default;
+  virtual ~ICS() = default;
 };
 
 #endif

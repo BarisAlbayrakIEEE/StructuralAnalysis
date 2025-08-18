@@ -333,7 +333,7 @@ Now the SAA is free of the **cyclic relations**.
 Hence, the core data structure of the SAA is a **directed acyclic graph (DAG)**.
 
 Consider a geometry application (e.g. Dassault's Catia).
-The application would be simulated with a directed acyclic graph (DAG).
+The application would be simulated with a DAG.
 The DAG can be very deep in case of a geometry application
 as each geometrical element (e.g. points, curves, surfaces) would be defined using other elements.
 The DAG is acyclic as a point cannot be created from a curve which has a relation with the point somewhere in the history.

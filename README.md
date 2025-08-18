@@ -3720,5 +3720,3 @@ class SC_Panel:
   def run_SA_panel_pressure(self):
     # TODO
 ```
-
-As can be seen that the 

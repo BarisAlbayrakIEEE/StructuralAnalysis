@@ -395,10 +395,10 @@ class Panel(SC):
 In summary, this approach distributes the memory management and the design to the CS and SP respectively
 by assuming that the CS can work with the raw data and would not need to know about the design (i.e. the class hierarchy).
 However, the assumption actually is not correct.
-Below list presents a couple of the reasons why the assumption fails:
+Below list presents a couple of reasons why the assumption fails:
 1. The DAG requires an interface: Ex: get_ancestors(), update_state(), inspect_invariant(), etc.
 2. Write operations would need temporary SP object creation in order to inspect the type invariants.
-3. The UI would need an interface for the FE: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
+3. The SAA needs an FE interface for each type: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
 4. The UI would need an interface for the mutability and sizeability: the state management and size()
 5. Extensibility fails for the user operations as designing new behaviours is cumbersome: Ex: get_all_materials() function would envolve too many branches.
 

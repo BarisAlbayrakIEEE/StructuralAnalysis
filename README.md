@@ -546,7 +546,7 @@ The importer reads the material, load, node and element data from the FE file (e
 and create the DAG by constructing the objects of SAA (e.g. panel and stiffener) based on this FE data.
 This process would require additional input such as a text file listing the IDs of the elements for each SC (e.g. panel_11: elements 1,2,3,4).
 With the import process:
-- the importer loads the FE data to be displayed by the FE graphics window
+- the importer loads the FE data to be displayed by the FE graphics window and
 - the importer creates a DAG involving the SAA objects (e.g. panel_11)
 
 The importer, constructs the SAA objects without the dependencies.

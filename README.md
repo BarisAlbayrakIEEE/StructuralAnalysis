@@ -3081,12 +3081,12 @@ struct ICS_0<FE_Importable_t> : public IFE_Importable {
 };
 
 template<>
-struct ICS_0<FE_Exportable_t> : public FE_Exportable_t {
+struct ICS_0<FE_Exportable_t> : public IFE_Exportable {
   virtual ~ICS_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Importable_Exportable_t> : public FE_Importable_Exportable_t {
+struct ICS_0<FE_Importable_Exportable_t> : public IFE_Importable_Exportable {
   virtual ~ICS_0() = default;
 };
 
@@ -3415,6 +3415,19 @@ Considering the above discussions, the interface for the SCs is as follows:
 
 #include "IEO.h"
 
+struct IExecutable {
+  virtual void run_analyses() = 0;
+}
+
+struct IReportable {
+  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
+}
+
+struct ILoad {
+  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
+  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
+}
+
 template<typename FEType, typename UpdateableType, typename SizeableType>
 struct ISC : public ICS<FEType, UpdateableType> {};
 
@@ -3422,23 +3435,15 @@ struct ISC : public ICS<FEType, UpdateableType> {};
 
 // Auto_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType>, IExecutable, IReportable, ILoad {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
-  virtual void run_analyses() = 0;
-  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
-  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
-  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
   virtual ~ISC() = default;
 };
 
 // Manual_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType>, IExecutable, IReportable, ILoad {
   virtual void size_for_RF() = 0;
-  virtual void run_analyses() = 0;
-  virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
-  virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
-  virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
   virtual ~ISC() = default;
 };
 

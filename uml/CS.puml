@@ -1,0 +1,152 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface IUI
+interface IDAG
+interface IFE_Non
+interface IFE_Importable
+interface IFE_Exportable
+interface IFE_Importable_Exportable
+interface IDB
+interface ICS_Data
+interface IExecutable
+interface IReportable
+interface ILoad
+interface ICS_0<FE_Non_t>
+interface ICS_0<FE_Importable_t>
+interface ICS_0<FE_Exportable_t>
+interface ICS_0<FE_Importable_Exportable_t>
+interface ICS<FE_Non_t, Non_Updatable_t>
+interface ICS<FE_Non_t, Ancestor_Updatable_t>
+interface ICS<FE_Non_t, Invariant_Updatable_t>
+interface ICS<FE_Importable_t, Non_Updatable_t>
+interface ICS<FE_Importable_t, Ancestor_Updatable_t>
+interface ICS<FE_Importable_t, Invariant_Updatable_t>
+interface ICS<FE_Exportable_t, Non_Updatable_t>
+interface ICS<FE_Exportable_t, Ancestor_Updatable_t>
+interface ICS<FE_Exportable_t, Invariant_Updatable_t>
+interface ICS<FE_Importable_Exportable_t, Non_Updatable_t>
+interface ICS<FE_Importable_Exportable_t, Ancestor_Updatable_t>
+interface ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>
+interface IEO<FE_Non_t, Non_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Non_t, Non_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Non_t, Non_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Non_t, Ancestor_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Non_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Non_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Non_t, Invariant_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Non_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Non_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Importable_t, Non_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Importable_t, Non_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Importable_t, Non_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Importable_t, Ancestor_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Importable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Importable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Importable_t, Invariant_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Importable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Importable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Exportable_t, Non_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Exportable_t, Non_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Exportable_t, Non_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Exportable_t, Ancestor_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Exportable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Exportable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Exportable_t, Invariant_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Non_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Non_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Ancestor_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Non_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Non_t, Non_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Non_t, Non_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Non_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Non_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Non_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Non_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Importable_t, Non_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Importable_t, Non_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Importable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Importable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Importable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Importable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Exportable_t, Non_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Exportable_t, Non_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Exportable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Exportable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Importable_Exportable_t, Non_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Importable_Exportable_t, Non_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Importable_Exportable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Importable_Exportable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+interface ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+interface ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+
+IFE_Non <|-- ICS_0<FE_Non_t>
+IFE_Importable <|-- ICS_0<FE_Importable_t>
+IFE_Exportable <|-- ICS_0<FE_Exportable_t>
+IFE_Importable_Exportable <|-- ICS_0<FE_Importable_Exportable_t>
+
+ICS_0<FE_Non_t> <|-- ICS<FE_Non_t, Non_Updatable_t>
+ICS_0<FE_Non_t> <|-- ICS<FE_Non_t, Ancestor_Updatable_t>
+ICS_0<FE_Non_t> <|-- ICS<FE_Non_t, Invariant_Updatable_t>
+ICS_0<FE_Importable_t> <|-- ICS<FE_Importable_t, Non_Updatable_t>
+ICS_0<FE_Importable_t> <|-- ICS<FE_Importable_t, Ancestor_Updatable_t>
+ICS_0<FE_Importable_t> <|-- ICS<FE_Importable_t, Invariant_Updatable_t>
+ICS_0<FE_Exportable_t> <|-- ICS<FE_Exportable_t, Non_Updatable_t>
+ICS_0<FE_Exportable_t> <|-- ICS<FE_Exportable_t, Ancestor_Updatable_t>
+ICS_0<FE_Exportable_t> <|-- ICS<FE_Exportable_t, Invariant_Updatable_t>
+ICS_0<FE_Importable_Exportable_t> <|-- ICS<FE_Importable_Exportable_t, Non_Updatable_t>
+ICS_0<FE_Importable_Exportable_t> <|-- ICS<FE_Importable_Exportable_t, Ancestor_Updatable_t>
+ICS_0<FE_Importable_Exportable_t> <|-- ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>
+
+ICS<FE_Non_t, Non_Updatable_t> <|-- IEO<FE_Non_t, Non_Updatable_t, Non_Sizeable_t>
+ICS<FE_Non_t, Non_Updatable_t> <|-- IEO<FE_Non_t, Non_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Non_t, Non_Updatable_t> <|-- IEO<FE_Non_t, Non_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Non_t, Ancestor_Updatable_t> <|-- IEO<FE_Non_t, Ancestor_Updatable_t, Non_Sizeable_t>
+ICS<FE_Non_t, Ancestor_Updatable_t> <|-- IEO<FE_Non_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Non_t, Ancestor_Updatable_t> <|-- IEO<FE_Non_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Non_t, Invariant_Updatable_t> <|-- IEO<FE_Non_t, Invariant_Updatable_t, Non_Sizeable_t>
+ICS<FE_Non_t, Invariant_Updatable_t> <|-- IEO<FE_Non_t, Invariant_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Non_t, Invariant_Updatable_t> <|-- IEO<FE_Non_t, Invariant_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Importable_t, Non_Updatable_t> <|-- IEO<FE_Importable_t, Non_Updatable_t, Non_Sizeable_t>
+ICS<FE_Importable_t, Non_Updatable_t> <|-- IEO<FE_Importable_t, Non_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Importable_t, Non_Updatable_t> <|-- IEO<FE_Importable_t, Non_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Importable_t, Ancestor_Updatable_t> <|-- IEO<FE_Importable_t, Ancestor_Updatable_t, Non_Sizeable_t>
+ICS<FE_Importable_t, Ancestor_Updatable_t> <|-- IEO<FE_Importable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Importable_t, Ancestor_Updatable_t> <|-- IEO<FE_Importable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Importable_t, Invariant_Updatable_t> <|-- IEO<FE_Importable_t, Invariant_Updatable_t, Non_Sizeable_t>
+ICS<FE_Importable_t, Invariant_Updatable_t> <|-- IEO<FE_Importable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Importable_t, Invariant_Updatable_t> <|-- IEO<FE_Importable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Exportable_t, Non_Updatable_t> <|-- IEO<FE_Exportable_t, Non_Updatable_t, Non_Sizeable_t>
+ICS<FE_Exportable_t, Non_Updatable_t> <|-- IEO<FE_Exportable_t, Non_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Exportable_t, Non_Updatable_t> <|-- IEO<FE_Exportable_t, Non_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Exportable_t, Ancestor_Updatable_t> <|-- IEO<FE_Exportable_t, Ancestor_Updatable_t, Non_Sizeable_t>
+ICS<FE_Exportable_t, Ancestor_Updatable_t> <|-- IEO<FE_Exportable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Exportable_t, Ancestor_Updatable_t> <|-- IEO<FE_Exportable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Exportable_t, Invariant_Updatable_t> <|-- IEO<FE_Exportable_t, Invariant_Updatable_t, Non_Sizeable_t>
+ICS<FE_Exportable_t, Invariant_Updatable_t> <|-- IEO<FE_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Exportable_t, Invariant_Updatable_t> <|-- IEO<FE_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Non_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Non_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Non_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Non_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Non_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Ancestor_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Ancestor_Updatable_t, Non_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Ancestor_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Ancestor_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Ancestor_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Ancestor_Updatable_t, Manual_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Invariant_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Non_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Invariant_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>
+ICS<FE_Importable_Exportable_t, Invariant_Updatable_t> <|-- IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>
+
+class MyClass {
+    +int id
+    +std::string name
+}
+
+@enduml

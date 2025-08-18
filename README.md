@@ -3277,6 +3277,16 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       {"_SC_side_stiffener_1", _SC_side_stiffener_1._index},
       {"_SC_side_stiffener_2", _SC_side_stiffener_2._index}
     };
+  
+  // IDB interface function: load_from_DB
+  void load_from_DB(const DB&) {
+    // TODO
+  };
+  
+  // IDB interface function: save_to_DB
+  void save_to_DB(const DB&) const {
+    // TODO
+  };
 
   // IDAG interface function: get_ancestors
   std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
@@ -3289,16 +3299,6 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       _SC_panel.get_object(DAG_),
       _SC_side_stiffener_1.get_object(DAG_),
       _SC_side_stiffener_2.get_object(DAG_) };
-  };
-  
-  // IDB interface function: load_from_DB
-  virtual void load_from_DB(const DB&) {
-    // TODO
-  };
-  
-  // IDB interface function: save_to_DB
-  virtual void save_to_DB(const DB&) const {
-    // TODO
   };
   
   // FE interface function for FE_Importable_Exportable_t: import_FE
@@ -3524,6 +3524,16 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       {"_SA_panel_buckling", _SA_panel_buckling._index}
     };
   }
+  
+  // IDB interface function: load_from_DB
+  void load_from_DB(const DB&) {
+    // TODO
+  };
+  
+  // IDB interface function: save_to_DB
+  void save_to_DB(const DB&) const {
+    // TODO
+  };
 
   // IDAG interface function: get_ancestors
   std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
@@ -3611,6 +3621,16 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 #endif
 ```
+
+As mentioned before for EO_Panel, the following interface functions would be moved to the CS
+by defining the members with CS_Data wrapper:
+- Has_Member_Types concept,
+- Json_Compatible concept,
+- CBindable concept,
+- IUI interface function: get_from_json,
+- IUI interface function: set_to_json,
+- IDB interface function: load_from_DB,
+- IDB interface function: save_to_DB.
 
 **The SAs**\
 The SAs define the structural analyses.

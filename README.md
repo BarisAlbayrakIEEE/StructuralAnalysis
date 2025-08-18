@@ -344,7 +344,7 @@ Catia also allows removing an element without removing the decendants which requ
 Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
-- The depth of the DAG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> buckling RF.
+- The depth of the DAG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> RF.
 - No need to have background processes for the cycled or deleted nodes.
 
 **The above two points show that the DAG shall be single-threaded.**

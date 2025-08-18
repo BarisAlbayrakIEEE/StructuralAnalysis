@@ -1252,7 +1252,7 @@ std::unordered_map<std::string, (*)(std::size_t, const json&)> setters;
 
 // register creator, getter and setter for each type statically
 template <typename T>
-  requires (Has_Type_Name<T> && Json_Compatible<T>)
+  requires (Has_type_name<T> && Json_Compatible<T>)
 void register_CS_type() {
   creators[T::_type_name] = create<T>;
   getters[T::_type_name] = get<T>;
@@ -1546,7 +1546,7 @@ struct EO_Panel : public IUI, IDAG {
   DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
   DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
-  // Notice that EO_Panel satisfies Has_Type_Name!!!
+  // Notice that EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
@@ -1889,7 +1889,7 @@ struct EO_Panel : public IUI, IDAG {
   DAG_Node<SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
   DAG_Node<SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
-  // Notice that EO_Panel satisfies Has_Type_Name!!!
+  // Notice that EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Json_Constructible!!!
@@ -2380,7 +2380,7 @@ void execute(std::size_t type_container_index, const std::string& function_name)
 
 // register creator, getter, setter and executor for each type statically
 template <typename T>
-  requires (Has_Type_Name<T> && Json_Compatible<T>)
+  requires (Has_type_name<T> && Json_Compatible<T>)
 void register_CS_type() {
   creators[T::_type_name] = create<T>;
   getters[T::_type_name] = get<T>;
@@ -2732,10 +2732,10 @@ At this point, I want to discuss about the raw data types used by the CS.
 The MySQL DB, the UI and the SP interfaces involve the transfer of the raw data.
 Currently, its impossible to automize these interactions due to the data types of the members.
 Hence, these issues are wrapped by the interfaces and concepts to be implemented in the final types (e.g. EO_Panel).
-However, if we define a uniform intterface for the raw data, the definition of the final derived classes would be way more clear
+However, if we define a uniform interface for the raw data, the definition of the final derived classes would be way more clear
 and the load on the clients will be quite less.
 
-The operations on the fundamental data includes the name, the type and the value.
+The operations on the fundamental data involves the interactions with the UI, MySQL DB and SP.
 Hence, the following interface would satisfy these three requirements:
 
 ```
@@ -2743,46 +2743,6 @@ Hence, the following interface would satisfy these three requirements:
 
 #ifndef _CS_Data_h
 #define _CS_Data_h
-
-using _a_CS_data_var_0D = std::variant<
-  bool,
-  char,
-  unsigned char,
-  int,
-  unsigned int,
-  long,
-  unsigned long,
-  long long,
-  unsigned long long,
-  double,
-  long double,
-  std::string>;
-using _a_CS_data_var_1D = std::variant<
-  std::vector<bool>,
-  std::vector<char>,
-  std::vector<unsigned char>,
-  std::vector<int>,
-  std::vector<unsigned int>,
-  std::vector<long>,
-  std::vector<unsigned long>,
-  std::vector<long long>,
-  std::vector<unsigned long long>,
-  std::vector<double>,
-  std::vector<long double>,
-  std::vector<std::string>>;
-using _a_CS_data_var_2D = std::variant<
-  std::vector<std::vector<bool>>,
-  std::vector<std::vector<char>>,
-  std::vector<std::vector<unsigned char>>,
-  std::vector<std::vector<int>>,
-  std::vector<std::vector<unsigned int>>,
-  std::vector<std::vector<long>>,
-  std::vector<std::vector<unsigned long>>,
-  std::vector<std::vector<long long>>,
-  std::vector<std::vector<unsigned long long>>,
-  std::vector<std::vector<double>>,
-  std::vector<std::vector<long double>>,
-  std::vector<std::vector<std::string>>>;
 
 const std::string CS_string_separator = "$"
 const std::string CS_string_0D_array  = "0D"
@@ -2829,194 +2789,109 @@ const std::string CS_string_2d_str    = CS_string_2D_array + CS_string_separator
 
 // The use of the fundamental types are limited by the integral types (signed and unsigned) and string!!! See the list below
 template<typename T>
-struct Type_Name_Fundamental {
+struct type_name_fundamental {
   static constexpr std::string value = [] {
     using U = std::remove_cv_t<std::remove_reference_t<T>>;
 
-    if constexpr (std::is_same_v<U, bool>)                                              return CS_string_bool;
-    else if constexpr (std::is_same_v<U, char>)                                         return CS_string_char;
-    else if constexpr (std::is_same_v<U, unsigned char>)                                return CS_string_uchar;
-    else if constexpr (std::is_same_v<U, int>)                                          return CS_string_int;
-    else if constexpr (std::is_same_v<U, unsigned int>)                                 return CS_string_uint;
-    else if constexpr (std::is_same_v<U, long>)                                         return CS_string_long;
-    else if constexpr (std::is_same_v<U, unsigned long>)                                return CS_string_ulong;
-    else if constexpr (std::is_same_v<U, long long>)                                    return CS_string_ll;
-    else if constexpr (std::is_same_v<U, unsigned long long>)                           return CS_string_ull;
-    else if constexpr (std::is_same_v<U, double>)                                       return CS_string_double;
-    else if constexpr (std::is_same_v<U, long double>)                                  return CS_string_ld;
-    else if constexpr (std::is_same_v<U, std::string>)                                  return CS_string_str;
-    else                                                                                static_assert("Wrong data type for the core system (CS).");
+    if constexpr (std::is_same_v<U, bool>)                    return CS_string_bool;
+    else if constexpr (std::is_same_v<U, char>)               return CS_string_char;
+    else if constexpr (std::is_same_v<U, unsigned char>)      return CS_string_uchar;
+    else if constexpr (std::is_same_v<U, int>)                return CS_string_int;
+    else if constexpr (std::is_same_v<U, unsigned int>)       return CS_string_uint;
+    else if constexpr (std::is_same_v<U, long>)               return CS_string_long;
+    else if constexpr (std::is_same_v<U, unsigned long>)      return CS_string_ulong;
+    else if constexpr (std::is_same_v<U, long long>)          return CS_string_ll;
+    else if constexpr (std::is_same_v<U, unsigned long long>) return CS_string_ull;
+    else if constexpr (std::is_same_v<U, double>)             return CS_string_double;
+    else if constexpr (std::is_same_v<U, long double>)        return CS_string_ld;
+    else if constexpr (std::is_same_v<U, std::string>)        return CS_string_str;
+    else                                                      static_assert("Wrong data type for the core system (CS).");
   }();
 };
 
 template<typename T>
-struct Type_Name {
-  static constexpr std::string value = Type_Name_Fundamental<T>::value;
+struct type_name {
+  static constexpr std::string value = type_name_fundamental<T>::value;
 };
-
 template<typename T>
-struct Type_Name<std::vector<T>> {
-  static constexpr std::string value = CS_string_1D_array + CS_string_separator + Type_Name_Fundamental<T>::value;
+struct type_name<std::vector<T>> {
+  static constexpr std::string value = CS_string_1D_array + CS_string_separator + type_name_fundamental<T>::value;
 };
-
 template<typename T>
-struct Type_Name<std::vector<std::vector<T>>> {
-  static constexpr std::string value = CS_string_2D_array + CS_string_separator + Type_Name_Fundamental<T>::value;
+struct type_name<std::vector<std::vector<T>>> {
+  static constexpr std::string value = CS_string_2D_array + CS_string_separator + type_name_fundamental<T>::value;
 };
-
 template<typename T>
-struct Type_Name<DAG_Node<T>> {
+struct type_name<DAG_Node<T>> {
   static constexpr std::string value = CS_string_DAG_node + CS_string_separator + T::_type_name;
 };
+template<typename T>
+static constexpr std::string type_name_v = type_name<T>::value;
 
 struct ICS_Data{
-  virtual std::string get_type_name() const = 0;
-  virtual _a_CS_data_var_0D get_val_0D() const = 0;
-  virtual _a_CS_data_var_1D get_val_1D() const = 0;
-  virtual _a_CS_data_var_2D get_val_2D() const = 0;
-  virtual void set_val(std::string) = 0;
   virtual ~ICS_Data() = default;
+  
+  virtual std::string get_type_name() const = 0;
+  // TODO: Define the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+
 };
-
-
-template<typename T> type_code_for_fundamental_type{};
-template<> type_code_for_fundamental_type<bool>               { static constexpr std::size_t value = 1; };
-template<> type_code_for_fundamental_type<char>               { static constexpr std::size_t value = 2; };
-template<> type_code_for_fundamental_type<unsigned char>      { static constexpr std::size_t value = 3; };
-template<> type_code_for_fundamental_type<int>                { static constexpr std::size_t value = 4; };
-template<> type_code_for_fundamental_type<unsigned int>       { static constexpr std::size_t value = 5; };
-template<> type_code_for_fundamental_type<long>               { static constexpr std::size_t value = 6; };
-template<> type_code_for_fundamental_type<unsigned long>      { static constexpr std::size_t value = 7; };
-template<> type_code_for_fundamental_type<long long>          { static constexpr std::size_t value = 8; };
-template<> type_code_for_fundamental_type<unsigned long long> { static constexpr std::size_t value = 9; };
-template<> type_code_for_fundamental_type<double>             { static constexpr std::size_t value = 10; };
-template<> type_code_for_fundamental_type<long double>        { static constexpr std::size_t value = 11; };
-template<> type_code_for_fundamental_type<std::string>        { static constexpr std::size_t value = 12; };
-template<typename T>
-type_code_for_fundamental_type<std::vector<T>>{
-  static constexpr std::size_t value = type_code_for_fundamental_type<T>::value + 12;
-};
-template<typename T>
-type_code_for_fundamental_type<std::vector<std::vector<T>>>{
-  static constexpr std::size_t value = type_code_for_fundamental_type<T>::value + 24;
-};
-
-template<typename T>
-static std::size_t type_code_for_fundamental_type_v = type_code_for_fundamental_type<T>::value;
-
-
-// The data type for all CS types:
-// Base template: the fundamental types (e.g. double)
-template<typename T>
-struct CS_Data : public ICS_Data {
-  static constexpr std::string _type_name = Type_Name<T>::value;
-  static constexpr std::size_t _type_code = type_list_size_v<CS_Types_t> + type_code_for_fundamental_type_v<T>;
-
-  T _val{};
-
-  CS_Data() = default;
-  explicit CS_Data(T val) : _val(val) {};
-
-  void set_val(T val) { _val = val; };
-  template<typename Function>
-  void apply(Function F) {
-    F(_val);
-  };
-};
-
-// The data type for all CS types:
-// Template specialization: DAG_Node<T>
-template<typename T>
-struct CS_Data<DAG_Node<T>> : public ICS_Data {
-  static constexpr std::string _type_name = T::_type_name;
-  static constexpr std::size_t _type_code = index_of_v<T, CS_Types_t>;
-
-  T _val{};
-
-  CS_Data() = default;
-  explicit CS_Data(std::size_t index) : _val(DAG_Node<T>(index)) {};
-
-  void set_val(std::size_t index) { _val._index = index; };
-  template<typename Function>
-  void apply(Function F) {
-    F(_val);
-  };
-};
-
-
-
-
-
-
-
 
 // The data type for all CS types:
 // Base template for the fundamental types (e.g. double)
 template<typename T>
 struct CS_Data : public ICS_Data {
-  static constexpr std::string _type_name = Type_Name<T>::value;
+  static constexpr std::string _type_name = type_name_v<T>;
   T _val{};
 
   CS_Data() = default;
   explicit CS_Data(T val) : _val(val) {};
-
   std::string get_type_name() const { return _type_name; };
-  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(_val); };
-  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(0); };
-  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(0); };
-  void set_val(T val) { _val = val; };
-  void set_val(const _a_CS_data_var_0D& val) { _val = std::get<T>(val); };
+  
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+
 };
 
 // The data type for all CS types:
 // Template specialization for std::vector<T> where T is a fundamental type (e.g. double)
 template<typename T>
 struct CS_Data<std::vector<T>> : public ICS_Data {
-  static constexpr std::string _type_name = Type_Name<std::vector<T>>::value;
   std::vector<T> _val{};
 
   CS_Data() = default;
   explicit CS_Data(const std::vector<T>& val) : _val(val) {};
 
-  std::string get_type_name() const { return _type_name; };
-  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(0); };
-  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(_val); };
-  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(0); };
-  void set_val(const std::vector<T>& val) { _val = val; };
+  std::string get_type_name() const { return type_name_v<std::vector<T>>; };
+  
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
+
 };
 
 // The data type for all CS types:
 // Template specialization for std::vector<std::vector<T>> where T is a fundamental type (e.g. double)
 template<typename T>
 struct CS_Data<std::vector<std::vector<T>>> : public ICS_Data {
-  static constexpr std::string _type_name = Type_Name<std::vector<std::vector<T>>>::value;
   DAG_Node<T> _val{};
 
   CS_Data() = default;
   explicit CS_Data(DAG_Node<T> val) : _val(val) {};
+  std::string get_type_name() const { return type_name_v<std::vector<std::vector<T>>>; };
+  
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
 
-  std::string get_type_name() const { return _type_name; };
-  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(0); };
-  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(0); };
-  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(_val); };
-  void set_val(std::size_t index) { _val._index = index; };
 };
 
 // The data type for all CS types:
 // Template specialization for DAG_Node<T>
 template<typename T>
 struct CS_Data<DAG_Node<T>> : public ICS_Data {
-  static constexpr std::string _type_name = Type_Name<T>::value;
   DAG_Node<T> _val{};
 
   CS_Data() = default;
   explicit CS_Data(std::size_t index) : _val(DAG_Node<T>(index)) {};
+  std::string get_type_name() const { return type_name_v<T>; };
+  
+  // TODO: Implement the interface for the UI, MySQL DB and SP interactions (e.g. set_to_json).
 
-  std::string get_type_name() const { return _type_name; };
-  _a_CS_data_var_0D get_val_0D() const { return _a_CS_data_var_0D(_val._index); };
-  _a_CS_data_var_1D get_val_1D() const { return _a_CS_data_var_1D(0); };
-  _a_CS_data_var_2D get_val_2D() const { return _a_CS_data_var_2D(0); };
-  void set_val(std::size_t index) { _val._index = index; };
 };
 
 using CS_DT_0D_bool   = CS_Data<bool>;
@@ -3090,7 +2965,12 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
   CS_DT_DN<EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
   CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
 
-  std::vector<ICS_Data*> _member_ptrs{}; // to be filed in the constructor. An interface function (e.g. set_member_ptrs) would ensure the safety.
+  // Pointers to the above memebrs.
+  // To be initialized having finished the CS object construction.
+  // An interface function (e.g. set_member_ptrs) would ensure the safety:
+  //   add set_member_ptrs into the ICS interface
+  //   CS factories call set_member_ptrs after constructing the object.
+  std::vector<ICS_Data*> _member_ptrs{};
 
   ...
 
@@ -3099,13 +2979,20 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
 ...
 ```
 
-The ICS_Data interface together with _member_names and _member_ptrs fields allow the CS to perform the UI, MySQL DB and SP interactions.
-The final derived CS types would not need to define/satisfy the ffollowing interface:
+The ICS_Data interface together with _member_names and _member_ptrs fields
+allow the CS to perform the UI, MySQL DB and SP interactions.
+Within the CS, any interaction with the UI, MySQL DB and SP related with a CS object would implement the following flow:
+1. get the pointers to the members of the CS object as pointers to ICS_Data base class object and
+2. for each member, aplly the corresponding ICS_Data interface function (e.g. set_to_json).
+
+The final derived CS types would not need to define/satisfy the following interface:
 - Has_Member_Types concept,
 - Json_Compatible concept,
 - CBindable concept,
 - IUI interface function: get_from_json,
-- IUI interface function: set_to_json.
+- IUI interface function: set_to_json,
+- IDB interface function: load_from_DB,
+- IDB interface function: save_to_DB.
 
 CS_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
 For example, for a panel, the thickness is sizeable while the widths are not.
@@ -3235,7 +3122,7 @@ struct I_CS<FEType, Invariant_Updatable_t> : public ICS_0<FEType> {
 
 Now, we have a templated interface for all CS types.
 Additionally, the CS types shall satisfy the following concepts in order to deal the UI, DB and SP interactions:
-- Has_Type_Name<T>
+- Has_type_name<T>
 - Json_Compatible<T>
 - Has_Member_Names<T>
 - Has_Member_Types<T>
@@ -3308,7 +3195,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   DAG_Node<SC_Stiffener> _SC_side_stiffener_1;
   DAG_Node<SC_Stiffener> _SC_side_stiffener_2;
 
-  // Notice that EO_Panel satisfies Has_Type_Name concept.
+  // Notice that EO_Panel satisfies Has_type_name concept.
   static inline std::string _type_name = "EO_Panel";
 
   // Notice that EO_Panel satisfies Has_Member_Names concept.
@@ -3404,6 +3291,16 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       _SC_side_stiffener_2.get_object(DAG_) };
   };
   
+  // IDB interface function: load_from_DB
+  virtual void load_from_DB(const DB&) {
+    // TODO
+  };
+  
+  // IDB interface function: save_to_DB
+  virtual void save_to_DB(const DB&) const {
+    // TODO
+  };
+  
   // FE interface function for FE_Importable_Exportable_t: import_FE
   virtual void import_FE(const std::string& FE_file_path) {
     // TODO
@@ -3423,12 +3320,15 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 #endif
 ```
 
-As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS by using CS_Data:
+As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS
+by defining the members with CS_Data wrapper:
 - Has_Member_Types concept,
 - Json_Compatible concept,
 - CBindable concept,
 - IUI interface function: get_from_json,
-- IUI interface function: set_to_json.
+- IUI interface function: set_to_json,
+- IDB interface function: load_from_DB,
+- IDB interface function: save_to_DB.
 
 **The SCs**\
 An SC is a combination of the EOs in order to perform the SAs.
@@ -3548,7 +3448,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   DAG_Node<SA_Panel_Buckling> _SA_panel_pressure;
   DAG_Node<SA_Panel_Pressure> _SA_panel_buckling;
 
-  // Notice that SC_Panel satisfies Has_Type_Name concept.
+  // Notice that SC_Panel satisfies Has_type_name concept.
   static inline std::string _type_name = "SC_Panel";
 
   // Notice that SC_Panel satisfies Has_Member_Names concept.

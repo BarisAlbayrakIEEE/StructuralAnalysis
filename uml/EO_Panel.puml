@@ -47,6 +47,6 @@ class EO_Panel {
 "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_Mat1
 "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>" <|-- EO_Panel
 
-EO_Panel -- EO_Mat1
+EO_Panel o-- EO_Mat1
 
 @enduml

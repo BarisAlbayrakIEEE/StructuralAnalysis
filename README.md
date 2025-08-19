@@ -2033,8 +2033,6 @@ struct IDAG {
 #endif
 ```
 
-EO_Panel shall implemented new interface functions but I will skip it.
-
 **MySQL DB**\
 The DAG has another interface which is the MySQL DB.
 Consider an ordinary user checks out a sub-DAG from the MySQL DB, works on it and saves it into the MySQL DB.

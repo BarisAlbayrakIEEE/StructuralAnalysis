@@ -29,6 +29,7 @@
     - [4.2.5. The MySQL DB Interface](#sec425)
     - [4.2.6. The CS Class Hierarchy](#sec426)
     - [4.2.7. The UML Diagram](#sec427)
+  - [4.3. The Solver Pack (SP)](#sec43)
 
 **Nomenclature**
 - **SC:** Structural Component

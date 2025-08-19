@@ -2095,7 +2095,7 @@ I will not redefine the DAG for all of these states as its straight forward.
 
 **State Management**\
 The DAG is responsible from the management of the state of the data (i.e. enum_DAG_node_states).
-Previously, I defined IDAG interface for this purpose which requires reevaluate_state__DAG, inspect_invariant and inspect_ancestors function definitions.
+Previously, I defined IDAG interface for this purpose which requires: `reevaluate_state__DAG`, `inspect_invariant` and `inspect_ancestors`.
 However, not all the types of the SAA follows this path for the state inspection.
 Some may not have any ancestors (e.g. standard items like material), some may even not hold any invariant.
 Hence, we have 3 base types considering the updateability of the SAA types:

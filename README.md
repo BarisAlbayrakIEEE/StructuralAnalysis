@@ -935,7 +935,7 @@ The current one, calculate_properties, would calculate some properties such as:
 **Below, I will present the pseudocode of the backend/frontend interface at the CS side based on the three fundamental functions: create, get and set.**
 Other functions such as remove can easily be defined similarly.
 
-Firstly, I will start with the type traits metafunctions to support static type definitions.
+Firstly, I will start with the a couple of simple type traits metafunctions to support the static type definitions.
 The type traits involve the following functionality:
 1. **This is the most important part of the CS: Defining the type list (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
@@ -3697,7 +3697,12 @@ I will not introduce the pseudocode for the SAs as I think the design process is
 Similarly, I will skip the SARs.
 
 #### 4.2.7. The UML Diagram <a id='sec427'></a>
+
+The UML diagram is not readable as the templated interfaces extends in the same level in the architecture.
 <img src="uml/CS.svg" alt="UML Diagram" width="100%">
+
+Instead, I will present three sample hierarchies:
+![UCD-01: Master User FE Import](./uml/EO_Panel.png)
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

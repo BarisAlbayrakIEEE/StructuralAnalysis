@@ -1,0 +1,49 @@
+@startuml
+hide empty members
+skinparam classAttributeIconSize 0
+
+interface IUI
+interface IDAG
+interface IDB
+interface ICS_Data
+
+interface "ICS_0<FE_Importable_Exportable_t>"
+interface ICS_1
+
+interface "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
+interface "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
+
+interface "IEO<IFE_Importable_Exportable, Non_Updatable_t, Non_Sizeable_t>"
+interface "IEO<IFE_Importable_Exportable, Invariant_Updatable_t, Auto_Sizeable_t>"
+
+IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
+
+IUI <|-- ICS_1
+IDAG <|-- ICS_1
+IDB <|-- ICS_1
+ICS_Data <|-- ICS_1
+
+"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
+"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
+
+ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
+ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
+
+"ICS<FE_Importable_Exportable_t, Non_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
+"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
+
+class EO_Mat1 {
+    +std::string _DB_descriptor
+}
+
+class EO_Panel {
+    +double _thickness
+    +double _width_a
+    +double _width_b
+    +CS_DT_DN<EO_Mat1>" _EO_mat1
+}
+
+"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_Mat1
+"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>" <|-- EO_Panel
+
+@enduml

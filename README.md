@@ -3701,8 +3701,8 @@ Similarly, I will skip the SARs.
 The UML diagram is not readable as the templated interfaces extend in the same level in the architecture.
 <img src="uml/CS.svg" alt="UML Diagram" width="100%">
 
-I will present a sample UML diagram for SC_Panel which is more readable and traceable:
-![UCD-01: Master User FE Import](./uml/SC_Panel.png)
+I will present a sample UML diagram for the DAG which is more readable and traceable:
+![DAG Sample UML](./uml/DAG.png)
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

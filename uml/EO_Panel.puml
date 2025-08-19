@@ -6,6 +6,7 @@ interface IUI
 interface IDAG
 interface IDB
 interface ICS_Data
+interface IFE_Importable_Exportable
 
 interface "ICS_0<FE_Importable_Exportable_t>"
 interface ICS_1
@@ -13,8 +14,8 @@ interface ICS_1
 interface "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
 interface "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
 
-interface "IEO<IFE_Importable_Exportable, Non_Updatable_t, Non_Sizeable_t>"
-interface "IEO<IFE_Importable_Exportable, Invariant_Updatable_t, Auto_Sizeable_t>"
+interface "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
+interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
 
 IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
 

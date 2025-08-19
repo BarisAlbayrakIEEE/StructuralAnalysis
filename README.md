@@ -2179,7 +2179,7 @@ The CS/SP interface requires the communication between C++ and python in both di
 I will use pybind11 for this interface as it allows flexible and efficient access from both sides.
 
 The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DAG.
-However, the SP should not need to access the DAG for the security puposes.
+However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types: Ex: EO_Material, EO_Panel and SA_Panel_Buckling.
 - The CS defines the python binding (i.e. pybind11) types: Ex: Bind_Material, Bind_Panel and Bind_Panel_Buckling.

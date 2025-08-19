@@ -1215,8 +1215,7 @@ For example, the remove operations can be delayed till a save.
 This approach can still apply the SAP.
 **All of these solutions must be benchmarked in order to fix the remove process.**
 
-The next pseudocode represents the CS.
-As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
+The next pseudocode represents the CS with create, get and set.
 
 ```
 // ~/src/system/CS.h
@@ -1302,8 +1301,7 @@ void register_CS_types() {
 #endif
 ```
 
-The next pseudocode represents the main involving the Crow routines.
-As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
+The next pseudocode represents the main involving the Crow routines with create, get and set.
 
 ```
 // ~/src/main.cpp
@@ -1367,8 +1365,7 @@ int main() {
 };
 ```
 
-The final pseudocode represents a sample SAA type: EO_Panel.
-As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
+The final pseudocode represents a sample SAA type, EO_Panel, with create, get and set.
 
 ```
 // ~/src/plugins/core/panel/EO_Panel.h

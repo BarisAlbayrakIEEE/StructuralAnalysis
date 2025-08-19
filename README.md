@@ -3698,10 +3698,10 @@ Similarly, I will skip the SARs.
 
 #### 4.2.7. The UML Diagram <a id='sec427'></a>
 
-The UML diagram is not readable as the templated interfaces extends in the same level in the architecture.
+The UML diagram is not readable as the templated interfaces extend in the same level in the architecture.
 <img src="uml/CS.svg" alt="UML Diagram" width="100%">
 
-I will present an sample hierarchy for SC_Panel which is more readable and traceable:
+I will present a sample UML diagram for SC_Panel which is more readable and traceable:
 ![UCD-01: Master User FE Import](./uml/SC_Panel.png)
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>

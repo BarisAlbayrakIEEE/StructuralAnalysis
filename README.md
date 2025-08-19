@@ -2190,7 +2190,7 @@ Some EOs would have behaviours which is strongly related with the processes exec
 For example, the cross-sectional properties of a stiffener is needed frequently during the SAs of the stiffeners.
 Hence, the SP would need the Py_Stiffener wrapper.
 
-The pprocess flow for this strategy is as follows:
+The process flow for this strategy is as follows:
 1. The user requests an analysis on an SC with type and index,
 2. The CS asks to the DAG to create a temporary Bind SC object corresponding to the type and index,
 3. The CS exposes the Bind object to python and requests an SP analysis,
@@ -2199,7 +2199,7 @@ The pprocess flow for this strategy is as follows:
 6. The CS reads the results and updates CS SAR object stored by the DAG or MySQL DB,
 7. The CS releases all temporary shared objects.
 
-The flow involves the the construction of Bind objects and executing python functions.
+The flow involves the construction of Bind objects and executing python functions.
 The 1st part is type dependent which requires type transformations if the solution is intended to contain interfaces.
 A better solution is assigning an **executor process** at the CS level (like create, get and set defined before).
 The **executor** involves the whole flow above.
@@ -2458,9 +2458,9 @@ In terms of the FE interface, we can mainly define 4 types:
 
 The FE importability is required for all types existing in an online DAG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
-Hence The three types would represent the following cases:
+Hence:
 1. IFE_Non: Cannot involve in an FE import/export process.
-2. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot involved in an FEA.
+2. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot be involved in an FEA.
 3. IFE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
 4. IFE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
@@ -2733,7 +2733,7 @@ However, I will not go through the details here.
 
 A parameterized DB core requires an interface at the CS side.
 The fields like member names and member types would also support automization of the UI interface.
-Following defines a short and clean interface which would most probably improved while designing the DB in moore detail.
+Following defines a short and clean interface which would most probably be improved while designing the DB in more detail.
 
 ```
 // ~/src/system/IDB.h
@@ -2752,12 +2752,14 @@ struct IDB {
 
 **CAUTION**\
 At this point, I want to discuss about the raw data types used by the CS.
-**All types would hold only the raw data types (e.g. int, double) and DAG_Nodes as the object relations are covered by the DAG.**
+**All CS types (e.g. EO_Panel) would hold only the raw data types (e.g. int, double) and DAG_Nodes as the object relations are covered by the DAG.**
 The MySQL DB, the UI and the SP interfaces involve the transfer of the raw data.
 Currently, its impossible to automize these interactions due to the data types of the members.
-Hence, these issues are wrapped by the interfaces and concepts to be implemented in the final types (e.g. EO_Panel).
-However, if we define a uniform interface for the raw data, the definition of the final derived classes would be way more clear
-and the load on the clients will be quite less.
+Hence, these issues have been declared by the interfaces and concepts before.
+However, if we define a uniform interface for the raw data:
+- the interface functions can be moved to the CS core,
+- the definition of the final derived classes would be way more clear and
+- the load on the clients will be quite less.
 
 The operations on the fundamental data involves the interactions with the UI, MySQL DB and SP.
 Hence, the following interface would satisfy these three requirements:

@@ -3364,13 +3364,13 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS
 by defining the members with CS_Data wrapper:
-- Has_Member_Types concept (as is replaced by get_member_names function of ICS interface),
-- Json_Compatible concept (as covered by ICS_Data interface),
-- CBindable concept (as covered by ICS_Data interface),
-- IUI interface function: get_from_json (as covered by ICS_Data interface),
-- IUI interface function: set_to_json (as covered by ICS_Data interface),
-- IDB interface function: load_from_DB (as covered by ICS_Data interface),
-- IDB interface function: save_to_DB (as covered by ICS_Data interface),
+- `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
+- Json_Compatible concept (as covered by `ICS_Data` interface),
+- CBindable concept (as covered by `ICS_Data` interface),
+- IUI interface function: `get_from_json` (as covered by `ICS_Data` interface),
+- IUI interface function: `set_to_json` (as covered by `ICS_Data` interface),
+- IDB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
+- IDB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
 - etc.
 
 **The SCs**\
@@ -3677,13 +3677,13 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
 As mentioned before for EO_Panel, the following interface functions would be moved to the CS
 by defining the members with CS_Data wrapper:
-- Has_Member_Types concept (as is replaced by get_member_names function of ICS interface),
-- Json_Compatible concept (as covered by ICS_Data interface),
-- CBindable concept (as covered by ICS_Data interface),
-- IUI interface function: get_from_json (as covered by ICS_Data interface),
-- IUI interface function: set_to_json (as covered by ICS_Data interface),
-- IDB interface function: load_from_DB (as covered by ICS_Data interface),
-- IDB interface function: save_to_DB (as covered by ICS_Data interface),
+- `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
+- Json_Compatible concept (as covered by `ICS_Data` interface),
+- CBindable concept (as covered by `ICS_Data` interface),
+- IUI interface function: `get_from_json` (as covered by `ICS_Data` interface),
+- IUI interface function: `set_to_json` (as covered by `ICS_Data` interface),
+- IDB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
+- IDB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
 - etc.
 
 **The SAs**\

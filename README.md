@@ -1198,6 +1198,23 @@ public:
 #endif
 ```
 
+The VectorTree shall be examined in detail.
+[VectorTree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) has two important concepts:
+- the structural sharing provided by a tree data structure and
+- the swap-and-pop (SAP) idiom to improve the remove operation.
+
+The SAP idiom has a side effect: the last element is moved to the remove position.
+In DOD terms, the index of the last element is changed.
+The DAG can perform the some operations in order to update the object relations easily.
+[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) defines and describes these operations in detail.
+However, in case of the SAA, the CS shall also inform and update the UI as it contains a mapping of the DAG nodes.
+This would add loading on the UI such that every remove action should be followed by an update in the UI mapping.
+
+There is another approach for the remove operation: set the state of the DAG node as **deleted** and delay the remove operation.
+For example, the remove operations can be delayed till a save.
+This approach can still apply the SAP.
+**All of these solutions must be benchmarked in order to fix the remove process.**
+
 The next pseudocode represents the CS.
 As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
 

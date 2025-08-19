@@ -3701,8 +3701,8 @@ Similarly, I will skip the SARs.
 The UML diagram is not readable as the templated interfaces extends in the same level in the architecture.
 <img src="uml/CS.svg" alt="UML Diagram" width="100%">
 
-Instead, I will present three sample hierarchies:
-![UCD-01: Master User FE Import](./uml/EO_Panel.png)
+I will present an sample hierarchy for SC_Panel which is more readable and traceable:
+![UCD-01: Master User FE Import](./uml/SC_Panel.png)
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

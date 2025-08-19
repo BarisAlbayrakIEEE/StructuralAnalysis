@@ -2974,7 +2974,7 @@ using CS_DT_DN = CS_Data<DAG_Node<T>>;
 #endif
 ```
 
-The CS types shall define the members with CS_Data.
+The CS types shall define the members with `CS_Data` type.
 Additionally, the CS types shall define two members:
 - the names of the members and
 - the pointers to the members.
@@ -3024,25 +3024,25 @@ struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
 ...
 ```
 
-The ICS_Data interface together with get_member_names and get_member_ptrs functions added to ICS interface
+`ICS_Data` interface together with `get_member_names` and `get_member_ptrs` functions added to `ICS` interface
 allow the CS to perform the UI, MySQL DB and SP interactions generically.
 Within the CS, any interaction with the UI, MySQL DB and SP related with a CS object would implement the following flow:
-1. get the pointers to the members of the CS object as pointers to ICS_Data base class object and
-2. for each member, aplly the corresponding ICS_Data interface function (e.g. set_to_json).
+1. get the pointers to the members of the CS object as pointers to `ICS_Data` base class object and
+2. for each member, aplly the corresponding `ICS_Data` interface function (e.g. `set_to_json`).
 
-The final derived CS types would not need to define/satisfy the following interface:
-- Has_Member_Types concept (as is replaced by get_member_names function of ICS interface),
-- Json_Compatible concept (as covered by ICS_Data interface),
-- CBindable concept (as covered by ICS_Data interface),
-- IUI interface function: get_from_json (as covered by ICS_Data interface),
-- IUI interface function: set_to_json (as covered by ICS_Data interface),
-- IDB interface function: load_from_DB (as covered by ICS_Data interface),
-- IDB interface function: save_to_DB (as covered by ICS_Data interface),
+The following interfaces and concepts defined previously would not be needed anymore:
+- `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
+- Json_Compatible concept (as covered by `ICS_Data` interface),
+- CBindable concept (as covered by `ICS_Data` interface),
+- IUI interface function: `get_from_json` (as covered by `ICS_Data` interface),
+- IUI interface function: `set_to_json` (as covered by `ICS_Data` interface),
+- IDB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
+- IDB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
 - etc.
 
-CS_Data wrapper also would provide a chance to automize the structural sizing which will be discussed later.
+`CS_Data` wrapper also would provide a chance to automize the structural sizing which will be discussed later.
 For example, for a panel, the thickness is sizeable while the widths are not.
-Hence, CS_Data would be improved with a sizeability interface.
+Hence, `CS_Data` would be improved with a sizeability interface.
 
 #### 4.2.6. The CS Class Hierarchy <a id='sec426'></a>
 

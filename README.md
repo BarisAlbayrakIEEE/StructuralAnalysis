@@ -2166,7 +2166,7 @@ struct IInvariant_Updatable : public IDAG {
 [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes
 many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
-However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and the deign.
+However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and design.
 
 #### 4.2.3. The SP Interface <a id='sec423'></a>
 

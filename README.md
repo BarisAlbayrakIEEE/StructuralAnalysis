@@ -3383,7 +3383,7 @@ Hence, the properties and behaviours of the SCs are related with the analysis re
 - load related issues.
 
 The SAs define the structural analyses procedures.
-Hence, they are the subject of the SPs.
+Hence, the SCs are the subject of the SAs.
 However, the SCs defines which SAs would be applied to the SC.
 For example, while sizing the EOs involved in an SC, all SAs assigned to the SC must be evaluated.
 Hence, the SCs also shall define the procedures to run the analyses.

@@ -1979,7 +1979,7 @@ I excluded the root and the tail node definitions and the iterators (const aand 
 [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes these issues in detail.
 **Its worth to note only that the relations of both the root and the tail nodes are runtime dependent.**
 Hence, the descendants of the root node and the ancestors of the tail node
-should be treated with the high level FP functions (i.e. with_type_container and with_type_object).
+should be treated with the high level FP functions (i.e. `with_type_container` and `with_type_object`).
 
 **DAG node state enumeration: enum_DAG_node_states**\
 The node state data management is the most important responsibility of the DAG in order for the user to follow the states of the SAs and SCs.

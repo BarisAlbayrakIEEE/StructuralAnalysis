@@ -74,7 +74,7 @@ class SC_Panel {
 
 EO_Panel o-- EO_Mat1
 EO_Stiffener o-- EO_Mat1
-SC_Panel o-- EO_Stiffener
 SC_Panel o-- EO_Panel
+SC_Panel o-- EO_Stiffener
 
 @enduml

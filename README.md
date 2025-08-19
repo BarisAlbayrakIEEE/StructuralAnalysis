@@ -3068,7 +3068,7 @@ Hence, the CS shall form a class hierarchy which roots to a base class visualizi
 #ifndef _ICS_h
 #define _ICS_h
 
-struct ICS : public IUI, IDAG, IDB {
+struct ICS : public IUI, IDAG, IDB, ICS_Data {
   virtual ~ICS() = default;
 };
 

@@ -3169,12 +3169,6 @@ struct ICS<FEType, Invariant_Updatable_t> : public ICS_0<FEType>, ICS_1 {
 ```
 
 Now, we have a templated interface for all CS types.
-Additionally, the CS types shall satisfy the following concepts in order to deal the UI, DB and SP interactions:
-- Has_type_name<T>
-- Json_Compatible<T>
-- Has_Member_Names<T>
-- Has_Member_Types<T>
-- CBindable<T>
 
 **The EOs**\
 The EOs represent the physical elements such as material, panel, stiffener, etc.

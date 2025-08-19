@@ -52,42 +52,50 @@ class EO_Panel {
     +double _thickness
     +double _width_a
     +double _width_b
-    +"CS_DT_DN<EO_Mat1>" _EO_mat1
+    +CS_DT_DN<EO_Mat1> _EO_mat1
 }
 
 class EO_Stiffener {
     +std::vector _dimensions
-    +"CS_DT_DN<EO_Mat1>" _EO_mat1
+    +CS_DT_DN<EO_Mat1> _EO_mat1
+}
+
+class EO_SCL_Panel {
+    +std::string _DB_descriptor
 }
 
 class SC_Panel {
-    +"CS_DT_DN<EO_Panel>" _EO_panel
-    +"CS_DT_DN<EO_Stiffener>" _EO_side_stiffener_1
-    +"CS_DT_DN<EO_Stiffener>" _EO_side_stiffener_2
-    +"CS_DT_DN<EO_SCL_Panel>" _EO_SCL_panel
+    +CS_DT_DN<EO_Panel> _EO_panel
+    +CS_DT_DN<EO_Stiffener> _EO_side_stiffener_1
+    +CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2
+    +CS_DT_DN<EO_SCL_Panel> _EO_SCL_panel
 }
 
 class "DAG<CS_Types_t>" {
-    +"VectorTree<EO_Mat1>" _EO_mat1s
-    +"VectorTree<EO_Panel>" _EO_panels
-    +"VectorTree<EO_Stiffener>" _EO_stiffeners
-    +"VectorTree<SC_Panel>" _SC_Panels
+    +VectorTree<EO_Mat1> _EO_mat1s
+    +VectorTree<EO_Panel> _EO_panels
+    +VectorTree<EO_Stiffener> _EO_stiffeners
+    +VectorTree<EO_SCL_Panel> _EO_SCL_panels
+    +VectorTree<SC_Panel> _SC_Panels
     +...
 }
 
 "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_Mat1
 "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>" <|-- EO_Panel
 "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- EO_Stiffener
+"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_SCL_Panel
 "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- SC_Panel
 
 EO_Panel o-- EO_Mat1
 EO_Stiffener o-- EO_Mat1
 SC_Panel o-- EO_Panel
 SC_Panel o-- EO_Stiffener
+SC_Panel o-- EO_SCL_Panel
 
 "DAG<CS_Types_t>" *-- EO_Mat1
 "DAG<CS_Types_t>" *-- EO_Panel
 "DAG<CS_Types_t>" *-- EO_Stiffener
+"DAG<CS_Types_t>" *-- EO_SCL_Panel
 "DAG<CS_Types_t>" *-- SC_Panel
 
 @enduml

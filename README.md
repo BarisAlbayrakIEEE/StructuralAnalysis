@@ -2087,7 +2087,7 @@ The following lists the whole state data required by the SAA algorithms:
 - DAG_state        : per DAG  : read-only and read-write
 - user_state       : per DAG  : owner, viewer, approver, etc.
 - config_state     : per DAG  : design, sizing, inspection and frozen
-- read_write_state : per DAG  : bool
+- read_write_state : per node : bool
 - structural_state : per node : safe and fail
 - DAG_node_state   : per node : already defined
 

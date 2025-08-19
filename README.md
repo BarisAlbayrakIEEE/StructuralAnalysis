@@ -8,7 +8,7 @@
     - [3.3.1. Deployment Model](#sec331)
     - [3.3.2. User Model](#sec332)
     - [3.3.3. Data & Persistency](#sec333)
-    - [3.3.4. Data & Persistency](#sec334)
+    - [3.3.4. Configuration](#sec334)
     - [3.3.5. Concurrency](#sec335)
     - [3.3.6. Summary of the 1st Overview](#sec336)
   - [3.4. The Frontend](#sec34)
@@ -230,7 +230,7 @@ I will review the following major aspects of the software architecture to make s
 - Is cross-platform file portability important?
 - Are the available resources sufficient to manage efficient transactions from/to a DB?
 
-#### 3.3.4. Data & Persistency <a id='sec334'></a>
+#### 3.3.4. Configuration <a id='sec334'></a>
 
 1. Options:
 - Local CPU and GPU

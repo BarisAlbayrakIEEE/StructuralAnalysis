@@ -18,7 +18,7 @@ interface "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
 interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
 interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
 interface ISC_0
-interface "ISC<IFE_Importable_Exportable, Invariant_Updatable_t, Manual_Sizeable_t>"
+interface "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
 
 IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
 

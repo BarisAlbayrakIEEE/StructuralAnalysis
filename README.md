@@ -3677,7 +3677,7 @@ by defining the members with CS_Data wrapper:
 
 **The SAs**\
 The SAs define the structural analyses.
-They hold the analysis related information such as
+They hold the analysis related information such as:
 - analysis type (e.g. FE or analytical, SAMM type and version, etc.)
 - analysis notes and assumptions additional to the ones defined in the SAMMs (e.g. neglect axial loading),
 - analysis coefficients (e.g. the fitting factor) and

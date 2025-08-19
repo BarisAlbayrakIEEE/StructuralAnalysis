@@ -1500,10 +1500,10 @@ Lets start by recalling the data that should be stored by the DAG:
 4. the FE data (e.g. FE elements linked to a Panel instance).
 
 A corresponding member list definition for the DAG would be:
-1. _ancestors: Stores the ancestor DAG node indices for all DAG nodes.
-2. _descendants: Stores the descendant DAG node indices for all DAG nodes.
-3. _states__DAG: Stores the states for all DAG nodes.
-4. _type_containers: Stores the data for all DAG nodes.
+1. _ancestors: Stores the ancestor type container indices.
+2. _descendants: Stores the descendant type container indices.
+3. _states__DAG: Stores the states.
+4. _type_containers: Stores the data.
 5. _FE_link: A descriptor for the linked FEM.
 
 **Ancestor Relations**\
@@ -1669,9 +1669,9 @@ Another example would be Material class such that too many objects of too many t
 In such cases, an algorithm is required to access statically defined data (e.g. _type_containers) with the runtime information.
 The efficiency of this algorithm is crucial as it would help central algorithms used frequently (e.g. the descendant traversal for the state propogation).
 **I will create a function hierarchy to apply the FP solutions to the problem.**
-A higher level templated function is defined where each specialization would bind to the corresponding type container (e.g. container for Panel objects).
+A higher level templated function is defined where each specialization would bind to the corresponding type container (e.g. `VectorTree<EO_Panel>`).
 Then, the functions of the DAG (e.g. DFS traversal) would be routed by this templated higher level function.
-The two functions in the below pseudocode serve for this purpose: with_type_object and with_type_container.
+The two functions in the below pseudocode serve for this purpose: `with_type_object` and `with_type_container`.
 
 ```
 // ~/src/system/DAG.h

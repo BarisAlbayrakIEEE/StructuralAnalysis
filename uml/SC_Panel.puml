@@ -73,6 +73,7 @@ class SC_Panel {
 "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- SC_Panel
 
 EO_Panel o-- EO_Mat1
+EO_Stiffener o-- EO_Mat1
 SC_Panel o-- EO_Stiffener
 SC_Panel o-- EO_Panel
 

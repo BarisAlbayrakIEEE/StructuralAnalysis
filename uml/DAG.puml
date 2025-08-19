@@ -1,7 +1,6 @@
 @startuml
 hide empty members
 skinparam classAttributeIconSize 0
-@enduml
 
 interface IUI
 interface IDAG
@@ -20,15 +19,6 @@ interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_
 interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
 interface ISC_0
 interface "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-
-
-
-
-
-
-
-
-
 
 class EO_Mat1 {
     +std::string _DB_descriptor
@@ -66,10 +56,6 @@ class "DAG<CS_Types_t>" {
     +...
 }
 
-
-
-
-
 IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
 IUI <|-- ICS_1
 IDAG <|-- ICS_1
@@ -102,3 +88,5 @@ SC_Panel o-- EO_SCL_Panel
 "DAG<CS_Types_t>" *-- EO_Stiffener
 "DAG<CS_Types_t>" *-- EO_SCL_Panel
 "DAG<CS_Types_t>" *-- SC_Panel
+
+@enduml

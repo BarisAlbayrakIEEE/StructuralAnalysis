@@ -1205,7 +1205,7 @@ The VectorTree shall be examined in detail.
 
 The SAP idiom has a side effect: the last element is moved to the remove position.
 In DOD terms, the index of the last element is changed.
-The DAG can perform the some operations in order to update the object relations easily.
+The DAG can perform some operations in order to update the object relations easily.
 [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) defines and describes these operations in detail.
 However, in case of the SAA, the CS shall also inform and update the UI as it contains a mapping of the DAG nodes.
 This would add loading on the UI such that every remove action should be followed by an update in the UI mapping.

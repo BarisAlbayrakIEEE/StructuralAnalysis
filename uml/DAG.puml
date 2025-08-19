@@ -6,23 +6,45 @@ interface IUI
 interface IDAG
 interface IDB
 interface ICS_Data
-interface IFE_Importable_Exportable
-interface IExecutable
-interface IReportable
-interface ILoad
-interface "ICS_0<FE_Importable_Exportable_t>"
 interface ICS_1
+
+IUI <|-- ICS_1
+IDAG <|-- ICS_1
+IDB <|-- ICS_1
+ICS_Data <|-- ICS_1
+
+interface IFE_Importable_Exportable
+interface "ICS_0<FE_Importable_Exportable_t>"
 interface "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
-interface "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
 interface "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
-interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
-interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-interface ISC_0
-interface "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+
+IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
+"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
+ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
+"ICS<FE_Importable_Exportable_t, Non_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
+"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_Mat1
+"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_SCL_Panel
 
 class EO_Mat1 {
     +std::string _DB_descriptor
 }
+
+class EO_SCL_Panel {
+    +std::string _DB_descriptor
+}
+
+
+
+interface "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
+interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
+interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+
+ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
+"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
+"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
+"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>" <|-- EO_Panel
+"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- EO_Stiffener
 
 class EO_Panel {
     +double _thickness
@@ -30,15 +52,28 @@ class EO_Panel {
     +double _width_b
     +CS_DT_DN<EO_Mat1> _EO_mat1
 }
+EO_Panel o-- EO_Mat1
 
 class EO_Stiffener {
     +std::vector _dimensions
     +CS_DT_DN<EO_Mat1> _EO_mat1
 }
+EO_Stiffener o-- EO_Mat1
 
-class EO_SCL_Panel {
-    +std::string _DB_descriptor
-}
+
+
+interface IExecutable
+interface IReportable
+interface ILoad
+interface ISC_0
+interface "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+
+IExecutable <|-- ISC_0
+IReportable <|-- ISC_0
+ILoad <|-- ISC_0
+ISC_0 <|-- "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+"ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- SC_Panel
 
 class SC_Panel {
     +CS_DT_DN<EO_Panel> _EO_panel
@@ -46,6 +81,11 @@ class SC_Panel {
     +CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2
     +CS_DT_DN<EO_SCL_Panel> _EO_SCL_panel
 }
+SC_Panel o-- EO_Panel
+SC_Panel o-- EO_Stiffener
+SC_Panel o-- EO_SCL_Panel
+
+
 
 class "DAG<CS_Types_t>" {
     +VectorTree<EO_Mat1> _EO_mat1s
@@ -55,34 +95,6 @@ class "DAG<CS_Types_t>" {
     +VectorTree<SC_Panel> _SC_Panels
     +...
 }
-
-IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
-IUI <|-- ICS_1
-IDAG <|-- ICS_1
-IDB <|-- ICS_1
-ICS_Data <|-- ICS_1
-"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
-"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
-ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
-ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
-"ICS<FE_Importable_Exportable_t, Non_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
-"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
-"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-IExecutable <|-- ISC_0
-IReportable <|-- ISC_0
-ILoad <|-- ISC_0
-ISC_0 <|-- "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_Mat1
-"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>" <|-- EO_Panel
-"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- EO_Stiffener
-"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_SCL_Panel
-"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- SC_Panel
-EO_Panel o-- EO_Mat1
-EO_Stiffener o-- EO_Mat1
-SC_Panel o-- EO_Panel
-SC_Panel o-- EO_Stiffener
-SC_Panel o-- EO_SCL_Panel
 "DAG<CS_Types_t>" *-- EO_Mat1
 "DAG<CS_Types_t>" *-- EO_Panel
 "DAG<CS_Types_t>" *-- EO_Stiffener

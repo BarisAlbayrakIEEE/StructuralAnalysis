@@ -1995,7 +1995,7 @@ The 3rd one simulates the invariant of the types.
 For example, a joint would fail from the knife edge condition if the following law breaks:
 - edge distance >= 2 * D + 1 where D is the nominal diameter of the fastener.
 
-The last one simulates the ancestor/descendant relations of the DAG.
+The 4th one simulates the ancestor/descendant relations of the DAG.
 If a DAG node fails, the descendants would fail as well.
 
 When the state of a node is changed, the DAG shall propogate the state change through the descendants up to the leaf nodes.

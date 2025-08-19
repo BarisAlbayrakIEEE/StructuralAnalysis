@@ -1833,7 +1833,7 @@ For example, for the SCs the list contains only the SAs defined for the SC.
 The most problematic types are the auxilary types (e.g. material and fastener) which would not be expected to exist alot in a DAG.
 In summary, the descendants can also be moved to the type definitions.
 Keep in mind that, having the static definitions would improve the other components of the SAA.
-For example, if the SCs would have the SAs defined statically, the state managemeent for the SCs and the SAs would become generic.
+For example, if the SCs would have the SAs defined statically, the state management for the SCs and the SAs would become generic.
 
 ```
 // ~/src/system/DAG.h

@@ -1490,7 +1490,7 @@ using DAG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_
 #endif
 ```
 
-**From now on, i will stop using the term DAG node index and switch to type container index.**
+From now on, i will stop using the term **DAG node index** and switch to **type container index**.
 
 **Initial Member List**\
 Lets start by recalling the data that should be stored by the DAG:

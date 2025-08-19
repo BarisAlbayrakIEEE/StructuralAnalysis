@@ -1987,7 +1987,8 @@ Below are the possible states for a DAG node:
 - up to date,
 - out of date,
 - failed by the invariant,
-- failed due to the ancestors.
+- failed due to the ancestors,
+- deleted (if the DAG node removal relies on *the lazy removal* discussed before in this section for the VectorTree).
 
 The 1st two are obvious where the 1st one is the only positive state for a DAG node.
 The 3rd one simulates the invariant of the types.

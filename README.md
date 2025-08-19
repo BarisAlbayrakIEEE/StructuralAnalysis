@@ -3702,7 +3702,7 @@ The UML diagram is not readable as the templated interfaces extend in the same l
 <img src="uml/CS.svg" alt="UML Diagram" width="100%">
 
 I will present a sample UML diagram for the DAG which is more readable and traceable:
-![Sample UML for the DAG1](./uml/DAG.png)
+![DAG](./uml/DAG1.png)
 
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 

@@ -88,11 +88,7 @@ SC_Panel o-- EO_SCL_Panel
 
 
 class "DAG<CS_Types_t>" {
-    +VectorTree<EO_Mat1> _EO_mat1s
-    +VectorTree<EO_Panel> _EO_panels
-    +VectorTree<EO_Stiffener> _EO_stiffeners
-    +VectorTree<EO_SCL_Panel> _EO_SCL_panels
-    +VectorTree<SC_Panel> _SC_Panels
+    +std::tuple<VectorTree<CS_Types_t>...> _CS_data
     +...
 }
 "DAG<CS_Types_t>" *-- EO_Mat1

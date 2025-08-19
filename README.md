@@ -2099,9 +2099,9 @@ Previously, I defined IDAG interface for this purpose which requires: `reevaluat
 However, not all the types of the SAA follows this path for the state inspection.
 Some may not have any ancestors (e.g. standard items like material), some may even not hold any invariant.
 Hence, we have 3 base types considering the updateability of the SAA types:
-- Non_Updatable: No update issue. inspect_invariant returns true.
-- Ancestor_Updatable: No function definition. reevaluate_state__DAG calls inspect_ancestors.
-- Invariant_Updatable: Requires inspect_invariant. reevaluate_state__DAG calls inspect_invariant and inspect_ancestors.
+- Non_Updatable: No update issue. `inspect_invariant` returns true.
+- Ancestor_Updatable: `reevaluate_state__DAG` calls `inspect_ancestors`.
+- Invariant_Updatable: Requires `inspect_invariant`. `reevaluate_state__DAG` calls `inspect_invariant` and `inspect_ancestors`.
 
 Obviously, IDAG interface treats all SAA types the same in terms of the updateability issue.
 I will define 3 abstract classes and move the updateability to those classes to obey the single responsibiliity rule.
@@ -2117,6 +2117,7 @@ The IDAG interface becomes:
 
 struct IDAG {
   virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
+  virtual std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const = 0;
   virtual bool reevaluate_state__DAG(DAG_t const* DAG_) const = 0;
 };
 

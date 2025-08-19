@@ -2186,7 +2186,7 @@ I will apply a C++/python binding strategy to solve this problem:
 - The SP defines the python wrapper classes if needed: Ex: Py_Material, Py_Panel and Py_Panel_Buckling.
 
 The SP python wrapper classes (e.g. Py_Panel) is defined when there is a need.
-Some EOs would have behaviours which is strongly relaated with the processes executed by the SP.
+Some EOs would have behaviours which is strongly related with the processes executed by the SP.
 For example, the cross-sectional properties of a stiffener is needed frequently during the SAs of the stiffeners.
 Hence, the SP would need the Py_Stiffener wrapper.
 

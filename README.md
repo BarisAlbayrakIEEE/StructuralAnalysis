@@ -526,9 +526,83 @@ Besides, the plugins are not self-contained anymore.
 The 1st solution on the other hand provides a type safe solution where the client is only responsible from the self-contained plugins.
 A CMake macro would automatically detect the new types defined by new plugins and regenerate the CS type list source file accordingly.
 
-**To summarize, for the type definitions, I will continue with the C++ static programming approach with a codegen shipped with the SAA.**
+**To summarize, for the type definitions, I will continue with:**
+- **The C++ static programming approach with a CMake tool shipped with the SAA which preserves the CS type list compatibility.**
+
 **Additionally, its worth to note that the static programming would eliminate the need for the type registration.**
 **Hence, we can neglect the previous discussions about the registry.**
+
+The CMake code would need a custom command to visit all the plugins in the plugins directory:
+
+```
+# ~/scripts/regenerate_CS_type_list.py
+
+import os
+import re
+
+def match_type_def(line: str):
+  inspection = re.match(r"class\s+(\w+)\s*:\s*public\s+(EO|SC|SA|SAR)_", line)
+  if inspection:
+    return inspection
+  
+  return re.match(r"struct\s+(\w+)\s*:\s*public\s+(EO|SC|SA|SAR)_", line)
+
+def collect_types(plugin_dir):
+  types = []
+  for fname in os.listdir(plugin_dir):
+    if fname.endswith(".h") or fname.endswith(".hpp"):
+      with open(os.path.join(plugin_dir, fname)) as f:
+        for line in f:
+          if match_type_def(line):
+            types.append(match.group(1))
+  return types
+
+def regenerate_CS_type_list(types, output_file):
+  with open(output_file, "w") as f:
+    f.write("// Auto-generated\n")
+    f.write("#pragma once\n")
+    f.write("#include \"TypeList.h\"\n")
+    for t in types:
+      f.write(f"#include \"{t}.h\"\n")
+    f.write("using CS_Types_t = TypeList<\n")
+    f.write(",\n".join(f"    {t}" for t in types))
+    f.write("\n>;\n")
+
+if __name__ == "__main__":
+  types = collect_types("plugins")
+  regenerate_CS_type_list(types, "generated/CS_type_list.generated.h")
+```
+
+The CmakeLists.txt would execute this custom command:
+
+```
+# CMakeLists.txt
+
+# paths
+set(PLUGIN_DIR "${CMAKE_SOURCE_DIR}/plugins")
+set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY ${GENERATED_DIR})
+
+# command
+add_custom_command(
+    OUTPUT ${GENERATED_DIR}/CS_type_list.generated.h
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/regenerate_CS_type_list.py
+    DEPENDS ${PLUGIN_DIR}
+    COMMENT "Generating CS_type_list.generated.h from plugin headers"
+)
+add_custom_target(
+  regenerate_CS_type_list_command
+  ALL
+  DEPENDS ${GENERATED_DIR}/CS_type_list.generated.h
+)
+
+# include the generated directory
+include_directories(${GENERATED_DIR})
+
+# executable that depends on the CS type list
+add_executable(core main.cpp)
+add_dependencies(core regenerate_CS_type_list_command)
+```
 
 The SP can still be implemented using python.
 Actually, it should be.

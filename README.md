@@ -3891,5 +3891,5 @@ I mentioned a couple of points during the previous chapters without going into d
 The 1st two are significant and can affect the architecture at some point.
 I will add a section related to these later.
 
-[The vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) and [The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repositories provides detailed discussions about the DAG data structure and the related algorithms.
-I mentioned only the points that differ in case of the SAA.
+[The vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) and [The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repositories provide detailed discussions about the DAG data structure and the related algorithms.
+Here, I mentioned only the points that differ in case of the SAA.

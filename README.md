@@ -317,10 +317,10 @@ In this approach, the client is mainly considered to develop the SAMMs.
 The SAA would still be extensible with introducing new plugins on top of the compiled core plugins.
 
 A plugin shall include the following items:
-- Plugin descriptor json file
-- Type module with type registry (e.g. panel.py including register_panel function)
-- SAMM module with analysis registry (e.g. panel_buckling.py including register_SA_panel_buckling function)
-- Type UI form js file with UI form registry (e.g. panel_ui.js including register_panel_ui function)
+- Plugin descriptor json file,
+- Type module with type registry,
+- SAMM module with analysis registry,
+- Type UI form js file with UI form registry and
 - **Core API shall provide the registry routines which shall be executed by the registry functions of the plugins.**
 
 [The overview of the problem](#sec31) explained the dependencies within the data.
@@ -3389,7 +3389,7 @@ For example, while sizing the EOs involved in an SC, all SAs assigned to the SC 
 Hence, the SCs also shall define the procedures to run the analyses.
 This is the structural inspectability window for the SCs which involves the structural sizing as well.
 
-The structural sizing interfaace within the SCs is conceptually different than the one defined within the EOs.
+The structural sizing interface within the SCs is conceptually different than the one defined within the EOs.
 An SC involve a nomber of EOs.
 The structural sizing within the SC is the orchestration of the sizing procedures of the involved EOs.
 It considers the behaviours of the EOs and the assigned SAs at the same time.
@@ -3406,11 +3406,11 @@ Hence, while designing the SCs the reporting features shall be considered.
 
 Finally, the SCs would carry the loading.
 As described before, the FE import procedures convert the FE loading (i.e. FE node/element loading) into the component loading.
-For example, a stiffener physically carries the folloowing load components:
+For example, a stiffener physically carries the following load components:
 - the axial load (tension or compression) and
 - the bending load.
 
-The loading on each type is defined by an EO such as EO_Load__Stiffener.
+The loading on each type is defined by an EO such as `EO_SCL__Stiffener`.
 The load EOs carries data for a number of LCs assigned to the DAG.
 Hence, the load EOs store a double matrix.
 
@@ -3421,7 +3421,7 @@ The DAG nodes pointing to the load EOs and SARs store only the MySQL DB keys.
 One last point about the loading is the critical LC selection.
 The number of LCs may rise up to thousands so that running the analyses would consume too much CPU resourses and take long time.
 Hence, one must eliminate the LCs that contains less loading than the other LCs.
-This process may be verry complex if the loading is combined or the corresponding analysis involves complex calculations.
+This process may be very complex if the loading is combined or the corresponding analysis involves complex calculations.
 For example, some load components may act on the element linearly (e.g. axial loading) while some other non-linearly (e.g. bending).
 Some analyses would have complex calculations such that there is no direct relation between the loading and the RF.
 The critical LC determination process depends on the components of the loading and the analyses type.
@@ -3699,7 +3699,7 @@ Each would have different implementations so that a strategy pattern would help.
 
 The 2nd one needs a careful study where a number of analysis options should be applied systematically.
 For example, load multipliers can be defined to adjust the loading.
-This requirement would be solved in cooperation with the cliient.
+This requirement would be solved in cooperation with the client.
 
 The analysis coefficients would vary among the companies and projects.
 The master users shall have write access to these parameters.

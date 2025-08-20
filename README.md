@@ -916,8 +916,7 @@ The architecture section defines three components for the SAA: the UI, the CS an
 - Modify the FE mapping stored in the DAG (e.g. elements of a SC) via the FE display.
 - Run SAs.
 
-First of all, the frontend shall define a user form for each type of the SAA (e.g. panel or stiffener).
-**These user forms need to be registered:**
+First of all, the frontend shall define a registry for each user form:
 
 ```
 // ~/src/system/UI_registry.js
@@ -979,8 +978,8 @@ export function registerForm(uiRegistry) {
     title: "Panel Properties",
     fields: [
       { name: "name",       label: "Name",       type: "text"   },
-      { name: "width_a",      label: "Width",      type: "number" },
-      { name: "width_b",     label: "Height",     type: "number" },
+      { name: "width_a",    label: "Width",      type: "number" },
+      { name: "width_b",    label: "Height",     type: "number" },
       { name: "thickness",  label: "Thickness",  type: "number" }
     ]
   });

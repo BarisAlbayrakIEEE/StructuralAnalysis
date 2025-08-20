@@ -514,7 +514,7 @@ Consider that the CS has a source file defining the CS type list statically: CS_
 The CS is designed based on this source file such that the only update required to embed a new type is to append the new type into the type list.
 There exist four approaches to add a new type statically into the CS:
 1. Ship the SAA with a codegen or build tool which inspects the compatibility of the type list with the plugins,
-2. Ask the client to update the type list (i.e. CS_type_list.h) for each new type,
+2. Ask the client to update the type list (i.e. CS_type_list.h) while adding a new type,
 3. Defining the type list with pre-reserved slots (e.g. EO_1, EO_2, etc.) and ask the client to map to these pre-reserved slots and
 4. Using macros.
 
@@ -522,7 +522,7 @@ I will skip the macro solution as the macros are not safe.
 Using pre-reserved types is a limited solution.
 Besides, it would result in a loss in the type safety and traceability.
 The 2nd solution makes the clients responsible from the system files which is totaly a bad design practice.
-Besides, the plugins are not self-contained anymore.
+Besides, the plugins are not self-contained anymore due to this coupling with the system source file.
 The 1st solution on the other hand provides a type safe solution where the client is only responsible from the self-contained plugins.
 A CMake macro would automatically detect the new types defined by new plugins and regenerate the CS type list source file accordingly.
 

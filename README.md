@@ -581,7 +581,7 @@ if __name__ == "__main__":
 The CmakeLists.txt would execute this custom command:
 
 ```
-# CMakeLists.txt
+# ~/CMakeLists.txt
 
 # paths
 set(PLUGIN_DIR "${CMAKE_SOURCE_DIR}/plugins")

@@ -21,13 +21,13 @@
   - [3.7. The Architecture: Summary](#sec37)
 - [4. Software Design](#sec4)
   - [4.1. The UI](#sec41)
-  - [4.2. The CS](#sec42)
+  - [4.2. The Core System (CS)](#sec42)
     - [4.2.1. The UI Interface](#sec421)
     - [4.2.2. The Functionally Persistent DAG](#sec422)
     - [4.2.3. The SP Interface](#sec423)
     - [4.2.4. The FE Interface](#sec424)
     - [4.2.5. The MySQL DB Interface](#sec425)
-    - [4.2.6. The CS Class Hierarchy](#sec426)
+    - [4.2.6. The Class Hierarchy](#sec426)
     - [4.2.7. The UML Diagram](#sec427)
   - [4.3. The Solver Pack (SP)](#sec43)
 
@@ -3154,7 +3154,7 @@ The following interfaces and concepts defined previously would not be needed any
 For example, for a panel, the thickness is sizeable while the widths are not.
 Hence, `CS_Data` would be improved with a sizeability interface.
 
-#### 4.2.6. The CS Class Hierarchy <a id='sec426'></a>
+#### 4.2.6. The Class Hierarchy <a id='sec426'></a>
 
 In this document, I mentioned about the following base types for the SAA:
 - engineering object (EO),

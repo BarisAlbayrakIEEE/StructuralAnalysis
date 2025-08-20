@@ -513,7 +513,7 @@ The only question is how to embed the new type into the CS type list statically.
 Consider that the CS has a source file defining the CS type list statically: CS_type_list.h.
 The CS is designed based on this source file such that the only update required to embed a new type is to append the new type into the type list.
 There exist four approaches to add a new type statically into the CS:
-1. Ship the SAA with a codegen which inspects the compatibility of the type list with the plugins,
+1. Ship the SAA with a codegen or build tool which inspects the compatibility of the type list with the plugins,
 2. Ask the client to update the type list (i.e. CS_type_list.h) for each new type,
 3. Defining the type list with pre-reserved slots (e.g. EO_1, EO_2, etc.) and ask the client to map to these pre-reserved slots and
 4. Using macros.
@@ -524,11 +524,11 @@ Besides, it would result in a loss in the type safety and traceability.
 The 2nd solution makes the clients responsible from the system files which is totaly a bad design practice.
 Besides, the plugins are not self-contained anymore.
 The 1st solution on the other hand provides a type safe solution where the client is only responsible from the self-contained plugins.
-The solution adds one more step into **the client's re-compilation process** as the 3rd step:
-- Run the codegen to make the system compatible with the plugins.
+A CMake macro would automatically detect the new types defined by new plugins and regenerate the CS type list source file accordingly.
 
 **To summarize, for the type definitions, I will continue with the C++ static programming approach with a codegen shipped with the SAA.**
 **Additionally, its worth to note that the static programming would eliminate the need for the type registration.**
+**Hence, we can neglect the previous discussions about the registry.**
 
 The SP can still be implemented using python.
 Actually, it should be.

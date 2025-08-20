@@ -30,6 +30,7 @@
     - [4.2.6. The Class Hierarchy](#sec426)
     - [4.2.7. The UML Diagram](#sec427)
   - [4.3. The Solver Pack (SP)](#sec43)
+- [5. Other Issues](#sec5)
 
 **Nomenclature**
 - **SC:** Structural Component
@@ -916,7 +917,8 @@ The architecture section defines three components for the SAA: the UI, the CS an
 - Modify the FE mapping stored in the DAG (e.g. elements of a SC) via the FE display.
 - Run SAs.
 
-First of all, the frontend shall define a registry for each user form:
+First of all, the frontend shall define a registry for each user form.
+The system needs to provide the registry:
 
 ```
 // ~/src/system/UI_registry.js
@@ -949,9 +951,11 @@ export class UIRegistry {
 
 // singleton instance
 export const uiRegistry = new UIRegistry();
+```
 
+Initialize the type registry:
 
-
+```
 // ~/src/bootstrap.js
 import { uiRegistry } from "./system/UIRegistry";
 
@@ -969,9 +973,11 @@ pluginForms.keys().forEach((modulePath) => {
     console.log(`[UI] Registered form from ${modulePath}`);
   }
 });
+```
 
+Finally, each new form shall provide the definition of the registry function:
 
-
+```
 // ~/src/plugins/panel/form.js
 export function registerForm(uiRegistry) {
   uiRegistry.registerFormSchema("EO_Panel", {
@@ -3869,3 +3875,21 @@ class SC_Panel:
   def run_SA_panel_pressure(self):
     # TODO
 ```
+
+## 5. Other Issues <a id='sec5'></a>
+
+Previously, I mentioned that each type shall be defined with a user form.
+However, a standard form would satisfy the user needs in case of the SAA.
+In fact, a design based on a standard form would shorten the learning time for the users.
+Such a design would eliminate the need for the frontend coding within the plugins as well.
+
+I mentioned a couple of points during the previous chapters without going into details such as:
+- the configuration management,
+- the state management for the user, DB and
+- the DAG algorithms.
+
+The 1st two are significant and can affect the architecture at some point.
+I will add a section related to these later.
+
+[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository provides discussions about the DAG data structure.
+I mentioned only the points that differ in case of the SAA.

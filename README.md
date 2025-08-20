@@ -494,8 +494,8 @@ class DAG{
 };
 ```
 
-C++ beats java in terms of static programming as it provides the whole functionality required for the static type transformations.
-In summary, C++ would perform better than java in terms of the static programming.
+C++ would perform better than java in terms of the static programming as it provides the whole functionality required for the static type transformations.
+Hence, I would prefer using C++ in case of the static programming.
 
 However, there is a problem with the static programming: the SAA shall be extensible via new plugins.
 This issue actually points to two problems:

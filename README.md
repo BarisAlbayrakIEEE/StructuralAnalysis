@@ -3886,10 +3886,10 @@ Such a design would eliminate the need for the frontend coding within the plugin
 I mentioned a couple of points during the previous chapters without going into details such as:
 - the configuration management,
 - the state management for the user, DB and
-- the DAG algorithms.
+- the DAG algorithms (e.g. iterators, DFS and BFS).
 
 The 1st two are significant and can affect the architecture at some point.
 I will add a section related to these later.
 
-[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository provides discussions about the DAG data structure.
+[The vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) and [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repositories provides detailed discussions about the DAG data structure and the related algorithms.
 I mentioned only the points that differ in case of the SAA.

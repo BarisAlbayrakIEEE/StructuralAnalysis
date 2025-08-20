@@ -527,9 +527,8 @@ The 1st solution on the other hand provides a type safe solution where the clien
 The solution adds one more step into **the client's re-compilation process** as the 3rd step:
 - Run the codegen to make the system compatible with the plugins.
 
-Finally, the static programming would eliminate the need for the type registration.
-
 **To summarize, for the type definitions, I will continue with the C++ static programming approach with a codegen shipped with the SAA.**
+**Additionally, its worth to note that the static programming would eliminate the need for the type registration.**
 
 The SP can still be implemented using python.
 Actually, it should be.

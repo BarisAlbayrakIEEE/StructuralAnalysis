@@ -482,7 +482,7 @@ using TypeList = Types<Foo, Bar>;
 static constexpr type_at<0, TypeList> obj{};
 ```
 
-On the other hand, with java, the type containers of the DAG must be defined manually:
+On the other hand, with java, the type containers of the DAG must be hardcoded:
 
 ```
 import java.util.ArrayList;

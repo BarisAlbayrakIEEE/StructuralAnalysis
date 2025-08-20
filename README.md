@@ -356,7 +356,7 @@ The DAG is acyclic as a point cannot be created from a curve which has a relatio
 The application may allow cycled nodes (e.g. Catia) and continue in an **invalid state**.
 A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
 Catia also allows removing an element without removing the decendants which requires a background thread as well.
-[My persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) examines the background thread in detail.
+[My persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository examines the background thread in detail.
 Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
@@ -1321,7 +1321,7 @@ The VectorTree shall be examined in detail.
 The SAP idiom has a side effect: the last element is moved to the remove position.
 In DOD terms, the index of the last element is changed.
 The DAG can perform some operations in order to update the object relations easily.
-[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) defines and describes these operations in detail.
+[The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository defines and describes these operations in detail.
 However, in case of the SAA, the CS shall also inform and update the UI as it contains a mapping of the DAG nodes.
 This would add loading on the UI such that every remove action should be followed by an update in the UI mapping.
 
@@ -2091,7 +2091,7 @@ struct EO_Panel : public IUI, IDAG {
 ```
 
 I excluded the root and the tail node definitions and the iterators (const aand non-const) of the DAG intensionally.
-[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes these issues in detail.
+[The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository describes these issues in detail.
 **Its worth to note only that the relations of both the root and the tail nodes are runtime dependent.**
 Hence, the descendants of the root node and the ancestors of the tail node
 should be treated with the high level FP functions (i.e. `with_type_container` and `with_type_object`).
@@ -2278,7 +2278,7 @@ struct IInvariant_Updatable : public IDAG {
 ```
 
 **Other Issues About the DAG**\
-[The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) describes
+[The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository describes
 many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
 However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and design.
@@ -3891,5 +3891,5 @@ I mentioned a couple of points during the previous chapters without going into d
 The 1st two are significant and can affect the architecture at some point.
 I will add a section related to these later.
 
-[The vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) and [The persistent DAG repository](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repositories provides detailed discussions about the DAG data structure and the related algorithms.
+[The vector tree](https://github.com/BarisAlbayrakIEEE/VectorTree.git) and [The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repositories provides detailed discussions about the DAG data structure and the related algorithms.
 I mentioned only the points that differ in case of the SAA.

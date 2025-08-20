@@ -62,12 +62,16 @@ In the first section, I will start by describing the problem without diving into
 Then, I will discuss about the architecture and design of an application to serve as a solution to the given problem.
 
 **Note**\
-This project includes example code snippets (e.g., EO_Panel.h) to support and clarify architectural and design discussions.
-However, these source files are intended as illustrative pseudocode.
-They have not been compiled, tested, or validated.
+**This project includes example code snippets (e.g., EO_Panel.h) to support and clarify architectural and design discussions.**
+**However, these source files are intended as illustrative pseudocode.**
+**They have not been compiled, tested, or validated.**
 **The code may contain bugs, and in some cases, contradictions with the stated design or architectural intent**
 **(especially regarding the const correctness and interface boundaries).**
 **Please interpret the code accordingly and focus on the architectural and design concepts rather than the implementation accuracy.**
+
+**I did not get support from an AI tool while preparing this repository accept for the discussions related with the frontend.**
+**I dont have an experience with the frontend development.**
+**The remaining discussions and the code blocks are all belong to my software engineering experience.**
 
 ## 2. Problem Definition: Stress Analysis of the Structural Components <a id='sec2'></a>
 

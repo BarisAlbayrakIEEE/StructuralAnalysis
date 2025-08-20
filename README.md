@@ -316,12 +316,13 @@ Additionally, the SAA should be shipped with the plugins of the fundamental type
 In this approach, the client is mainly considered to develop the SAMMs.
 The SAA would still be extensible with introducing new plugins on top of the compiled core plugins.
 
-A plugin shall include the following items:
+A plugin may include the following items:
 - Plugin descriptor json file,
 - Type module with type registry,
-- SAMM module with analysis registry,
-- Type UI form js file with UI form registry and
-- **Core API shall provide the registry routines which shall be executed by the registry functions of the plugins.**
+- SAMM module with analysis registry and
+- Type UI form js file with UI form registry.
+
+**Core API shall provide the registry routines for the new types, SP routines and the UI forms defined by the plugins.**
 
 [The overview of the problem](#sec31) explained the dependencies within the data.
 The dependencies/relations in the data require a link-based (i.e. pointer-based) data structure for the memory managemant.
@@ -438,7 +439,7 @@ I also eliminate the rust solution as I dont have any experience with the rust d
 Hence, there remains only C++ and java solutions.
 
 In order for the DAG to manage the memory it must store the whole data.
-The objects need to be contained by the DAG in contiguous allocations.
+For the data locality, the DAG shall allocate contiguous memory for each type.
 C++ provides variadic templates for varying type lists.
 Java handles the problem applying the type erasure which loses the compile-time static definition capability.
 
@@ -493,15 +494,46 @@ class DAG{
 };
 ```
 
-However, the SAA is designed to be extensible by adding new plugins defining new types.
-Hence, for each new plugin, the CS (i.e. the DAG and maybe some others) needs to be updated manually in case of java.
-Making the client responsible from the DAG is not a good design practice.
+C++ beats java in terms of static programming as it provides the whole functionality required for the static type transformations.
+In summary, C++ would perform better than java in terms of the static programming.
 
-**The discussions up to here concludes that C++ is the best choice for the CS side.**
+However, there is a problem with the static programming: the SAA shall be extensible via new plugins.
+This issue actually points to two problems:
+1. Plugin extensions need re-compilation and
+2. Injecting the new types into the CS.
+
+Requesting re-compilation from the clients is not a big deal.
+The process can be described by the following maintanance procedure handled by a master user:
+1. Shut the server for maintanance,
+2. Add the new type and
+3. Restart the server.
+
+As I discussed before, the SAA would run on a cloud server which allows the above maintanance procedure to be handled easily.
+The only question is how to embed the new type into the CS type list statically.
+Consider that the CS has a source file defining the CS type list statically: CS_type_list.h.
+The CS is designed based on this source file such that the only update required to embed a new type is to append the new type into the type list.
+There exist four approaches to add a new type statically into the CS:
+1. Ship the SAA with a codegen which inspects the compatibility of the type list with the plugins,
+2. Ask the client to update the type list (i.e. CS_type_list.h) for each new type,
+3. Defining the type list with pre-reserved slots (e.g. EO_1, EO_2, etc.) and ask the client to map to these pre-reserved slots and
+4. Using macros.
+
+I will skip the macro solution as the macros are not safe.
+Using pre-reserved types is a limited solution.
+Besides, it would result in a loss in the type safety and traceability.
+The 2nd solution makes the clients responsible from the system files which is totaly a bad design practice.
+Besides, the plugins are not self-contained anymore.
+The 1st solution on the other hand provides a type safe solution where the client is only responsible from the self-contained plugins.
+The solution adds one more step into **the client's re-compilation process** as the 3rd step:
+- Run the codegen to make the system compatible with the plugins.
+
+Finally, the static programming would eliminate the need for the type registration.
+
+**To summarize, for the type definitions, I will continue with the C++ static programming approach with a codegen shipped with the SAA.**
 
 The SP can still be implemented using python.
 Actually, it should be.
-**A wrapper class (i.e. cython, boost.Python, swig, pybind11) for each type forms a bridge between C++ and python.**
+A bridge would allow the interactions between the two languages: cython, boost.Python, swig, pybind11.
 **I would prefer pybind11 as it is very elegant in sharing C++ objects considering the reference counting.**
 This approach requires an additional wrapper class definition for each new type.
 However, the SP is a library for the behaviours rather than the types.
@@ -516,7 +548,8 @@ A panel has many FMs and corresponding SAMMs:
 A company may have many other FMs defined for a panel element.
 In summary, corresponding to a CS type, there may exist many SAMMs in the SP side.
 In other words, the additional wrapper class would be defined once and only for the types, not for the SAMMs.
-Hence, this approach adds boilerplate code into the CS which the client is mostly not involved.
+This would not cause to much work to the clients as the clients would mostly work on the SAMMs rather than the types.
+**In other words, the core types shipped with the SAA would cover the possible types that the SAA would need to involve.**
 
 I mentioned that, I will use React for the frontend development.
 The C++ backend needs to communicate with the React frontend.

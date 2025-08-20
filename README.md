@@ -497,7 +497,7 @@ class DAG{
 C++ would perform better than java in terms of the static programming as it provides the whole functionality required for the static type transformations.
 Hence, I would prefer using C++ in case of the static programming.
 
-However, there is a problem with the static programming: the SAA shall be extensible via new plugins.
+However, there is a problem with the static programming: how to reconcile the extensibility via new plugins with the static programming?
 This issue actually points to two problems:
 1. Plugin extensions need re-compilation and
 2. Injecting the new types into the CS.
@@ -509,7 +509,7 @@ The process can be described by the following maintanance procedure handled by a
 3. Restart the server.
 
 As I discussed before, the SAA would run on a cloud server which allows the above maintanance procedure to be handled easily.
-The only question is how to embed the new type into the CS type list statically.
+The remaining question is how to embed the new type into the CS type list statically.
 Consider that the CS has a source file defining the CS type list statically: CS_type_list.h.
 The CS is designed based on this source file such that the only update required to embed a new type is to append the new type into the type list.
 There exist four approaches to add a new type statically into the CS:

@@ -546,10 +546,13 @@ import os
 import re
 
 def match_type_def(line: str):
+  '''
+  As a simple solution, assumes that the class names start with one of EO_, SC_, SA_, SAR_.
+  A generic solution is required.
+  '''
   inspection = re.match(r"class\s+(\w+)\s*:\s*public\s+(EO|SC|SA|SAR)_", line)
   if inspection:
     return inspection
-  
   return re.match(r"struct\s+(\w+)\s*:\s*public\s+(EO|SC|SA|SAR)_", line)
 
 def collect_types(plugin_dir):

@@ -3854,14 +3854,14 @@ class SC_Panel:
       EO_side_stiffener_1: EO_Stiffener,
       EO_side_stiffener_2: EO_Stiffener,
       EO_SCL_panel: EO_SCL_Panel,
-      SAR_panel_buckling: SAR_Panel_Buckling,
-      SAR_panel_pressure: SAR_Panel_Pressure):
+      SA_panel_buckling: SA_Panel_Buckling,
+      SA_panel_pressure: SA_Panel_Pressure):
     self._EO_panel = EO_panel
     self._EO_side_stiffener_1 = EO_side_stiffener_1
     self._EO_side_stiffener_2 = EO_side_stiffener_2
     self._EO_SCL_panel = EO_SCL_panel
-    self._SAR_panel_buckling = SAR_panel_buckling
-    self._SAR_panel_pressure = SAR_panel_pressure
+    self._SA_panel_buckling = SA_panel_buckling
+    self._SA_panel_pressure = SA_panel_pressure
   
   def calculate_buckling_coefficient(self):
     # TODO

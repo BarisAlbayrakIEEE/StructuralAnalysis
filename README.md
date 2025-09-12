@@ -442,27 +442,7 @@ Every action of the user may take considarable time for large DAGs if the data i
 I will eliminate the 3rd solution as its no better than the 4th one.
 I also eliminate the rust solution as I dont have any experience with the rust development.
 
-**Java:**
-Java handles the problem applying the type erasure which loses the compile-time static definition capability.
-Hence, Java' type-safe solution would be based on the type erasure strategy.
-
-In java, the type containers of the DAG must be hardcoded:
-
-```
-import java.util.ArrayList;
-
-class DAG{
-  private ArrayList<Panel> panels;
-  private ArrayList<Stiffener> stiffeners;
-  ...
-};
-```
-
-The above issue would arise for the other interfaces of the application (e.g. interface with the FE or SP)
-which requires the client would have to update the core (e.g. DAG) parts of the application for each new type.
-This would be a very bad architecture.
-
-**C++:**
+**C++:**\
 C++ provides variadic templates for varying type lists.
 C++ solution for the DAG would look like:
 
@@ -633,8 +613,35 @@ This approach requires an additional wrapper class definition for each new type.
 The interface between the CS in C++ and the SP in python (i.e. cython or pybind11) is an issue to be solved
 and some part of this interface would have to be managed by the client.
 
+**Java:**\
+Java handles the problem applying the type erasure which loses the compile-time static definition capability.
+Hence, Java' type-safe solution would be based on the type erasure strategy.
+Additionally, in java, the type containers of the DAG must be hardcoded:
+
+```
+import java.util.ArrayList;
+
+class DAG{
+  private ArrayList<Panel> panels;
+  private ArrayList<Stiffener> stiffeners;
+  ...
+};
+```
+
+In this architecture, the client is supposed to update the DAG source file for each new type.
+A codegen would do this on behalf of the client, but the codegen would be more complex than the oone we had in the C++ solution.
+
+I will not go more details with the java solution.
+The performance superiority of the static definitions of the C++ core 
 
 
+The above issue would arise for the other interfaces of the application as well (e.g. interface with the FE or SP)
+which requires the client would have to update the core parts of the application (e.g. DAG) for each new type.
+This would be a very bad architecture.
+
+
+
+**Python:**\
 
 
 

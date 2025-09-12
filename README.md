@@ -632,7 +632,7 @@ In this architecture, the client is supposed to update the DAG source file for e
 A codegen would do this on behalf of the client, but the codegen would be more complex than the oone we had in the C++ solution.
 
 I will not go more details with the java solution.
-The performance superiority of the static definitions of the C++ core 
+The performance superiority of the static definitions of the C++ core tastes stronger.
 
 
 

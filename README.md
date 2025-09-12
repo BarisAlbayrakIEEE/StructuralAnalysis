@@ -472,6 +472,7 @@ class DAG {
   private:
     std::tuple<std::vector<Ts>...> _type_containers;
   ...
+}
 ```
 
 C++ provides a powerful type traits library in order to handle type transformations statically.
@@ -606,14 +607,6 @@ include_directories(${GENERATED_DIR})
 add_executable(core main.cpp)
 add_dependencies(core regenerate_CS_type_list_command)
 ```
-
-
-
-
-
-
-
-
 
 To summarize:
 - **C++ provides a type-safe static solution which perfectly satisfies the mentioned requrements.**

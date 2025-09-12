@@ -628,7 +628,7 @@ The C++ solution would require the followings from the clients:
 For the 3rd one, there exist other solutions (e.g. pybind11).
 **I would prefer pybind11 as it is very elegant in sharing C++ objects considering the reference counting.**
 This approach requires an additional wrapper class definition for each new type.
-The interface between the CS in C++ and the SP in python (i.e. cython or pybind11) is an issue to be soved
+The interface between the CS in C++ and the SP in python (i.e. cython or pybind11) is an issue to be solved
 and some part of this interface would have to be managed by the client.
 
 

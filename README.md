@@ -635,6 +635,7 @@ I will not go more details with the java solution.
 The performance superiority of the static definitions of the C++ core 
 
 
+
 The above issue would arise for the other interfaces of the application as well (e.g. interface with the FE or SP)
 which requires the client would have to update the core parts of the application (e.g. DAG) for each new type.
 This would be a very bad architecture.

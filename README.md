@@ -376,7 +376,7 @@ A container can be defined for each type (e.g. Panel) which separates the fields
 ```
 import numpy as np
 
-class Panel_Container:
+class CS_Panel_Container:
   def __init__():
     self.ts = np.zeros(dtype=np.float32)
     self.EO_side_stiffeners_1 = np.zeros(dtype=np.uint32)
@@ -386,12 +386,11 @@ class Panel_Container:
 
 The above approach would serve very well for the memory management performed by the CS.
 The solver pack (SP), on the other hand, would need the actual type definitions in order to make use of the OOP capabilities.
-The SP would need to define the types based on many aspects of the software design: structure, behaviour, construction, etc.
-Hence, it would create the class hierarchies as well.
+The SP would also need to define a class hierarchy for the types.
 A prototype for the Panel type of the SP would be:
 
 ```
-class Panel(SC):
+class SP_Panel:
   def __init__(t, _EO_side_stiffener_1, _EO_side_stiffener_2):
     self.t = t
     self._EO_side_stiffener_1 = _EO_side_stiffener_1
@@ -418,8 +417,9 @@ Below list presents a couple of reasons why the assumption fails:
 4. The UI would need an interface for the mutability and sizeability: the state management and `size_structurally` and
 5. Extensibility fails for the user operations as designing new behaviours is cumbersome: Ex: `get_all_materials` function would envolve too many branches.
 
-I will discuss on these issues later in [the software design](#sec4) section.
-The 1st reason is especially important as it means that
+[The software design](#sec4) section will discuss on these issues later in detail.
+However, I will review the above items shortly here as well.
+The 1st one is especially important as it means that
 a traversal through the DAG would require the construction of temporary objects (e.g. Mat1, Panel)
 if the CS involves only the raw data.
 Actually, all of the operations may require the temporary objects.
@@ -427,27 +427,43 @@ Another solution is to apply the FOD approach to every problem but
 it will cause an explosion in the type tags and the boilerplate code which will kill the traceability.
 
 **Hence, a design with the CS handling DOD style raw data and the SP defining the whole class hierarchy is not reasonable.**
-**The CS shall be responsible from the memory while defining a class hierarchy.**
-In that case, Python would allocate the heap memory in order to store the user defined types.
-In summary, we have three choices for the CS:
-1. use Python with the heap memory,
-2. use Cython for the CS type definitions and
-3. use one of C++, rust and java.
+**The CS shall be responsible from the memory while defining a class hierarchy managing the core utilities.**
+In summary, we have four choices for the CS:
+1. Python: Involve each type (e.g. CS_Panel) in a class hierarchy and store the objects of these types -> DOD data management fails -> uses the heap memory,
+2. Python: Define DOD containers such as the above CS_Panel_Container within a class hierarchy,
+3. Python: Use Cython for the CS type definitions and store the objects of these types in contiguous arrays,
+4. use one of C++, rust and java.
 
 The 1st solution is not a choice due to the reasons already been discussed but I want to add one more point.
 Later, I will review the DAG in detail and select functionally persistent DAG to manage the memory.
 The persistent solution would require frequent copy operations for which the heap memory usage is a significant problem.
 Every action of the user may take considarable time for large DAGs if the data is spread out of the heap memory.
 
-I will eliminate the 2nd solution as its no better than the 3rd one.
+I will eliminate the 3rd solution as its no better than the 4th one.
 I also eliminate the rust solution as I dont have any experience with the rust development.
-Hence, there remains only C++ and java solutions.
 
-In order for the DAG to manage the memory it must store the whole data.
-For the data locality, the DAG shall allocate contiguous memory for each type.
-C++ provides variadic templates for varying type lists.
+**Java:**
 Java handles the problem applying the type erasure which loses the compile-time static definition capability.
+Hence, Java' type-safe solution would be based on the type erasure strategy.
 
+In java, the type containers of the DAG must be hardcoded:
+
+```
+import java.util.ArrayList;
+
+class DAG{
+  private ArrayList<Panel> panels;
+  private ArrayList<Stiffener> stiffeners;
+  ...
+};
+```
+
+The above issue would arise for the other interfaces of the application (e.g. interface with the FE or SP)
+which requires the client would have to update the core (e.g. DAG) parts of the application for each new type.
+This would be a very bad architecture.
+
+**C++:**
+C++ provides variadic templates for varying type lists.
 C++ solution for the DAG would look like:
 
 ```
@@ -487,21 +503,7 @@ using TypeList = Types<Foo, Bar>;
 static constexpr type_at<0, TypeList> obj{};
 ```
 
-On the other hand, with java, the type containers of the DAG must be hardcoded:
-
-```
-import java.util.ArrayList;
-
-class DAG{
-  private ArrayList<Panel> panels;
-  private ArrayList<Stiffener> stiffeners;
-  ...
-};
-```
-
 C++ would perform better than java in terms of the static programming as it provides the whole functionality required for the static type transformations.
-Hence, I would prefer using C++ in case of the static programming.
-
 However, there is a problem with the static programming: how to reconcile the extensibility via new plugins with the static programming?
 This issue actually points to two problems:
 1. Plugin extensions need re-compilation and
@@ -530,13 +532,6 @@ The 2nd solution makes the clients responsible from the system files which is to
 Besides, the plugins are not self-contained anymore due to this coupling with the system source file.
 The 1st solution on the other hand provides a type safe solution where the client is only responsible from the self-contained plugins.
 A CMake macro would automatically detect the new types defined by new plugins and regenerate the CS type list source file accordingly.
-
-**To summarize, for the type definitions, I will continue with:**
-- **The C++ static programming approach with a CMake tool shipped with the SAA which preserves the CS type list compatibility.**
-
-**Additionally, its worth to note that the static programming would eliminate the need for the type registration.**
-**Hence, we can neglect the previous discussions about the registry.**
-
 The CMake code would need a custom command to visit all the plugins in the plugins directory:
 
 ```
@@ -612,11 +607,56 @@ add_executable(core main.cpp)
 add_dependencies(core regenerate_CS_type_list_command)
 ```
 
+
+
+
+
+
+
+
+
+To summarize:
+- **C++ provides a type-safe static solution which perfectly satisfies the mentioned requrements.**
+- **The static solution would absolutely be the best performing solution.**
+- **The static programming would eliminate the need for the type registration.**
+
+The CS would need to define the following interfaces to be satisfied by each type (e.g. CS_Panel):
+- an interface that manages the DAG requests,
+- an interface that manages the UI requests,
+- an interface that manages the FE imports and exports,
+- an interface that manages the communication with the SP which is in python,
+- an interface that manages the MySQL DB requests.
+
+The C++ solution would require the followings from the clients:
+1. C++: Capability to add new concrete types that will be involved in an existing class hierarchy (i.e. the above interfaces).
+2. Python: Capability to generate a class hierarchy and corresponding concrete types.
+3. Cython: Capability to define new types (a wrapper class for each type, e.g. Bind_Panel) based on some interface.
+
+For the 3rd one, there exist other solutions (e.g. pybind11).
+**I would prefer pybind11 as it is very elegant in sharing C++ objects considering the reference counting.**
+This approach requires an additional wrapper class definition for each new type.
+The interface between the CS in C++ and the SP in python (i.e. cython or pybind11) is an issue to be soved
+and some part of this interface would have to be managed by the client.
+
+
+
+
+
+- **The C++ static programming approach with a CMake tool shipped with the SAA which preserves the CS type list compatibility.**
+
+
+
+
+
+
+
+
+
+
+
 The SP can still be implemented using python.
 Actually, it should be.
 A bridge would allow the interactions between the two languages: cython, boost.Python, swig, pybind11.
-**I would prefer pybind11 as it is very elegant in sharing C++ objects considering the reference counting.**
-This approach requires an additional wrapper class definition for each new type.
 However, the SP is a library for the behaviours rather than the types.
 Consider, for example, the panel type.
 A panel has many FMs and corresponding SAMMs:

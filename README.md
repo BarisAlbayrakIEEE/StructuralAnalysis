@@ -608,6 +608,8 @@ add_executable(core main.cpp)
 add_dependencies(core regenerate_CS_type_list_command)
 ```
 
+**This solution (i.e. the 1st one above) shipped with the SAA would preserve the CS type list compatibility.**
+
 To summarize:
 - **C++ provides a type-safe static solution which perfectly satisfies the mentioned requrements.**
 - **The static solution would absolutely be the best performing solution.**
@@ -634,8 +636,6 @@ and some part of this interface would have to be managed by the client.
 
 
 
-
-- **The C++ static programming approach with a CMake tool shipped with the SAA which preserves the CS type list compatibility.**
 
 
 

@@ -610,7 +610,7 @@ add_dependencies(core regenerate_CS_type_list_command)
 
 **This solution (i.e. the 1st one above) shipped with the SAA would preserve the CS type list compatibility.**
 
-To summarize:
+We can summarize the highlights of the CS in C++:
 - **C++ provides a type-safe static solution which perfectly satisfies the mentioned requrements.**
 - **The static solution would absolutely be the best performing solution.**
 - **The static programming would eliminate the need for the type registration.**

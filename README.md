@@ -907,7 +907,7 @@ Although the client is supposed to define the SAMMs,
 she would develop some code within the CS via the plugins as well (e.g. adding a new type, CS_EO_Tension_Fitting).
 Hence, the learning curve is an important parameter for which python is far more better comparing with any language.
 
-Finally, the SAMMs would be defined in python.
+Finally, the SAMMs are going to be defined in python.
 Using the same language for the CS and SP would form a compact application.
 **Gathering all of these discussions, python is the best choice for the CS.**
 

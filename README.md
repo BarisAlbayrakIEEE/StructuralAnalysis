@@ -1276,12 +1276,13 @@ When, for example, the user clicks on an OETVN, the frontend:
 
 ### 4.2. The CS <a id='sec42'></a>
 
-The CS contains 5 components:
+The CS contains six components:
 1. The DAG
 2. The types (i.e. the plugins)
 3. The UI interface
 4. The SP interface
 5. The MySQL DB interface
+6. The FE interface
 
 Firstly, I will discuss on the above issues based on the requests by the UI.
 

@@ -12,7 +12,11 @@
     - [3.3.5. Concurrency](#sec335)
     - [3.3.6. Summary of the 1st Overview](#sec336)
   - [3.4. The Frontend](#sec34)
-  - [3.5. Data Types & Data Structures](#sec35)
+  - [3.5. The Core](#sec35)
+    - [3.5.1. The CS in C++](#sec351)
+    - [3.5.2. The CS in Java](#sec352)
+    - [3.5.3. The CS in Python](#sec353)
+    - [3.5.4. The CS Language Comparison](#sec354)
   - [3.6. Use Case Diagrams](#sec36)
     - [3.6.1. Use Case scenario #1](#sec361)
     - [3.6.2. Use Case scenario #2](#sec362)
@@ -288,24 +292,29 @@ Based on these requirements, I will continue with **javascript/react as the fron
 Additionally, the separation of responsibility between the main framework and the UI is satisfied
 as react executes asynchronously with the core framework.
 
-### 3.5. Data Types & Data Structures <a id='sec35'></a>
+### 3.5. The Core <a id='sec35'></a>
 
-We had three requirements related to the extensibility from [the overview of the problem](#sec31):
+The core systems has the following responsibilities:
+1. Memory management,
+2. Data transformations,
+3. Forwarding the requests between the frontend and the memory, the MySQL DB, the SP and the FE.
+
+While performing the above duties, the core needs to satisfy the three requirements related to the extensibility from [the overview of the problem](#sec31):
 - The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
 - There may exist hundreds even thousands of types and correspondingly too many objects may need to be managed.
 
 The SCs, SAs and SARs are the objects of the application which need type definitions
 while SAMMs present the behaviours of these types.
-**The SAA will be used by the SAEs among whom Python is the most popular choice (even can be considered as de-facto).**
+Considering that the SAMMs involve the implementation of some scientific calculations,
+**python is the best choice for the SAMMs**
+as Python is the most popular language (even can be considered as de-facto) among various engineering fields including the SAEs.
 
 A plugin style architecture for the SCs, SAs and SARs needs a type registration.
 **Hence, the core framework shall provide the type registration.**
-Additionally, each new type would need a UI form.
-**Hence, if required a plugin may involve a UI form implementation with js as well.**
 
 The requirements arised from [the overview of the problem](#sec31) underline that the application
-would need to construct a type/class hierarchy which requires a careful design study based on:
+would need to construct a type/class hierarchy which requires a careful design study following:
 - object oriented design (OOD),
 - function oriented design (FOD),
 - data oriented design (DOD),
@@ -327,8 +336,9 @@ A plugin may include the following items:
 - SAMM module with analysis registry and
 - Type UI form js file with UI form registry.
 
-**Core API shall provide the registry routines for the new types, SP routines and the UI forms defined by the plugins.**
+**The core API shall provide the registry routines for the new types, SP routines and the UI forms defined by the plugins.**
 
+**Memory Management:**\
 [The overview of the problem](#sec31) explained the dependencies within the data.
 The dependencies/relations in the data require a link-based (i.e. pointer-based) data structure for the memory managemant.
 The relations are not linear such that the data contains both the one-to-many and many-to-one relations.
@@ -353,7 +363,7 @@ The application would be simulated with a DAG.
 The DAG can be very deep in case of a geometry application
 as each geometrical element (e.g. points, curves, surfaces) would be defined using other elements.
 The DAG is acyclic as a point cannot be created from a curve which has a relation with the point somewhere in the history.
-The application may allow cycled nodes (e.g. Catia) and continue in an **invalid state**.
+On the other hand, the application may allow cycled nodes (e.g. Catia) and continue in an **invalid state**.
 A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
 Catia also allows removing an element without removing the decendants which requires a background thread as well.
 [My persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository examines the background thread in detail.
@@ -361,61 +371,49 @@ Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
 - The depth of the DAG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> RF.
-- No need to have background processes for the cycled or deleted nodes.
+- No need to allow cycled nodes as it doesn't make sence in case of the SAA.
+- No need to allow deleting the nodes with descendants as it doesn't make sence in case of the SAA.
 
-**The above two points show that the DAG shall be single-threaded.**
+**The above three points show that the DAG of the SAA shall be single-threaded.**
 
-The memory management is crucial in case of the SAA as it may contain large data caused by hundreds of the user types.
-The memory management is related to the efficiency of the memory access patterns affecting both the read and write operations.
-The memory management policy of Python is based on the heap memory excluding the contiguous arrays.
-On the other hand, NumPy library provides this facility but for only the raw types.
-This is an important opportunity and deserves attention.
-Consider designing the CS based on the np.ndarray of raw types following the DOD approach.
-A container can be defined for each type (e.g. Panel) which separates the fields using np.ndarray:
+**Data Transformations and the Interfaces:**\
+The SAA has a number of components:
+- the DAG,
+- the UI,
+- the FE,
+- the MySQL DB and
+- the SP.
 
-```
-import numpy as np
+These components have a number of interactions that need to be handled by the CS.
+These interactions define the main interfaces.
 
-class CS_Panel_Container:
-  def __init__():
-    self.ts = np.zeros(dtype=np.float32)
-    self.EO_side_stiffeners_1 = np.zeros(dtype=np.uint32)
-    self.EO_side_stiffeners_2 = np.zeros(dtype=np.uint32)
-    ...
-```
+Each component would require the data in its own format
+so that the CS shall perform a data transformation before transfering the data.
+For example, lets consider a sample SA method defined by the SP: panel buckling.
+Before, I stated that the SP shall implement the SAMMs in python.
+The client would prefer simple OOP objects while working on the SAMMs.
+For example, a Panel class would encapsulate the panel data (e.g. thickness)
+in order to access data with dot notation easily (e.g. panel.t).
+Additionally, Panel class would have some methods.
+In other words, SAMMs would contain simple classes without a complex class hierarchy
+in order for the simplicity and traceability of the SAMMs.
+What about the CS?
+Shall the CS involve these type definitions?
+For example, does the DAG store the panel data by gathering these Panel objects?
+The answer to this question is actually a big *NO*.
+SAMMs will be defined by the client and the CS is not.
+Hence, the CS and the SP involve their own design.
+They even can be implemented in different languages such as C++ for the CS and python for the SP.
 
-The above approach would serve very well for the memory management performed by the CS.
-The solver pack (SP), on the other hand, would need the actual type definitions in order to make use of the OOP capabilities.
-The SP would also need to define a class hierarchy for the types.
-A prototype for the Panel type of the SP would be:
-
-```
-class SP_Panel:
-  def __init__(t, _EO_side_stiffener_1, _EO_side_stiffener_2):
-    self.t = t
-    self._EO_side_stiffener_1 = _EO_side_stiffener_1
-    self._EO_side_stiffener_2 = _EO_side_stiffener_2
-    ...
-  
-  def calculate_buckling_coefficient():
-    ...
-  
-  def inspect_EO_side_stiffener_restraint():
-    ...
-  
-  def run_analysis():
-    ...
-```
-
-In summary, this approach distributes the memory management and the design to the CS and SP respectively
+Another approach would be distributing the memory management and the design to the CS and SP respectively
 by assuming that the CS can work with the raw data and would not need to know about the design (i.e. the class hierarchy).
-However, the assumption actually is not correct.
-Below list presents a couple of reasons why the assumption fails:
-1. The DAG requires an interface: Ex: `get_ancestors`, `update_state`, `inspect_invariant`, etc,
-2. Write operations would need temporary SP object creation in order to inspect the type invariants,
-3. The SAA needs an FE interface for each type: `import_FE` and `export_FE`,
-4. The UI would need an interface for the mutability and sizeability: the state management and `size_structurally` and
-5. Extensibility fails for the user operations as designing new behaviours is cumbersome: Ex: `get_all_materials` function would envolve too many branches.
+However, the responsibilities of the CS listed above clearly shows that the CS needs to access and forward the data via a number of interfaces.
+Below list presents a couple of example operations that need a careful design:
+- The types would need to implement some functions for the DAG: `get_ancestors`, `update_state`, `inspect_invariant`,
+- The types would need to implement the import and export functions for the FE: `import_FE` and `export_FE`,
+- The types would need to implement the functions for the mutability and sizeability: `size_structurally`,
+- The types would need to implement a factory function for the SP: `create_SP_object`,
+- Extensibility fails for the user operations as designing new behaviours is cumbersome: `get_all_materials` function would envolve too many branches.
 
 [The software design](#sec4) section will discuss on these issues later in detail.
 However, I will review the above items shortly here as well.
@@ -427,26 +425,34 @@ Another solution is to apply the FOD approach to every problem but
 it will cause an explosion in the type tags and the boilerplate code which will kill the traceability.
 
 **Hence, a design with the CS handling DOD style raw data and the SP defining the whole class hierarchy is not reasonable.**
-**The CS shall be responsible from the memory while defining a class hierarchy managing the core utilities.**
-In summary, we have four choices for the CS:
-1. Python: Involve each type (e.g. CS_Panel) in a class hierarchy and store the objects of these types -> DOD data management fails -> uses the heap memory,
-2. Python: Define DOD containers such as the above CS_Panel_Container within a class hierarchy,
+**The CS shall be responsible from both the memory and the design.**
+
+**The Language:**\
+The client implements the SAMMs (i.e. the SP) in python.
+
+We have four choices for the CS:
+1. Python: Involve each type (e.g. CS_EO_Panel) within a class hierarchy and store the objects of these types in the DAG,
+2. Python: Involve a DOD container for each type (e.g. CS_EO_Panel_Container) within a class hierarchy and store the containers in the DAG,
 3. Python: Use Cython for the CS type definitions and store the objects of these types in contiguous arrays,
 4. use one of C++, rust and java.
 
-The 1st solution is not a choice due to the reasons already been discussed but I want to add one more point.
-Later, I will review the DAG in detail and select functionally persistent DAG to manage the memory.
+The 1st solution is not a choice as python would use the heap memory in this case which is obviously not a design choice but to be more clear: 
+- The DOD style data management would fail and
+- Later, I will review the DAG in detail and select functionally persistent DAG to manage the memory.
 The persistent solution would require frequent copy operations for which the heap memory usage is a significant problem.
 Every action of the user may take considarable time for large DAGs if the data is spread out of the heap memory.
 
 I will eliminate the 3rd solution as its no better than the 4th one.
 I also eliminate the rust solution as I dont have any experience with the rust development.
 
-**C++:**\
+#### 3.5.1. The CS in C++ <a id='sec351'></a>
+
 C++ provides variadic templates for varying type lists.
 C++ solution for the DAG would look like:
 
 ```
+// ~/src/system/dag.h
+
 template<typename... Ts>
 class DAG {
   private:
@@ -456,9 +462,11 @@ class DAG {
 ```
 
 C++ provides a powerful type traits library in order to handle type transformations statically.
-For example, the Nth type T within the typelist Ts that would be required by the CS:
+For example, the Nth type T within the typelist Ts would be obtained by:
 
 ```
+// ~/src/system/CS_type_traits.h
+
 // The base template to extract the Nth type from a type list
 template<std::size_t N, typename Types>
 struct type_at;
@@ -492,17 +500,18 @@ This issue actually points to two problems:
 
 Requesting re-compilation from the clients is not a big deal.
 The process can be described by the following maintanance procedure handled by a master user:
-1. Shut the server for maintanance,
-2. Add the new type and
-3. Restart the server.
+1. shut the server for maintanance,
+2. define the new type,
+2. recompile the application and
+3. restart the server.
 
 As I discussed before, the SAA would run on a cloud server which allows the above maintanance procedure to be handled easily.
 The remaining question is how to embed the new type into the CS type list statically.
-Consider that the CS has a source file defining the CS type list statically: CS_type_list.h.
+Consider that the CS has a source file defining the CS type list statically: `CS_type_list.h`.
 The CS is designed based on this source file such that the only update required to embed a new type is to append the new type into the type list.
 There exist four approaches to add a new type statically into the CS:
 1. Ship the SAA with a codegen or build tool which inspects the compatibility of the type list with the plugins,
-2. Ask the client to update the type list (i.e. CS_type_list.h) while adding a new type,
+2. Ask the client to update the type list (i.e. `CS_type_list.h`) while adding a new type,
 3. Defining the type list with pre-reserved slots (e.g. EO_1, EO_2, etc.) and ask the client to map to these pre-reserved slots and
 4. Using macros.
 
@@ -595,15 +604,9 @@ We can summarize the highlights of the CS in C++:
 - **The static solution would absolutely be the best performing solution.**
 - **The static programming would eliminate the need for the type registration.**
 
-The CS would need to define the following interfaces to be satisfied by each type (e.g. CS_Panel):
-- an interface that manages the DAG requests,
-- an interface that manages the UI requests,
-- an interface that manages the FE imports and exports,
-- an interface that manages the communication with the SP which is in python,
-- an interface that manages the MySQL DB requests.
-
-The C++ solution would require the followings from the clients:
-1. C++: Capability to add new concrete types that will be involved in an existing class hierarchy (i.e. the above interfaces).
+Considering that the CS would involve some interfaces mentioned before (e.g. the interface for the MySQL DB),
+the C++ solution would require the followings skills to be met by the clients:
+1. C++: Capability to add new concrete types that will be involved in an existing class hierarchy.
 2. Python: Capability to generate a class hierarchy and corresponding concrete types.
 3. Cython: Capability to define new types (a wrapper class for each type, e.g. Bind_Panel) based on some interface.
 
@@ -613,12 +616,14 @@ This approach requires an additional wrapper class definition for each new type.
 The interface between the CS in C++ and the SP in python (i.e. cython or pybind11) is an issue to be solved
 and some part of this interface would have to be managed by the client.
 
-**Java:**\
+#### 3.5.2. The CS in Java <a id='sec352'></a>
+
 Java handles the problem applying the type erasure which loses the compile-time static definition capability.
-Hence, Java' type-safe solution would be based on the type erasure strategy.
-Additionally, in java, the type containers of the DAG must be hardcoded:
+Additionally, java does not have type utilities provided by C++ such that the type containers of the DAG must be hardcoded:
 
 ```
+// ~/src/system/dag.java
+
 import java.util.ArrayList;
 
 class DAG{
@@ -629,63 +634,282 @@ class DAG{
 ```
 
 In this architecture, the client is supposed to update the DAG source file for each new type.
-A codegen would do this on behalf of the client, but the codegen would be more complex than the one we had in the C++ solution.
+This issue would arise for the other interfaces of the application as well (e.g. interface with the MySQL DB)
+which requires the client to update the core parts of the application for each new type.
+A codegen would do this on behalf of the client, but the codegen would absolutely be more complex than the one we had in the C++ solution.
 
-I will not go more details with the java solution.
-The performance superiority of the static definitions of the C++ core tastes stronger.
+I will not go through the details with the java solution
+since in this problem case I am more interested in C++ and python.
 
+Below presents some of the superiorities of java in case of the SAA:
+- cross-platform applicability,
+- wide worldwide use and shorter learning curves for the clients comparing with C++,
+- good enterprise libraries,
+- ensured type and memory safety,
+- simpler multithreading interface (i.e. java.util.concurrent) comparing with C++.
 
+Below presents some of the disadvantages of java in case of the SAA:
+- The dynamism involved in the static type definitions and the heap allocated memory,
+- lack of the type traits utilities and harder type transformations comparing with C++,
+- garbage collection (GC) might pause unpredictably.
 
-The above issue would arise for the other interfaces of the application as well (e.g. interface with the FE or SP)
-which requires the client would have to update the core parts of the application (e.g. DAG) for each new type.
-This would be a very bad architecture.
+#### 3.5.3. The CS in Python <a id='sec353'></a>
 
+As mentioned above, python uses heap for the memory management.
+The alternative is to use raw data types or NumPy data types for the data management.
+However, this approach cannot involve the pre-mentioned interfaces required by the CS.
+The solution is separating the data and the interfaces.
+Consider the following interfaces for the DAG, UI, MySQL DB, SP and FE.
+The interfaces will be implemented by data containers which store the data in contiguous DOD style arrays.
+The index argument in the function definitions represents the index of the data within the container.
+The interfaces here are defined quite basic as they will be inspected in the [Software Design]('sect4') section in detail.
 
+**The sample interface for the DAG:**
 
-**Python:**\
+```
+# ~/src/system/idag.py
 
+from abc import ABC, abstractmethod
 
+class IDAG(ABC):
+  @abstractmethod
+  def get_ancestors(self, index:int, DAG_:DAG) -> []:
+    """Getter for the ancestor DAG node indices"""
+    pass
 
+  @abstractmethod
+  def get_descendants(self, index:int, DAG_:DAG) -> []:
+    """Getter for the descendant DAG node indices"""
+    pass
+```
 
+**The sample interface for the UI:**
 
+```
+# ~/src/system/iui.py
 
+from abc import ABC, abstractmethod
 
+class IUI(ABC):
+  @abstractmethod
+  def get_type_name(self, index:int) -> None:
+    """gets the type name"""
+    pass
 
+  @abstractmethod
+  def get_from_json(self, index:int, josn_:json) -> None:
+    """gets the member data from a json input"""
+    pass
 
+  @abstractmethod
+  def set_to_json(self, index:int) -> json:
+    """sets the member data to the output json"""
+    pass
+```
 
+**The sample interface for the MySQL DB:**
 
+```
+# ~/src/system/idb.py
 
-The SP can still be implemented using python.
-Actually, it should be.
-A bridge would allow the interactions between the two languages: cython, boost.Python, swig, pybind11.
-However, the SP is a library for the behaviours rather than the types.
-Consider, for example, the panel type.
-A panel has many FMs and corresponding SAMMs:
-- the panel pressure analysis,
-- the panel buckling analysis,
-- the snap-through buckling analysis,
-- the fracture analyses (contains more than 2 FMs),
-- etc.
+from abc import ABC, abstractmethod
 
-A company may have many other FMs defined for a panel element.
-In summary, corresponding to a CS type, there may exist many SAMMs in the SP side.
-In other words, the additional wrapper class would be defined once and only for the types, not for the SAMMs.
-This would not cause to much work to the clients as the clients would mostly work on the SAMMs rather than the types.
-**In other words, the core types shipped with the SAA would cover the possible types that the SAA would need to involve.**
+class IDB(ABC):
+  def get_modified_indexs(self) -> []:
+    """gets the items modified during the session"""
+    modified_indexs = []
+    for i, state__DB in enumerate(self._states_DB):
+      if state_DB:
+        modified_indexs.append(i)
+    return modified_indexs
 
-I mentioned that, I will use React for the frontend development.
-The C++ backend needs to communicate with the React frontend.
-The REST API would serve very well in case of the SAA.
-If required, WebSocket would be utilized later to allow backend pushes or enhance the real-time communication.
+  @abstractmethod
+  def load_from_DB_1(self, DB_descriptor) -> None:
+    """loads all data for this type from the MySQL DB"""
+    pass
 
-There is one last point under this heading.
-The LC and SC data multiplies in case of the SAA as on an SC a load data (i.e. the SCL) is defined for each LC.
-Hence, considering that M is the number of SCs and N is the number of LCs:
-- The number of SCLs = M * N
-- The number of SARs = M * N
+  @abstractmethod
+  def load_from_DB_2(self, index:int, DB_descriptor) -> None:
+    """loads the data for the indexth element from the MySQL DB"""
+    pass
 
-The SCLs and SARs dominate the SAA in terms of the memory which may cause memory problems.
-Hence, **the SCLs and the SARs shall be stored in the MySQL DB.**
+  @abstractmethod
+  def save_to_DB_1(self, index:int, DB_descriptor) -> None:
+    """saves all modified data for this type to the MySQL DB"""
+    pass
+
+  @abstractmethod
+  def save_to_DB_2(self, index:int, DB_descriptor) -> None:
+    """saves the data for the indexth element to the MySQL DB"""
+    pass
+```
+
+**The sample interface for the SP:**
+
+```
+# ~/src/system/isp.py
+
+from abc import ABC, abstractmethod
+
+class ISP(ABC):
+  @abstractmethod
+  def create(self, CS_: CS, index:int) -> ISP: # CS is the CS class
+    """creates the corresponding SP object (e.g. SP_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    pass
+```
+
+**The sample interface for the FE:**
+
+```
+# ~/src/system/ife.py
+
+from abc import ABC, abstractmethod
+
+class IFE(ABC):
+  @abstractmethod
+  def import_FE(self, index:int, FE_file_path:str) -> None:
+    """imports the data of the indexth item within the container from an FE file (e.g. a bdf file)"""
+    pass
+
+  @abstractmethod
+  def export_FE(self, index:int, FE_file_path:str) -> None:
+    """exports the data of the indexth item within the container to an FE file (e.g. a bdf file)"""
+    pass
+```
+
+The container types of the CS implement these interfaces.
+**A sample container definition for the panel EO would be:**
+
+```
+# ~/src/plugins/core/panel/eo_panel.py
+
+import array
+
+class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
+  def __init__():
+    self._names = array.array(dtype=str)
+    self._states__DB = array.array(dtype=bool) # bool holds whether the item is modified during the session
+    self._ts = array.array(dtype=float)
+    self._EO_side_stiffeners_1 = array.array(dtype=int) # ancestors: indices of the EOs - the side stiffeners - 1
+    self._EO_side_stiffeners_2 = array.array(dtype=int) # ancestors: indices of the EOs - the side stiffeners - 2
+    self._SC_panels = array.array(dtype=int) # descendants: indices of the SCs - the panels
+    self._SC_stiffeners_1 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 1
+    self._SC_stiffeners_2 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 2
+    ...
+  
+  def get_ancestors(self, index:int, DAG_:DAG) -> []:
+    """Getter for the ancestor DAG node indices"""
+    return [
+      self._EO_side_stiffeners_1[index],
+      self._EO_side_stiffeners_2[index]]
+
+  def get_descendants(self, index:int, DAG_:DAG) -> []:
+    """Getter for the descendant DAG node indices"""
+    return [
+      self._SC_panels[index],
+      self._SC_stiffeners_1[index],
+      self._SC_stiffeners_2[index]]
+
+  def get_type_name(self, index:int) -> None:
+    """gets the type name"""
+    return 'EO_Panel'
+
+  def get_from_json(self, index:int, josn_:json) -> None:
+    """gets the member data from a json input"""
+    self._ts[index] = json_["_ts"]
+    self._EO_side_stiffeners_1[index] = json_["_EO_side_stiffeners_1"]
+    ...
+
+  def set_to_json(self, index:int) -> json:
+    """sets the member data to the output json"""
+    return create_json(
+      {
+        {"_ts": self._ts[index]},
+        {"_EO_side_stiffeners_1": self._EO_side_stiffeners_1[index]},
+        ...
+      }
+    )
+
+  def load_from_DB_1(self, DB_descriptor) -> None:
+    """loads all data for this type from the MySQL DB"""
+    self._ts = table_EO_panel__column_ts # TODO: get DB data using DB_descriptor
+    self._EO_side_stiffeners_1 = table_EO_panel__column_EO_side_stiffeners_1 # TODO: get DB data using DB_descriptor
+    ...
+
+  def load_from_DB_2(self, index:int, DB_descriptor) -> None:
+    """loads the data for the indexth element from the MySQL DB"""
+    self._ts = table_EO_Panel__column_ts__row_index # TODO: get DB data using DB_descriptor
+    self._EO_side_stiffeners_1 = table_EO_panel__column_EO_side_stiffeners_1__row_index # TODO: get DB data using DB_descriptor
+    ...
+
+  def save_to_DB_1(self, index:int, DB_descriptor) -> None:
+    """saves all modified data for this type to the MySQL DB"""
+    modified_indexs = self.get_modified_indexs()
+    for modified_index in modified_indexs:
+      self.save_to_DB_2(modified_index, DB_descriptor)
+
+  def save_to_DB_2(self, index:int, DB_descriptor) -> None:
+    """saves the data for the indexth element to the MySQL DB"""
+    table_EO_panel__column_ts__row_index = self._ts # TODO: set DB data using DB_descriptor
+    table_EO_panel__column_EO_side_stiffeners_1__row_index = self._EO_side_stiffeners_1 # TODO: set DB data using DB_descriptor
+    ...
+
+  def create(self, CS_: CS, index:int) -> ISP: # CS is the CS class
+    """creates the corresponding SP object (e.g. SP_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    return SP_Panel(
+      self._ts[index],
+      CS_.EO_Stiffeners.create(CS_, self._EO_side_stiffeners_1[index]),
+      ...
+      )
+
+  def import_FE(self, index:int, FE_file_path:str) -> None:
+    """imports the data of the indexth item within the container from an FE file (e.g. a bdf file)"""
+    # TODO: this is a quite complex function which requires a significant portion of the clients' effort.
+
+  def export_FE(self, index:int, FE_file_path:str) -> None:
+    """exports the data of the indexth item within the container to an FE file (e.g. a bdf file)"""
+    # TODO: this is a quite complex function which requires a significant portion of the clients' effort.
+```
+
+The above definition satisfies the DOD principles while supporting all the required interfaces.
+**I would not expect a significant performance difference for this architecture comparing with the one formed by C++.**
+The only measurable performance loss would be the absence of the static definitions obtained by C++.
+The static definitions would transfer some work to the compile time which we cannot achieve by python.
+However, I dont think that this performance loss would affect the end user statistics significantly.
+
+#### 3.5.4. The CS Language Comparison <a id='sec354'></a>
+
+The below table summarizes the previous three sections:
+
+| Criterion                     | C++                                    | Python                                 | Java                                   |
+|:------------------------------|:---------------------------------------|:---------------------------------------|:---------------------------------------|
+| Type safety | Strong, <br> good at type transformations (traits) | Weak, <br> only runtime type checks | Strong, <br> good for complex hierarchies |
+| Memory Management | Full memory control, <br> fast memory access | Contains memory overheads, <br> enhanced by DOD containers | Contains little overhead |
+| Concurrency | Strong but complex | No multithreading | Strong, safe and simple |
+| Performance | Best performance, <br> runtime to compile-time load transfer | Worst performance, <br> enhanced by DOD approach | Medium performance, <br> lack of static definitions |
+| OOP | Strong but requires <br> much more effort (e.g. rule of 3/5/7) | Not good for complex class hierarchies | Strong but dynamic |
+| Compatibility | Worst, requires too much effort <br> for multi-platform compilation | No compilation at all | JVM handles |
+| Harmony with other components | Medium with JS. <br> Native with python <br> but requires wrapper classes | Strong with JS | Strong with JS, <br> Medium with python |
+| Developer learning curve | Steepest | Smooth to None | Medium |
+
+As I mentioned earlier, the DAG is single-threaded.
+Javascript itself works asynchronously.
+The interfaces (i.e. the SP, MySQL DB and FE) would run sequencially.
+As a result, the CS does not need multi-threading at all even for the separation of the responsibilities.
+Hence, the concurrency is not an aspect for the design of the CS.
+
+I would not expect a significant performance difference for the three languages
+accept for the edge cases (e.g. pauses due to the GC).
+**The DOD container solution given in [The CS in Python](sec353) section would perform close to C++ solution.**
+**However, its good to add a **TODO** here to measure some benchmarks for this expectation.**
+
+Although the client is supposed to define the SAMMs,
+she would develop some code within the CS via the plugins as well (e.g. adding a new type, CS_EO_Tension_Fitting).
+Hence, the learning curve is an important parameter for which python is far more better comparing with any language.
+
+Finally, the SAMMs would be defined in python.
+Using the same language for the CS and SP would form a compact application.
+**Gathering all of these discussions, python is the best choice for the CS.**
 
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 

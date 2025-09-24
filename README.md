@@ -612,10 +612,10 @@ the C++ solution would require the followings skills to be met by the clients:
 2. Python: Capability to generate a class hierarchy and corresponding concrete types.
 3. Cython: Capability to define new types (a wrapper class for each type, e.g. CS_Bind_Panel) based on some interface.
 
-For the 3rd one, there exist other solutions (e.g. pybind11).
-**I would prefer pybind11 as it is very elegant in sharing C++ objects considering the reference counting.**
+For the 3rd one, there exist other solutions (e.g. `pybind11`).
+**I would prefer `pybind11` as it is very elegant in sharing C++ objects considering the reference counting.**
 This approach requires an additional wrapper class definition for each new type.
-The interface between the CS in C++ and the SP in python (i.e. cython or pybind11) is an issue to be solved
+The interface between the CS in C++ and the SP in python (i.e. cython or `pybind11`) is an issue to be solved
 and some part of this interface would have to be managed by the client.
 
 #### 3.5.2. The CS in Java <a id='sec352'></a>
@@ -1330,11 +1330,14 @@ Below are the current features of the SAA based on the previous sections:
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 - A three component application: the CS, the SP and the frontend
-- The CS language: Python
+- The CS language: C++ or java or python
 - The SP language: Python
 - The frontend language: js/react
 - UI contains three interactive components: OETV, user forms and FE display
-- Backend/frontend communication: fastapi
+- Backend/frontend communication (C++) | backend: Crow
+- Backend/frontend communication (C++) | frontend: HTTP or WebSocket
+- Backend/frontend communication (python): fastapi
+- Backend/frontend communication (java): Spring Boot
 - The CS base types (i.e. current interfaces): EO, SC, SCL, SA, SAR
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. CS_EO_Panel) are shipped with the installation
@@ -2739,20 +2742,15 @@ However, I think, up to this point, I clearified the fundamental aspects of the 
 
 #### 4.2.3. The SP Interface <a id='sec423'></a>
 
-We have the following architecture for the SAA:
-- The UI is developed in js.
-- The CS is developed in C++.
-- The SP is developed in python.
-
 The CS/SP interface requires the communication between C++ and python in both directions.
-I will use pybind11 for this interface as it allows flexible and efficient access from both sides.
+I will use `pybind11` for this interface as it allows flexible and efficient access from both sides.
 
 The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DAG.
 However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
-- The CS defines the types: Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
-- The CS defines the python binding (i.e. pybind11) types: Ex: CS_Bind_Material, CS_Bind_Panel and CS_Bind_Panel_Buckling.
-- The SP defines the python wrapper classes if needed: Ex: SP_Py_Material, SP_Py_Panel and SP_Py_Panel_Buckling.
+- The CS defines the types. Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
+- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_Material, CS_Bind_Panel and CS_Bind_Panel_Buckling.
+- The SP defines the python wrapper classes if needed. Ex: SP_Py_Material, SP_Py_Panel and SP_Py_Panel_Buckling.
 
 The SP python wrapper classes (e.g. SP_Py_Panel) is defined when there is a need.
 Some EOs would have behaviours which is strongly related with the processes executed by the SP.
@@ -2886,7 +2884,7 @@ struct CS_Bind_Panel{
 #endif
 ```
 
-Additionally, we need the pybind11 binding file for each CS type:
+Additionally, we need the `pybind11` binding file for each CS type:
 
 ```
 // ~/src/plugins/core/panel/pybind11_Panel.cpp
@@ -3010,7 +3008,7 @@ Lets exemine the components of this strategy:
 - The CS implements the factory and the strategy patterns.
 - The client needs to define the factory method creating the Bind type object (e.g. CS_Bind_Panel) within each CS type (e.g. CS_EO_Panel).
 - The client needs to define a Bind class for each CS type which is almost a copy of the original CS class.
-- The client needs to implement the pybind11 interface for each CS class.
+- The client needs to implement the `pybind11` interface for each CS class.
 - The client needs to implement the SP processes.
 
 **The last one is inevitable; actually the client side development of the SP is a requirement for the SAA.**

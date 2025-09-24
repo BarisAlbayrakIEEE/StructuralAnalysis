@@ -610,7 +610,7 @@ Considering that the CS would involve some interfaces mentioned before (e.g. the
 the C++ solution would require the followings skills to be met by the clients:
 1. C++: Capability to add new concrete types that will be involved in an existing class hierarchy.
 2. Python: Capability to generate a class hierarchy and corresponding concrete types.
-3. Cython: Capability to define new types (a wrapper class for each type, e.g. CS_Bind_Panel) based on some interface.
+3. Cython: Capability to define new types (a wrapper class for each type, e.g. CS_Bind_EO_Panel) based on some interface.
 
 For the 3rd one, there exist other solutions (e.g. `pybind11`).
 **I would prefer `pybind11` as it is very elegant in sharing C++ objects considering the reference counting.**
@@ -2749,8 +2749,8 @@ The problem in case of the CS/SP interface is that the CS types delegates the de
 However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types. Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
-- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_Material, CS_Bind_Panel and CS_Bind_Panel_Buckling.
-- The SP defines the python wrapper classes if needed. Ex: SP_Py_Material, SP_Py_EO_Panel and SP_Py_EO_Panel_Buckling.
+- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_EO_Material, CS_Bind_EO_Panel and CS_Bind_SA_Panel_Buckling.
+- The SP defines the python wrapper classes if needed. Ex: SP_Py_EO_Material, SP_Py_EO_Panel and SP_Py_SA_Panel_Buckling.
 
 The SP python wrapper classes (e.g. SP_Py_EO_Panel) is defined when there is a need.
 Some EOs would have behaviours which is strongly related with the processes executed by the SP.
@@ -2774,7 +2774,7 @@ The **executor** is a templated function and shall be registered like the other 
 The **executor** asks the CS types to construct Bind objects.
 Hence, the CS types shall implement a method returning the Bind object which requires an interface while
 the DAG needs a function which would return the Bind objects for the input type and index.
-The function will be templated and the return type (e.g. CS_Bind_Panel) depends on the template type (e.g. CS_EO_Panel).
+The function will be templated and the return type (e.g. CS_Bind_EO_Panel) depends on the template type (e.g. CS_EO_Panel).
 The solution is defining an alias within the CS types that stores the type of the corresponding Bind type.
 This alias would be used in many steps of the above flow.
 
@@ -2829,7 +2829,7 @@ The CS panel class becomes:
 ...
 
 struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
-  using bind_type = CS_Bind_Panel;
+  using bind_type = CS_Bind_EO_Panel;
 
   double _thickness;
   double _width_a;
@@ -2855,19 +2855,19 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
 The Bind class definition for the panel would be:
 
 ```
-// ~/src/plugins/core/panel/CS_Bind_Panel.h
+// ~/src/plugins/core/panel/CS_Bind_EO_Panel.h
 
-#ifndef _CS_Bind_Panel_h
-#define _CS_Bind_Panel_h
+#ifndef _CS_Bind_EO_Panel_h
+#define _CS_Bind_EO_Panel_h
 
-struct CS_Bind_Panel{
+struct CS_Bind_EO_Panel{
   double _thickness;
   double _width_a;
   double _width_b;
   std::shared_ptr<Bind_Stiffener> _EO_side_stiffener_1;
   std::shared_ptr<Bind_Stiffener> _EO_side_stiffener_2;
 
-  CS_Bind_Panel(
+  CS_Bind_EO_Panel(
     double thickness,
     double width_a,
     double width_b,
@@ -2896,7 +2896,7 @@ Additionally, we need the `pybind11` binding file for each CS type:
 namespace py = pybind11;
 
 PYBIND11_MODULE(panel_bindings, m) {
-  py::class_<CS_Bind_Panel, std::shared_ptr<CS_Bind_Panel>>(m, "CS_Bind_Panel")
+  py::class_<CS_Bind_EO_Panel, std::shared_ptr<CS_Bind_EO_Panel>>(m, "CS_Bind_EO_Panel")
     .def(
       py::init<
         double,
@@ -2905,7 +2905,7 @@ PYBIND11_MODULE(panel_bindings, m) {
         const std::shared_ptr<Bind_Stiffener>&,
         const std::shared_ptr<Bind_Stiffener>&>());
 
-  py::class_<CS_Bind_Panel, std::shared_ptr<CS_Bind_Panel>>(m, "CS_Bind_Panel")
+  py::class_<CS_Bind_EO_Panel, std::shared_ptr<CS_Bind_EO_Panel>>(m, "CS_Bind_EO_Panel")
     .def(
       py::init<
         double,
@@ -2913,11 +2913,11 @@ PYBIND11_MODULE(panel_bindings, m) {
         double,
         const std::shared_ptr<Bind_Stiffener>&,
         const std::shared_ptr<Bind_Stiffener>&>());
-    .def_readonly("_thickness", &CS_Bind_Panel::_thickness)
-    .def_readonly("_width_a", &CS_Bind_Panel::_width_a)
-    .def_readonly("_width_b", &CS_Bind_Panel::_width_b)
-    .def_readonly("_EO_side_stiffener_1", &CS_Bind_Panel::_EO_side_stiffener_1)
-    .def_readonly("_EO_side_stiffener_2", &CS_Bind_Panel::_EO_side_stiffener_2);
+    .def_readonly("_thickness", &CS_Bind_EO_Panel::_thickness)
+    .def_readonly("_width_a", &CS_Bind_EO_Panel::_width_a)
+    .def_readonly("_width_b", &CS_Bind_EO_Panel::_width_b)
+    .def_readonly("_EO_side_stiffener_1", &CS_Bind_EO_Panel::_EO_side_stiffener_1)
+    .def_readonly("_EO_side_stiffener_2", &CS_Bind_EO_Panel::_EO_side_stiffener_2);
 }
 ```
 
@@ -2926,10 +2926,10 @@ The SP python class definition for the panel would be:
 ```
 # ~/src/plugins/core/panel/SP_Panel.py
 
-from panel_bindings import CS_Bind_Panel
+from panel_bindings import CS_Bind_EO_Panel
 
 class SP_Panel:
-  def __init__(self, bind_panel: CS_Bind_Panel):
+  def __init__(self, bind_panel: CS_Bind_EO_Panel):
     self._bind_panel = bind_panel
 
   def calculate_buckling_coefficient(self) -> double:
@@ -2964,7 +2964,7 @@ void execute(std::size_t type_container_index, const std::string& function_name)
   // execute the requested SP function
   py::module py_module = py::module::import(module_name);
   py::function py_function = py_module.attr(function_name);
-  py_function(bind_object);  // pass shared_ptr<CS_Bind_Panel> to python
+  py_function(bind_object);  // pass shared_ptr<CS_Bind_EO_Panel> to python
 };
 
 ...
@@ -3006,7 +3006,7 @@ Similarly, main.cpp needs an update for the registration of the executor:
 
 Lets exemine the components of this strategy:
 - The CS implements the factory and the strategy patterns.
-- The client needs to define the factory method creating the Bind type object (e.g. CS_Bind_Panel) within each CS type (e.g. CS_EO_Panel).
+- The client needs to define the factory method creating the Bind type object (e.g. CS_Bind_EO_Panel) within each CS type (e.g. CS_EO_Panel).
 - The client needs to define a Bind class for each CS type which is almost a copy of the original CS class.
 - The client needs to implement the `pybind11` interface for each CS class.
 - The client needs to implement the SP processes.

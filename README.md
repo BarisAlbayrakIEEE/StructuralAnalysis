@@ -1044,41 +1044,46 @@ Compatibility is the main problem that makes the people think twice when talking
 One of the main reasons for the birth of java is actually to achieve a language running on any machine.
 Use of C++ as the CS language would require too much effort in the development process due to the compatibility issue.
 
+**Design:**\
+The software design is an important parameter while making decissions about the architecture of an application.
+Basically, below three rules covers the comparison of the three languages:
+- Use C++ if a **complex** class hierarchy exists and the **performance** is crucial as it allows **static** definitions.
+- Use java if a **complex** class hierarchy exists **without** a realy tight performance requirement as it deals with the problem **idiomatically**.
+- Use python if a **flat** class hierarchy exists as it allows **easy** development.
 
+Lets examine the CS with respect to the above rules.
+The CS involves a number of interfaces with the UI, FE, MySQL DB and SP.
+Additionally, the DAG requires an interface.
+These interfaces define a base for the CS.
+On top of these interfaces, the CS shall also include a couple of interfaces to define the analysis procedure (i.e. EO, SC, SA and SAR).
+These are all interfaces on top of which the CS would define the concrete types (e.g. CS_EO_Panel).
 
+On the other hand, the concrete objects does not require additional relations
+which extends the above class hierarchy further.
+For example, panels and joints has no relation in the class hierachy.
+The object relations are handled by the DAG.
+In other words, the class hierarchy holds three level:
+1. The base interfaces to interact with the DAG and the other components of the SAA,
+2. The interfaces that define the analysis procedure (i.e. EO, SC, SA and SAR),
+3. The concrete types (e.g. CS_EO_Panel).
 
+The above architecture is a result of the fact that the CS is not involved in the physical definitions.
+The physics of the structural analyses are defined by the SP and left to the client.
+In other words, the CS deals with only the data management and the process flow.
 
-The below table summarizes the previous three sections:
+Considering the flatness of the CS class hierarchy, python would offer enough
+if powered by the runtime checks and unit tests.
 
-| Criterion                     | C++                                    | Python                                 | Java                                   |
-|:------------------------------|:---------------------------------------|:---------------------------------------|:---------------------------------------|
-| Type safety | Strong, <br> good at type transformations (traits) | Weak, <br> only runtime type checks | Strong, <br> good for complex hierarchies |
-| Memory Management | Full memory control, <br> fast memory access | Contains memory overheads, <br> enhanced by DOD containers | Contains little overhead |
-| Concurrency | Strong but complex | No multithreading | Strong, safe and simple |
-| Performance | Best performance, <br> runtime to compile-time load transfer | Worst performance, <br> enhanced by DOD approach | Medium performance, <br> lack of static definitions |
-| OOP | Strong but requires <br> much more effort (e.g. rule of 3/5/7) | Not good for complex class hierarchies | Strong but dynamic |
-| Compatibility | Worst, requires too much effort <br> for multi-platform compilation | No compilation at all | JVM handles |
-| Harmony with other components | Medium with JS. <br> Native with python <br> but requires wrapper classes | Strong with JS | Strong with JS, <br> Medium with python |
-| Developer learning curve | Steepest | Smooth to None | Medium |
+**Harmony:**\
+Its already stated that the UI is in javascript and the SP is in python.
+C++ has a medium-grade API with js while a native API with python.
+However, the python interface would require a data wrapper for each type (e.g. CS_Wrapper_EO_Panel).
+Java has a strong-grade API with js while a medium-grade API with python.
+Java would not need wrapper classes in order to manage python objects of the SP.
+Python has a strong-grade API with js.
 
-As I mentioned earlier, the DAG is single-threaded.
-Javascript itself works asynchronously.
-The interfaces (i.e. the SP, MySQL DB and FE) would run sequencially.
-As a result, the CS does not need multi-threading at all even for the separation of the responsibilities.
-Hence, the concurrency is not an aspect for the design of the CS.
-
-I would not expect a significant performance difference for the three languages
-accept for the edge cases (e.g. pauses due to the GC).
-**The DOD container solution given in [The CS in Python](sec353) section would perform close to C++ solution.**
-**However, its good to add a **TODO** here to measure some benchmarks for this expectation.**
-
-Although the client is supposed to define the SAMMs,
-she would develop some code within the CS via the plugins as well (e.g. adding a new type, CS_EO_Tension_Fitting).
-Hence, the learning curve is an important parameter for which python is far more better comparing with any language.
-
-Finally, the SAMMs are going to be defined in python.
-Using the same language for the CS and SP would form a compact application.
-**Gathering all of these discussions, python is the best choice for the CS.**
+**Summary:**\
+**The above arguments clearly show that python is the best language choice for the CS.**
 
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 

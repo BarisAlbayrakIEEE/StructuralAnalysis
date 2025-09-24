@@ -1462,15 +1462,14 @@ When, for example, the user clicks on an OETVN, the frontend:
 
 ### 4.2. The CS <a id='sec42'></a>
 
-The CS contains six components:
-1. The DAG
-2. The types (i.e. the plugins)
-3. The UI interface
-4. The SP interface
-5. The MySQL DB interface
-6. The FE interface
+The CS contains the following interfaces:
+1. The UI interface
+2. The DAG interface
+3. The SP interface
+4. The MySQL DB interface
+5. The FE interface
 
-Firstly, I will discuss on the above issues based on the requests by the UI.
+I will describe the CS following these interfaces.
 
 #### 4.2.1. The UI Interface <a id='sec421'></a>
 
@@ -1506,7 +1505,7 @@ The current one, calculate_properties, would calculate some properties such as:
 **Below, I will present the pseudocode of the backend/frontend interface at the CS side based on the three fundamental functions: create, get and set.**
 Other functions such as remove can easily be defined similarly.
 
-Firstly, I will start with the a couple of simple type traits metafunctions to support the static type definitions.
+Firstly, I will start with a couple of simple type traits metafunctions to support the static type definitions.
 The type traits involve the following functionality:
 1. **This is the most important part of the CS: Defining the type list (e.g. CS_EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
@@ -1529,7 +1528,7 @@ struct TypeList {};
 
 // CAUTION:
 //   Each new type needs to be added to this type list.
-//   This is the only CS modification the client has to perform to add a new type via a plugin!!!
+//   This is the only CS modification when a new type is added via a plugin!!!
 using CS_Types_t = TypeList<
   CS_EO_Panel,
   CS_EO_Stiffener,
@@ -1628,7 +1627,7 @@ struct for_each_type_impl<TypeList<Ts...>, F> {
 template<typename Types, typename F>
 inline void for_each_type(F&& f) {
   for_each_type_impl<Types, F>::apply(std::forward<F>(f));
-}
+};
 
 // -----------------------------------------------------------------------
 

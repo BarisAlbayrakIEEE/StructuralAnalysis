@@ -2864,15 +2864,15 @@ struct CS_Bind_EO_Panel{
   double _thickness;
   double _width_a;
   double _width_b;
-  std::shared_ptr<Bind_Stiffener> _EO_side_stiffener_1;
-  std::shared_ptr<Bind_Stiffener> _EO_side_stiffener_2;
+  std::shared_ptr<CS_Bind_EO_Stiffener> _EO_side_stiffener_1;
+  std::shared_ptr<CS_Bind_EO_Stiffener> _EO_side_stiffener_2;
 
   CS_Bind_EO_Panel(
     double thickness,
     double width_a,
     double width_b,
-    const std::shared_ptr<Bind_Stiffener>& EO_side_stiffener_1,
-    const std::shared_ptr<Bind_Stiffener>& EO_side_stiffener_2
+    const std::shared_ptr<CS_Bind_EO_Stiffener>& EO_side_stiffener_1,
+    const std::shared_ptr<CS_Bind_EO_Stiffener>& EO_side_stiffener_2
   ):
     _thickness(thickness),
     _width_a(width_a),
@@ -2887,7 +2887,7 @@ struct CS_Bind_EO_Panel{
 Additionally, we need the `pybind11` binding file for each CS type:
 
 ```
-// ~/src/plugins/core/panel/pybind11_Panel.cpp
+// ~/src/plugins/core/panel/pybind11_CS_EO_Panel.cpp
 
 #include <pybind11/pybind11.h>
 #include <pybind11/smart_ptr.h>
@@ -2902,8 +2902,8 @@ PYBIND11_MODULE(panel_bindings, m) {
         double,
         double,
         double,
-        const std::shared_ptr<Bind_Stiffener>&,
-        const std::shared_ptr<Bind_Stiffener>&>());
+        const std::shared_ptr<CS_Bind_EO_Stiffener>&,
+        const std::shared_ptr<CS_Bind_EO_Stiffener>&>());
 
   py::class_<CS_Bind_EO_Panel, std::shared_ptr<CS_Bind_EO_Panel>>(m, "CS_Bind_EO_Panel")
     .def(
@@ -2911,8 +2911,8 @@ PYBIND11_MODULE(panel_bindings, m) {
         double,
         double,
         double,
-        const std::shared_ptr<Bind_Stiffener>&,
-        const std::shared_ptr<Bind_Stiffener>&>());
+        const std::shared_ptr<CS_Bind_EO_Stiffener>&,
+        const std::shared_ptr<CS_Bind_EO_Stiffener>&>());
     .def_readonly("_thickness", &CS_Bind_EO_Panel::_thickness)
     .def_readonly("_width_a", &CS_Bind_EO_Panel::_width_a)
     .def_readonly("_width_b", &CS_Bind_EO_Panel::_width_b)

@@ -2750,18 +2750,18 @@ However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types. Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
 - The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_Material, CS_Bind_Panel and CS_Bind_Panel_Buckling.
-- The SP defines the python wrapper classes if needed. Ex: SP_Py_Material, SP_Py_Panel and SP_Py_Panel_Buckling.
+- The SP defines the python wrapper classes if needed. Ex: SP_Py_Material, SP_Py_EO_Panel and SP_Py_EO_Panel_Buckling.
 
-The SP python wrapper classes (e.g. SP_Py_Panel) is defined when there is a need.
+The SP python wrapper classes (e.g. SP_Py_EO_Panel) is defined when there is a need.
 Some EOs would have behaviours which is strongly related with the processes executed by the SP.
 For example, the cross-sectional properties of a stiffener is needed frequently during the SAs of the stiffeners.
-Hence, the SP would need the SP_Py_Stiffener wrapper.
+Hence, the SP would need the SP_Py_EO_Stiffener wrapper.
 
 The process flow for this strategy is as follows:
 1. The user requests an analysis on an SC with type and index,
 2. The CS asks to the DAG to create a temporary Bind SC object corresponding to the type and index,
 3. The CS exposes the Bind object to python and requests an SP analysis,
-4. If needed, the SP analysis function creates a Python object (e.g. SP_Py_Panel) wrapping the Bind object,
+4. If needed, the SP analysis function creates a Python object (e.g. SP_Py_EO_Panel) wrapping the Bind object,
 5. The SP analysis function performs the calculations and updates the results (i.e. Bind SAR object composed by the Bind SC object),
 6. The CS reads the results and updates CS SAR object stored by the DAG or MySQL DB,
 7. The CS releases all temporary shared objects.

@@ -362,6 +362,8 @@ Consider a geometry application (e.g. Dassault's Catia).
 The application would be simulated with a DAG.
 The DAG can be very deep in case of a geometry application
 as each geometrical element (e.g. points, curves, surfaces) would be defined using other elements.
+Theoretically, the depth of the DAG in a geometry application
+can reach up to millions or more.
 The DAG is acyclic as a point cannot be created from a curve which has a relation with the point somewhere in the history.
 On the other hand, the application may allow cycled nodes (e.g. Catia) and continue in an **invalid state**.
 A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
@@ -890,6 +892,13 @@ Python can be forced to use contiguous memory segments by activating the NumPy o
 which can be achieved by a DOD embedded OOP approach explained in [The CS in Python](sec353) section clearly.
 This approach fulfills the memory requirements effectively.
 
+In terms of memory, java would add little type overhead comparing with C++.
+This overhead gets larger in case of python.
+However, the type container approach given in [The CS in Python](sec353) section
+corresponds to an additional memory not per object but per type
+which ends up with a tiny amount of memory (i.e. a few KBs for thousands of types).
+Hence, there is nothing to worry about the memory usage.
+
 An important point about the memory aspect is that the objects of the SP are temporary
 such that they are only required during an SA.
 When the CS is requested to execute an SA via the SP (e.g. SP_SA_Panel_Buckling),
@@ -912,8 +921,7 @@ Lets examine the operations handled by the CS in order to visualize the performa
 5. Saving a DAG to the MySQL DB,
 6. Responding to the UI that requesting an SC data (e.g. CS_EO_Panel),
 7. Responding to the UI that requesting the names of all objects of an SC (e.g. CS_EO_Panel),
-8. Responding to the UI that requesting updating an SC (e.g. CS_EO_Panel) which is close to the root of the DAG,
-9. Responding to the UI that requesting updating an SC (e.g. CS_EO_Panel) which is close to the tail of the DAG.
+8. Responding to the UI that requesting updating an item (e.g. CS_EO_Panel) which is close to the **root** of the DAG,
 
 The 1st two operations involve SAMMs.
 In case of the SAA, the SAs are naturally long running
@@ -958,9 +966,83 @@ The operation involves following three:
 2. The fetch of the data from the memory and
 3. Another interaction between the frontend and the backend (i.e. a CS request).
 
+The 1st and the last operations are handled efficiently by all the three languages
+according to my benchmarks even for large heap allocated arrays.
+Hence, I will focus on the 2nd operation.
+C++ and java store the object data in contiguous arrays (i.e. an array of CS_EO_Panel)
+while python stores the object data in separate containers (i.e. arrays of panel thickness, panel width, etc.).
+Hence, in case of C++ and java the CPU needs to fetch the data from an array
+while in case of python the CPU needs to fetch a number of arrays.
+This means a little delay for the python.
+However, this delay would not cause significant delays that can affect the user statistics.
 
+The 7th process is also executed efficiently by all the three languages considering the DOD approach
+that stores the names in a separate container.
 
-Again, C++ serves best in terms of performance.
+The 8th operation simulates a traversal through the DAG.
+[The Core](sec35) section highlights very important points about the DAG in case of the SAA.
+Firstly, the depth of the DAG is too small (i.e. a finite number like ten).
+Second, the DAG is single-threaded as it does not allow cycled nodes and deleting nodes with descendants.
+Hence, the DAG traversal involves a loop within a highly small range and performs a simple operation.
+The 8th operation is an update which means that the state of the descendants of the updated element must be re-inspected.
+The ith cycle of the loop contains the following operations:
+1. Access the state of the current descendant object,
+2. Evaluate the new state,
+3. Update the state of the current descendant object if needed and
+4. Obtain the position of the next descendant object (i.e. type and index within the type container).
+
+The 1st and the 3rd operations require the state field while the 4th operation requires the field storing the descendants.
+Hence, within each cycle, the algorithm requires the CPU to fetch two fields data.
+The important point here is that each cycle would involve an object of a different type
+which means that for each cycle the CPU needs to fetch data from an array (or some arrays).
+C++ may solve the problem more elegantly considering that the descendants of the types can be defined statically.
+For example, the types of the descendants of CS_EO_Panel type are CS_SC_Panel and CS_SC_Stiffener.
+Hence, the compiler can be informed for these types statically
+which may result with fetching the data from the two arrays at the same time.
+This would absolutely make the loop run faster.
+However, the descendant types are not known for all types such as the materials
+which shows that the situation involves a dynamic behaviour.
+Hence, the compiler optimizations would not work for this problem.
+
+This is the usual situation when defining a DAG for managing objects of various types based on the DOD approach.
+The languages would somehow perform similarly in our case.
+The key point here is that the DAG has a very small depth so that the runtime for the loop would not vary much among the languages.
+
+Accept for the above use cases, there is an important issue related with java and python.
+The two languages manages the memory applying a Garbage Collection (GC) strategy
+while C++ runs based on the ownership mechanism.
+The GC would pause the execution if the object data contains circular references.
+The circular references are more dangerous in case of C++ which would cause memory leaks, dangling pointers and double deletes.
+In case of java and python, the circular references should be dealt during the design as the GCs are annoying for the user.
+However, the DOD style DAG replaces the pointers/references with indices.
+In other words, the DAG takes the memory management responsibility from the GC.
+
+**In summary, the three languages would perform similarly if the DOD strategies are applied correctly.**
+
+**Concurrency:**\
+As I mentioned earlier, the DAG is single-threaded.
+Javascript itself works asynchronously.
+The interfaces (i.e. the SP, MySQL DB and FE) would run sequentially.
+As a result, the CS does not need multi-threading at all even for the separation of the responsibilities.
+Hence, the concurrency is not an aspect for the design of the CS.
+
+**Development:**\
+C++ assigns many duties to the developer related to the memory management and object relations
+aside with the actual algorithm.
+For example, applying the copy and swap idiom for the strong exception safety
+terminates the application of the Rule of Zero
+forcing the developer to switch to the Rule of 3.
+This single issue would require a quite large effort as the SAA may contain thousands of types.
+
+The client side is also similar.
+The learning curves for the three languages vary dramatically as well.
+Python is used by the engineers from any field widely while C++ is considered too complex.
+Java is somehow at the middle.
+
+**Compatibility:**\
+Compatibility is the main problem that makes the people think twice when talking about C++.
+One of the main reasons for the birth of java is actually to achieve a language running on any machine.
+Use of C++ as the CS language would require too much effort in the development process due to the compatibility issue.
 
 
 

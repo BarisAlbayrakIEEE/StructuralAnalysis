@@ -353,7 +353,7 @@ a stiffener is an extruded cross-section balanced by two side panels against the
 Hence, both the panel and the stiffener depend on each other.
 However, this problem can be solved by delaying the dependencies to a higher definition.
 The SAA contains two fundamental types: engineering object (EO) and structural component (SC).
-The dependencies can be defined in the SCs (i.e. SC_Panel and SC_Stiffener)
+The dependencies can be defined in the SCs (i.e. CS_SC_Panel and CS_SC_Stiffener)
 leaving the EOs (i.e. CS_EO_Panel and CS_EO_Stiffener) with the raw data (e.g. thickness).
 Now the SAA is free of the **cyclic relations**.
 Hence, the core data structure of the SAA is a **directed acyclic graph (DAG)**.
@@ -1510,7 +1510,7 @@ Other functions such as remove can easily be defined similarly.
 
 Firstly, I will start with a couple of simple type traits metafunctions to support the static type definitions.
 The type traits involve the following functionality:
-1. **This is the most important part of the CS: Defining the type list (e.g. CS_EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
+1. **This is the most important part of the CS: Defining the type list (e.g. CS_EO_Panel, CS_EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
 3. Two metafunctions to apply the template parameters of a type list to classes and functions respectively.
 
@@ -1535,14 +1535,14 @@ struct TypeList {};
 using CS_Types_t = TypeList<
   CS_EO_Panel,
   CS_EO_Stiffener,
-  EO_Mat1,
+  CS_EO_Mat1,
   EO_Mat2,
   EO_Mat8,
   EO_Mat9,
   CS_EO_PanelLoading,
   CS_EO_StiffenerLoading,
-  SC_Panel,
-  SC_Stiffener,
+  CS_SC_Panel,
+  CS_SC_Stiffener,
   SA_PanelBuckling,
   SA_PanelPressure,
   SA_StiffenerInstability,
@@ -2139,8 +2139,8 @@ struct CS_EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
 
   // Notice that CS_EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "CS_EO_Panel";
@@ -2480,10 +2480,10 @@ struct CS_EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
 
   // Notice that CS_EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "CS_EO_Panel";
@@ -2834,8 +2834,8 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the Bind object creation in detail.
   
   ...
 
@@ -3557,8 +3557,8 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   CS_DT_double _thickness{};
   CS_DT_double _width_a{};
   CS_DT_double _width_b{};
-  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
-  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
 
   // Get the names of the members.
   // Add get_member_names into the ICS interface.
@@ -3788,9 +3788,9 @@ Defining the EO interface, the full version of CS_EO_Panel can be defined:
 #define _CS_EO_Panel_h
 
 #include "~/src/system/IEO.h"
-#include "~/src/plugins/core/material/EO_Mat1.h"
-#include "~/src/plugins/core/stiffener/SC_Stiffener.h"
-#include "SC_Panel.h"
+#include "~/src/plugins/core/material/CS_EO_Mat1.h"
+#include "~/src/plugins/core/stiffener/CS_SC_Stiffener.h"
+#include "CS_SC_Panel.h"
 
 using json = nlohmann::json;
 
@@ -3799,10 +3799,10 @@ struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<EO_Mat1> _EO_mat1;
-  DAG_Node<SC_Panel> _SC_panel;
-  DAG_Node<SC_Stiffener> _SC_side_stiffener_1;
-  DAG_Node<SC_Stiffener> _SC_side_stiffener_2;
+  DAG_Node<CS_EO_Mat1> _EO_mat1;
+  DAG_Node<CS_SC_Panel> _SC_panel;
+  DAG_Node<CS_SC_Stiffener> _SC_side_stiffener_1;
+  DAG_Node<CS_SC_Stiffener> _SC_side_stiffener_2;
 
   // Notice that CS_EO_Panel satisfies Has_type_name concept.
   static inline std::string _type_name = "CS_EO_Panel";
@@ -3845,15 +3845,15 @@ struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_
     _thickness = json_["_thickness"];
     _width_a = json_["_width_a"];
     _width_b = json_["_width_b"];
-    _EO_mat1 = DAG_Node<EO_Mat1>(json_["_EO_mat1"]);
-    _SC_panel = DAG_Node<SC_Panel>(json_["_SC_panel"]);
-    _SC_side_stiffener_1 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_1"]);
-    _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
+    _EO_mat1 = DAG_Node<CS_EO_Mat1>(json_["_EO_mat1"]);
+    _SC_panel = DAG_Node<CS_SC_Panel>(json_["_SC_panel"]);
+    _SC_side_stiffener_1 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_1"]);
+    _SC_side_stiffener_2 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_2"]);
   };
 
   // Notice that CS_EO_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_mat1{ DAG_->create_bind_object<EO_Mat1>(_EO_mat1._index) };
+    auto EO_mat1{ DAG_->create_bind_object<CS_EO_Mat1>(_EO_mat1._index) };
     return std::make_shared<bind_type>(
       _thickness,
       _width_a,
@@ -3869,10 +3869,10 @@ struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_
     if (json_.contains("_thickness")) _thickness = json_["_thickness"];
     if (json_.contains("_width_a")) _width_a = json_["_width_a"];
     if (json_.contains("_width_b")) _width_b = json_["_width_b"];
-    if (json_.contains("_EO_mat1")) _EO_mat1 = DAG_Node<EO_Mat1>(json_["_EO_mat1"]);
-    if (json_.contains("_SC_panel")) _SC_panel = DAG_Node<SC_Panel>(json_["_SC_panel"]);
-    if (json_.contains("_SC_side_stiffener_1")) _SC_side_stiffener_1 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_1"]);
-    if (json_.contains("_SC_side_stiffener_2")) _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
+    if (json_.contains("_EO_mat1")) _EO_mat1 = DAG_Node<CS_EO_Mat1>(json_["_EO_mat1"]);
+    if (json_.contains("_SC_panel")) _SC_panel = DAG_Node<CS_SC_Panel>(json_["_SC_panel"]);
+    if (json_.contains("_SC_side_stiffener_1")) _SC_side_stiffener_1 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_1"]);
+    if (json_.contains("_SC_side_stiffener_2")) _SC_side_stiffener_2 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_2"]);
   }
 
   // IUI interface function: set_to_json
@@ -3960,7 +3960,7 @@ The structural sizing interface within the SCs is conceptually different than th
 An SC involve a nomber of EOs.
 The structural sizing within the SC is the orchestration of the sizing procedures of the involved EOs.
 It considers the behaviours of the EOs and the assigned SAs at the same time.
-For example, sizing for SC_Panel shall consider the involved panel and striffener at the same time.
+For example, sizing for CS_SC_Panel shall consider the involved panel and striffener at the same time.
 The side stiffener may not provide enough support which causes a failure.
 Hence, both the panel and the stiffener shall be considered while sizing.
 Besides, the sizing strategy corresponding to the panel pressure analysis would be different than the one corresponding to the panel buckling analysis.
@@ -4044,13 +4044,13 @@ struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, Updat
 #endif
 ```
 
-After defining the SC interface, we can implement SC_Panel:
+After defining the SC interface, we can implement CS_SC_Panel:
 
 ```
-// ~/src/plugins/core/panel/SC_Panel.h
+// ~/src/plugins/core/panel/CS_SC_Panel.h
 
-#ifndef _SC_Panel_h
-#define _SC_Panel_h
+#ifndef _CS_SC_Panel_h
+#define _CS_SC_Panel_h
 
 #include "~/src/system/ISC.h"
 #include "~/src/plugins/core/stiffener/CS_EO_Stiffener.h"
@@ -4060,7 +4060,7 @@ After defining the SC interface, we can implement SC_Panel:
 
 using json = nlohmann::json;
 
-struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
+struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
   std::size_t _type_container_index;
   DAG_Node<CS_EO_Panel> _EO_panel;
   DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1;
@@ -4068,10 +4068,10 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure;
   DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling;
 
-  // Notice that SC_Panel satisfies Has_type_name concept.
-  static inline std::string _type_name = "SC_Panel";
+  // Notice that CS_SC_Panel satisfies Has_type_name concept.
+  static inline std::string _type_name = "CS_SC_Panel";
 
-  // Notice that SC_Panel satisfies Has_Member_Names concept.
+  // Notice that CS_SC_Panel satisfies Has_Member_Names concept.
   static inline auto _member_names = std::vector<std::string>{
     "_type_container_index",
     "_EO_panel",
@@ -4080,7 +4080,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "_SA_panel_pressure",
     "_SA_panel_buckling"};
 
-  // Notice that SC_Panel satisfies Has_Member_Types concept.
+  // Notice that CS_SC_Panel satisfies Has_Member_Types concept.
   static inline std::string member_names = std::vector<std::string>{
     "std::size_t",
     "DAG_Node",
@@ -4089,15 +4089,15 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "DAG_Node",
     "DAG_Node"};
 
-  // Notice that SC_Panel satisfies Json_Constructible concept.
-  SC_Panel(std::size_t type_container_index, const json& json_) {
+  // Notice that CS_SC_Panel satisfies Json_Constructible concept.
+  CS_SC_Panel(std::size_t type_container_index, const json& json_) {
     if (
         !json_.contains("_EO_panel") ||
         !json_.contains("_EO_side_stiffener_1") ||
         !json_.contains("_EO_side_stiffener_2") ||
         !json_.contains("_SA_panel_pressure") ||
         !json_.contains("_SA_panel_buckling"))
-      throw std::exception("Wrong inputs for SC_Panel type.");
+      throw std::exception("Wrong inputs for CS_SC_Panel type.");
     
     _type_container_index = type_container_index;
     _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
@@ -4107,7 +4107,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     _SA_panel_buckling = DAG_Node<CS_SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   };
 
-  // Notice that SC_Panel satisfies CBindable concept.
+  // Notice that CS_SC_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
     auto EO_panel{ DAG_->create_bind_object<CS_EO_Panel>(_EO_panel._index) };
     auto EO_side_stiffener_1{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
@@ -4123,7 +4123,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   };
 
   // IUI interface function: get_type_name
-  inline std::string get_type_name() const { return "SC_Panel"; };
+  inline std::string get_type_name() const { return "CS_SC_Panel"; };
 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
@@ -4297,9 +4297,9 @@ I will skip the design of the SP.
 Lets see an example SP type definition:
 
 ```
-# ~/src/plugins/core/panel/SC_Panel.py
+# ~/src/plugins/core/panel/CS_SC_Panel.py
 
-class SC_Panel:
+class CS_SC_Panel:
   def __init__(
       self,
       EO_panel: EO_panel,

@@ -879,6 +879,93 @@ However, I dont think that this performance loss would affect the end user stati
 
 #### 3.5.4. The CS Language Comparison <a id='sec354'></a>
 
+In order to select the CS language, I will discuss about some critical issues such as memory management, performance and compatibility.
+
+**Memory Management:**\
+First of all, C++ is the best language to manage the memory and the access patterns efficiently.
+The alignments and paddings can be controlled and the memory pools can be utilized perfectly.
+Java and python, on the other hand, uses heap memory if the fundamental OOP approach is followed.
+
+Python can be forced to use contiguous memory segments by activating the NumPy or array libraries
+which can be achieved by a DOD embedded OOP approach explained in [The CS in Python](sec353) section clearly.
+This approach fulfills the memory requirements effectively.
+
+An important point about the memory aspect is that the objects of the SP are temporary
+such that they are only required during an SA.
+When the CS is requested to execute an SA via the SP (e.g. SP_SA_Panel_Buckling),
+the SP creates the required objects (e.g. SP_EO_Panel and SP_SCL_Panel_Buckling_Load),
+run the analysis, store the results in the analysis object (i.e. SP_SA_Panel_Buckling)
+or in an SAR object (e.g. SP_SAR_Panel_Buckling) and return the results to CS.
+The CS would store the results in its own format which means that all the objects created by the SP
+are not needed anymore.
+This situation is independent from the language.
+Even both the CS and the SP are developed in the same language (i.e. python),
+the SP objects are temporary.
+The data is stored by the CS whichever the languages are used for the CS and the SP.
+
+**Performance:**\
+Lets examine the operations handled by the CS in order to visualize the performance requirements in more detail.
+1. Performing an SA on an SC under a SCL,
+2. Performing an SA on an SC under all SCLs applied on the SC,
+3. Extracting data from an FE file and creating a DAG involving the SAA objects corresponding to the FE data,
+4. Loading a DAG from the MySQL DB,
+5. Saving a DAG to the MySQL DB,
+6. Responding to the UI that requesting an SC data (e.g. CS_EO_Panel),
+7. Responding to the UI that requesting the names of all objects of an SC (e.g. CS_EO_Panel),
+8. Responding to the UI that requesting updating an SC (e.g. CS_EO_Panel) which is close to the root of the DAG,
+9. Responding to the UI that requesting updating an SC (e.g. CS_EO_Panel) which is close to the tail of the DAG.
+
+The 1st two operations involve SAMMs.
+In case of the SAA, the SAs are naturally long running
+so that the runtime of any system operation (e.g. creating an SP object based on the DAG data) can be neglected.
+Hence, the 1st two operations are out of the consideration.
+
+The 3rd one would be the most complex and time consuming process.
+It highly depends on the algorithms written by the client
+that converts the FE data to the SAA objects.
+For example, the client shall develop the algorithm that reads the geometry, material and load data from the FE
+element and nodes to create a Panel object that is recognized by the SAA.
+This algorithm is quite complex.
+As an example, the elements of a panel in an FE usualy do not form a rectangule
+so that the algorithm needs to idealize the FE geometry to a rectangule
+and transform the element and node loading to the local frame of this rectangule.
+So, similar to the previous two, this operation can also be excluded from the performance examinations.
+
+The 4th one is quite important.
+Its similar to the 3rd one while the data can be considered to be accessed in zero time
+by neglecting the DB access which is out of consideration.
+Hence, this operation simulates the initialization and construction of a DAG.
+Keep in mind that the construction of the DAG involves the construction of the SAA objects
+as the DAG owns all the data in a session.
+
+Lets consider the copy construction of the DAG.
+The data stored in the DAG can be copied bitwise if the DAG stores the data in contiguous buffers (e.g. the data of all panels).
+The only problem with this approach is that the existance of the pointers/references hidden in the data will cause a shallow copy.
+The problem is out of the concern by default since the DOD approach suggests the usage of the indices instead of the pointers.
+All the three languages (i.e. C++, java and python) allow this approach.
+The 4th process is actually similar to this copy construction
+such that the contiguous buffers can be accessed from the MySQL DB.
+
+The 5th operation is nothing by the inverse of the 4th one
+where semantically the algorithms are similar.
+
+The 6th operation is similar with the 1st two with a crucial difference.
+In this case, the user would refuse the latencies.
+For example, when the user clicks on an element in the tree view,
+she would expect the data of the item to be present in the form view in a non-sensible time.
+The operation involves following three:
+1. An interaction between the frontend and the backend (i.e. a UI request),
+2. The fetch of the data from the memory and
+3. Another interaction between the frontend and the backend (i.e. a CS request).
+
+
+
+Again, C++ serves best in terms of performance.
+
+
+
+
+
 The below table summarizes the previous three sections:
 
 | Criterion                     | C++                                    | Python                                 | Java                                   |

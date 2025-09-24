@@ -60,14 +60,14 @@
 
 ## 1. About The Project <a id='sec1'></a>
 
-This project is a part of the repositories to illustrate my software engineering experience.
-This repository especially demonstrates my skills about the software architecture and design.
+This repository is a part of the repositories to illustrate my software engineering experience
+and especially demonstrates my skills about the software architecture and design.
 
 In the first section, I will start by describing the problem without diving into too much detail.
 Then, I will discuss about the architecture and design of an application to serve as a solution to the given problem.
 
 **Note**\
-**This project includes example code snippets (e.g., EO_Panel.h) to support and clarify architectural and design discussions.**
+**This repository includes example code snippets (e.g., CS_EO_Panel.h) to support and clarify architectural and design discussions.**
 **However, these source files are intended as illustrative pseudocode.**
 **They have not been compiled, tested, or validated.**
 **The code may contain bugs, and in some cases, contradictions with the stated design or architectural intent**
@@ -110,7 +110,7 @@ However, the cost of the uniform analysis interface is the requirement for a lar
 In other words, an inspection handled in a few miliseconds by the analytical approach may take hours by an FE solver.
 Nevertheless, the FE approach contains some inevitable assumptions which results with the loss of the accuracy.
 
-**The aim of the project is to design the core framework of a *closed form stand-alone* solution for the analytical approach**.
+**The aim of this repository is to design the core framework of a *closed form stand-alone* solution for the analytical approach**.
 
 ## 3. Software Architecture <a id='sec3'></a>
 
@@ -278,7 +278,7 @@ The GPU resources need to be spared for the FE graphics display.
 
 ### 3.4. The Frontend <a id='sec34'></a>
 
-**This project excludes the details of the frontend development.**
+**This repository excludes the details of the frontend development.**
 However, the architecture and design need some solid definitions about the UI in order to have a clear interface.
 Following two were the initial requirements related to the UI:
 - The SAA will define a UI form for each type.
@@ -354,7 +354,7 @@ Hence, both the panel and the stiffener depend on each other.
 However, this problem can be solved by delaying the dependencies to a higher definition.
 The SAA contains two fundamental types: engineering object (EO) and structural component (SC).
 The dependencies can be defined in the SCs (i.e. SC_Panel and SC_Stiffener)
-leaving the EOs (i.e. EO_Panel and EO_Stiffener) with the raw data (e.g. thickness).
+leaving the EOs (i.e. CS_EO_Panel and EO_Stiffener) with the raw data (e.g. thickness).
 Now the SAA is free of the **cyclic relations**.
 Hence, the core data structure of the SAA is a **directed acyclic graph (DAG)**.
 
@@ -814,7 +814,7 @@ class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
 
   def get_type_name(self, index:int) -> None:
     """gets the type name"""
-    return 'EO_Panel'
+    return 'CS_EO_Panel'
 
   def get_from_json(self, index:int, josn_:json) -> None:
     """gets the member data from a json input"""
@@ -840,7 +840,7 @@ class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
 
   def load_from_DB_2(self, index:int, DB_descriptor) -> None:
     """loads the data for the indexth element from the MySQL DB"""
-    self._ts = table_EO_Panel__column_ts__row_index # TODO: get DB data using DB_descriptor
+    self._ts = table_CS_EO_Panel__column_ts__row_index # TODO: get DB data using DB_descriptor
     self._EO_side_stiffeners_1 = table_EO_panel__column_EO_side_stiffeners_1__row_index # TODO: get DB data using DB_descriptor
     ...
 
@@ -902,7 +902,7 @@ Hence, there is nothing to worry about the memory usage.
 An important point about the memory aspect is that the objects of the SP are temporary
 such that they are only required during an SA.
 When the CS is requested to execute an SA via the SP (e.g. SP_SA_Panel_Buckling),
-the SP creates the required objects (e.g. SP_EO_Panel and SP_SCL_Panel_Buckling_Load),
+the SP creates the required objects (e.g. SP_CS_EO_Panel and SP_SCL_Panel_Buckling_Load),
 run the analysis, store the results in the analysis object (i.e. SP_SA_Panel_Buckling)
 or in an SAR object (e.g. SP_SAR_Panel_Buckling) and return the results to CS.
 The CS would store the results in its own format which means that all the objects created by the SP
@@ -1034,7 +1034,18 @@ terminates the application of the Rule of Zero
 forcing the developer to switch to the Rule of 3.
 This single issue would require a quite large effort as the SAA may contain thousands of types.
 
+On the other hand, C++ provides great tools with templates (e.g. traits).
+C++ solution has superiorities especially compared with java which are explained in detail in [The CS in C++](sec351) section.
+
 The client side is also similar.
+Python is the easiest among the three which would decrease the development time dramatically.
+However, its important to keep in mind that python requires a more and more strict test regime
+comparing with the other two languages especially with java.
+This would add more load on the development cycle
+but still python would require significantly less efort.
+Its again important to note that both the system development (home side)
+and the plugin development (client side) requires strong testing in order to ensure the type safety.
+
 The learning curves for the three languages vary dramatically as well.
 Python is used by the engineers from any field widely while C++ is considered too complex.
 Java is somehow at the middle.
@@ -1042,7 +1053,7 @@ Java is somehow at the middle.
 **Compatibility:**\
 Compatibility is the main problem that makes the people think twice when talking about C++.
 One of the main reasons for the birth of java is actually to achieve a language running on any machine.
-Use of C++ as the CS language would require too much effort in the development process due to the compatibility issue.
+Use of C++ as the CS language would require too much effort in the development process due to the compatibility.
 
 **Design:**\
 The software design is an important parameter while making decissions about the architecture of an application.
@@ -1050,6 +1061,9 @@ Basically, below three rules covers the comparison of the three languages:
 - Use C++ if a **complex** class hierarchy exists and the **performance** is crucial as it allows **static** definitions.
 - Use java if a **complex** class hierarchy exists **without** a realy tight performance requirement as it deals with the problem **idiomatically**.
 - Use python if a **flat** class hierarchy exists as it allows **easy** development.
+
+By the way, the rules assumes that all the three languages can be used with all power
+including the open source libraries and the experienced software engineers are available to develop in that language efficiently.
 
 Lets examine the CS with respect to the above rules.
 The CS involves a number of interfaces with the UI, FE, MySQL DB and SP.
@@ -1062,7 +1076,7 @@ On the other hand, the concrete objects does not require additional relations
 which extends the above class hierarchy further.
 For example, panels and joints has no relation in the class hierachy.
 The object relations are handled by the DAG.
-In other words, the class hierarchy holds three level:
+In other words, the class hierarchy holds the following three levels:
 1. The base interfaces to interact with the DAG and the other components of the SAA,
 2. The interfaces that define the analysis procedure (i.e. EO, SC, SA and SAR),
 3. The concrete types (e.g. CS_EO_Panel).
@@ -1077,7 +1091,7 @@ if powered by the runtime checks and unit tests.
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.
 C++ has a medium-grade API with js while a native API with python.
-However, the python interface would require a data wrapper for each type (e.g. CS_Wrapper_EO_Panel).
+However, the python interface would require a data wrapper for each type (e.g. CS_Wrapper_CS_EO_Panel).
 Java has a strong-grade API with js while a medium-grade API with python.
 Java would not need wrapper classes in order to manage python objects of the SP.
 Python has a strong-grade API with js.
@@ -1369,7 +1383,7 @@ export class UIRegistry {
   }
 
   /**
-   * @param {string} typeName   e.g. "EO_Panel", "EO_Stiffener"
+   * @param {string} typeName   e.g. "CS_EO_Panel", "EO_Stiffener"
    * @param {object} schema     JSON/schema describing fields, labels, types
    */
   registerFormSchema(typeName, schema) {
@@ -1420,7 +1434,7 @@ Finally, each new form shall provide the definition of the registry function:
 ```
 // ~/src/plugins/panel/form.js
 export function registerForm(uiRegistry) {
-  uiRegistry.registerFormSchema("EO_Panel", {
+  uiRegistry.registerFormSchema("CS_EO_Panel", {
     title: "Panel Properties",
     fields: [
       { name: "name",       label: "Name",       type: "text"   },
@@ -1472,7 +1486,7 @@ The CS and the DAG shall define the below interface in order to handle the UI re
 All items in the above list are obvious or have already been discussed accept for the last two functions.
 The 6th function is required during the 1st scenario inspected before when
 the master user constructs the DAG by importing an FEM.
-The core importer algorithm imports the FE data and constructs the SCs without
+The core importer algorithm imports the FE data and constructs the objects without
 setting the node relation data (e.g. side stiffeners of a panel).
 The master user needs to define the relations manually.
 She has the panels and stiffeners generated by the importer.
@@ -1494,7 +1508,7 @@ Other functions such as remove can easily be defined similarly.
 
 Firstly, I will start with the a couple of simple type traits metafunctions to support the static type definitions.
 The type traits involve the following functionality:
-1. **This is the most important part of the CS: Defining the type list (e.g. EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
+1. **This is the most important part of the CS: Defining the type list (e.g. CS_EO_Panel, EO_Mat1, etc.).** Extending the SAA by adding plugins require an update in this file. **This is the only location that the client needs to modify the core code while defining new plugins.**
 2. Some metafunctions to handle type list operations: Ex: Getting the Nth type in a type list.
 3. Two metafunctions to apply the template parameters of a type list to classes and functions respectively.
 
@@ -1517,13 +1531,13 @@ struct TypeList {};
 //   Each new type needs to be added to this type list.
 //   This is the only CS modification the client has to perform to add a new type via a plugin!!!
 using CS_Types_t = TypeList<
-  EO_Panel,
+  CS_EO_Panel,
   EO_Stiffener,
   EO_Mat1,
   EO_Mat2,
   EO_Mat8,
   EO_Mat9,
-  EO_PanelLoading,
+  CS_EO_PanelLoading,
   EO_StiffenerLoading,
   SC_Panel,
   SC_Stiffener,
@@ -1857,7 +1871,7 @@ void register_CS_types() {
 #endif
 ```
 
-The next pseudocode represents the main involving the Crow routines with create, get and set.
+The next pseudocode represents the main routine involving the Crow routines with create, get and set.
 
 ```
 // ~/src/main.cpp
@@ -1921,30 +1935,30 @@ int main() {
 };
 ```
 
-The final pseudocode represents a sample SAA type, EO_Panel, with create, get and set.
+The final pseudocode represents a sample SAA type, CS_EO_Panel, with create, get and set.
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/CS_EO_Panel.h
 
-#ifndef _EO_Panel_h
-#define _EO_Panel_h
+#ifndef _CS_EO_Panel_h
+#define _CS_EO_Panel_h
 
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IUI {
+struct CS_EO_Panel : public IUI {
   double _thickness;
   double _width_a;
   double _width_b;
 
-  // Notice that EO_Panel satisfies Json_Constructible!!!
-  EO_Panel(const json& json_) {
+  // Notice that CS_EO_Panel satisfies Json_Constructible!!!
+  CS_EO_Panel(const json& json_) {
     if (
         !json_.contains("thickness") ||
         !json_.contains("width_a") ||
         !json_.contains("width_b"))
-      throw std::exception("Wrong inputs for EO_Panel type.");
+      throw std::exception("Wrong inputs for CS_EO_Panel type.");
     
     thickness = json_["thickness"];
     width_a = json_["width_a"];
@@ -1952,7 +1966,7 @@ struct EO_Panel : public IUI {
   };
 
   // IUI interface function: get_type_name
-  inline std::string get_type_name() const { return "EO_Panel"; };
+  inline std::string get_type_name() const { return "CS_EO_Panel"; };
 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
@@ -1979,14 +1993,14 @@ The SAA contains many standard items such as material and fastener.
 The UI representation of the standard items can be handled by simple forms listing the values.
 For example, an isotropic material has a number of members/properties such as E1, E2, etc.
 Similarly, the SCL holds 2D data where the loading (e.g. Fxx, Fyy, etc.) is defined per LC.
-The frontend library shall provvide simple solutions for the UI form representation of these standard items.
+The frontend library shall provide simple solutions for the UI form representation of these standard items.
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.
 
 #### 4.2.2. The Functionally Persistent DAG <a id='sec422'></a>
 
 The architecture chapter underlined that we need two DAG definitions which are online and offline respectively.
-**I will skip the offline DAG in order for the simplicity of the project.**
+**I will skip the offline DAG in order for the simplicity of this repository.**
 
 The DAG would additionally need some auxilary data in order to perform some actions more efficiently (e.g. traversal).
 
@@ -2104,13 +2118,13 @@ struct IDAG {
 #endif
 ```
 
-Correspondingly, the source file defined before for the sample EO_Panel class becomes:
+Correspondingly, the source file defined before for the sample CS_EO_Panel class becomes:
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/CS_EO_Panel.h
 
-#ifndef _EO_Panel_h
-#define _EO_Panel_h
+#ifndef _CS_EO_Panel_h
+#define _CS_EO_Panel_h
 
 #include <nlohmann/json.hpp>
 #include "~/src/system/IUI.h"
@@ -2119,25 +2133,25 @@ Correspondingly, the source file defined before for the sample EO_Panel class be
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IUI, IDAG {
+struct CS_EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
   DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
-  // Notice that EO_Panel satisfies Has_type_name!!!
-  static inline std::string _type_name = "EO_Panel";
+  // Notice that CS_EO_Panel satisfies Has_type_name!!!
+  static inline std::string _type_name = "CS_EO_Panel";
 
-  // Notice that EO_Panel satisfies Json_Constructible!!!
-  EO_Panel(const json& json_) {
+  // Notice that CS_EO_Panel satisfies Json_Constructible!!!
+  CS_EO_Panel(const json& json_) {
     if (
         !json_.contains("thickness") ||
         !json_.contains("width_a") ||
         !json_.contains("width_b") ||
         !json_.contains("_EO_side_stiffener_1") ||
         !json_.contains("_EO_side_stiffener_2"))
-      throw std::exception("Wrong inputs for EO_Panel type.");
+      throw std::exception("Wrong inputs for CS_EO_Panel type.");
     
     thickness = json_["thickness"];
     width_a = json_["width_a"];
@@ -2146,7 +2160,7 @@ struct EO_Panel : public IUI, IDAG {
     _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   };
 
-  // Notice that EO_Panel satisfies Json_Serializable!!!
+  // Notice that CS_EO_Panel satisfies Json_Serializable!!!
   void get_from_json(const json& json_) {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
@@ -2155,7 +2169,7 @@ struct EO_Panel : public IUI, IDAG {
     if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   }
 
-  // Notice that EO_Panel satisfies Json_Serializable!!!
+  // Notice that CS_EO_Panel satisfies Json_Serializable!!!
   json set_to_json() const {
     return {
       {"thickness", thickness},
@@ -2225,7 +2239,7 @@ Another example would be Material class such that too many objects of too many t
 In such cases, an algorithm is required to access statically defined data (e.g. _type_containers) with the runtime information.
 The efficiency of this algorithm is crucial as it would help central algorithms used frequently (e.g. the descendant traversal for the state propogation).
 **I will create a function hierarchy to apply the FP solutions to the problem.**
-A higher level templated function is defined where each specialization would bind to the corresponding type container (e.g. `VectorTree<EO_Panel>`).
+A higher level templated function is defined where each specialization would bind to the corresponding type container (e.g. `VectorTree<CS_EO_Panel>`).
 Then, the functions of the DAG (e.g. DFS traversal) would be routed by this templated higher level function.
 The two functions in the below pseudocode serve for this purpose: `with_type_object` and `with_type_container`.
 
@@ -2448,10 +2462,10 @@ struct IDAG {
 The descendants are moved to the type definitions:
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/CS_EO_Panel.h
 
-#ifndef _EO_Panel_h
-#define _EO_Panel_h
+#ifndef _CS_EO_Panel_h
+#define _CS_EO_Panel_h
 
 #include <nlohmann/json.hpp>
 #include "~/src/system/IUI.h"
@@ -2460,7 +2474,7 @@ The descendants are moved to the type definitions:
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IUI, IDAG {
+struct CS_EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
@@ -2469,18 +2483,18 @@ struct EO_Panel : public IUI, IDAG {
   DAG_Node<SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
   DAG_Node<SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
-  // Notice that EO_Panel satisfies Has_type_name!!!
-  static inline std::string _type_name = "EO_Panel";
+  // Notice that CS_EO_Panel satisfies Has_type_name!!!
+  static inline std::string _type_name = "CS_EO_Panel";
 
-  // Notice that EO_Panel satisfies Json_Constructible!!!
-  EO_Panel(const json& json_) {
+  // Notice that CS_EO_Panel satisfies Json_Constructible!!!
+  CS_EO_Panel(const json& json_) {
     if (
         !json_.contains("thickness") ||
         !json_.contains("width_a") ||
         !json_.contains("width_b") ||
         !json_.contains("_EO_side_stiffener_1") ||
         !json_.contains("_EO_side_stiffener_2"))
-      throw std::exception("Wrong inputs for EO_Panel type.");
+      throw std::exception("Wrong inputs for CS_EO_Panel type.");
     
     thickness = json_["thickness"];
     width_a = json_["width_a"];
@@ -2489,7 +2503,7 @@ struct EO_Panel : public IUI, IDAG {
     _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   };
 
-  // Notice that EO_Panel satisfies Json_Serializable!!!
+  // Notice that CS_EO_Panel satisfies Json_Serializable!!!
   void get_from_json(const json& json_) {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
@@ -2498,7 +2512,7 @@ struct EO_Panel : public IUI, IDAG {
     if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   }
 
-  // Notice that EO_Panel satisfies Json_Serializable!!!
+  // Notice that CS_EO_Panel satisfies Json_Serializable!!!
   json set_to_json() const {
     return {
       {"thickness", thickness},
@@ -2737,7 +2751,7 @@ I will use pybind11 for this interface as it allows flexible and efficient acces
 The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DAG.
 However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
-- The CS defines the types: Ex: EO_Material, EO_Panel and SA_Panel_Buckling.
+- The CS defines the types: Ex: EO_Material, CS_EO_Panel and SA_Panel_Buckling.
 - The CS defines the python binding (i.e. pybind11) types: Ex: Bind_Material, Bind_Panel and Bind_Panel_Buckling.
 - The SP defines the python wrapper classes if needed: Ex: Py_Material, Py_Panel and Py_Panel_Buckling.
 
@@ -2763,7 +2777,7 @@ The **executor** is a templated function and shall be registered like the other 
 The **executor** asks the CS types to construct Bind objects.
 Hence, the CS types shall implement a method returning the Bind object which requires an interface while
 the DAG needs a function which would return the Bind objects for the input type and index.
-The function will be templated and the return type (e.g. Bind_Panel) depends on the template type (e.g. EO_Panel).
+The function will be templated and the return type (e.g. Bind_Panel) depends on the template type (e.g. CS_EO_Panel).
 The solution is defining an alias within the CS types that stores the type of the corresponding Bind type.
 This alias would be used in many steps of the above flow.
 
@@ -2813,11 +2827,11 @@ The factory function of the DAG is:
 The CS panel class becomes:
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/CS_EO_Panel.h
 
 ...
 
-struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
+struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   using bind_type = Bind_Panel;
 
   double _thickness;
@@ -2995,7 +3009,7 @@ Similarly, main.cpp needs an update for the registration of the executor:
 
 Lets exemine the components of this strategy:
 - The CS implements the factory and the strategy patterns.
-- The client needs to define the factory method creating the Bind type object (e.g. Bind_Panel) within each CS type (e.g. EO_Panel).
+- The client needs to define the factory method creating the Bind type object (e.g. Bind_Panel) within each CS type (e.g. CS_EO_Panel).
 - The client needs to define a Bind class for each CS type which is almost a copy of the original CS class.
 - The client needs to implement the pybind11 interface for each CS class.
 - The client needs to implement the SP processes.
@@ -3308,7 +3322,7 @@ struct IDB {
 
 **CAUTION**\
 At this point, I want to discuss about the raw data types used by the CS.
-**All CS types (e.g. EO_Panel) would hold only the raw data types (e.g. int, double) and DAG_Nodes as the object relations are covered by the DAG.**
+**All CS types (e.g. CS_EO_Panel) would hold only the raw data types (e.g. int, double) and DAG_Nodes as the object relations are covered by the DAG.**
 The MySQL DB, the UI and the SP interfaces involve the transfer of the raw data.
 Currently, its impossible to automize these interactions due to the data types of the members.
 Hence, these issues have been declared by the interfaces and concepts before.
@@ -3538,11 +3552,11 @@ Additionally, the CS types shall define two members:
 The CS panel class becomes:
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/CS_EO_Panel.h
 
 ...
 
-struct EO_Panel : public IUI, Abstract_Invariant_Updatable {
+struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   CS_DT_double _thickness{};
   CS_DT_double _width_a{};
   CS_DT_double _width_b{};
@@ -3768,13 +3782,13 @@ struct IEO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, Updat
 #endif
 ```
 
-Defining the EO interface, the full version of EO_Panel can be defined:
+Defining the EO interface, the full version of CS_EO_Panel can be defined:
 
 ```
-// ~/src/plugins/core/panel/EO_Panel.h
+// ~/src/plugins/core/panel/CS_EO_Panel.h
 
-#ifndef _EO_Panel_h
-#define _EO_Panel_h
+#ifndef _CS_EO_Panel_h
+#define _CS_EO_Panel_h
 
 #include "~/src/system/IEO.h"
 #include "~/src/plugins/core/material/EO_Mat1.h"
@@ -3783,7 +3797,7 @@ Defining the EO interface, the full version of EO_Panel can be defined:
 
 using json = nlohmann::json;
 
-struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
+struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
   std::size_t _type_container_index;
   double _thickness;
   double _width_a;
@@ -3793,10 +3807,10 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   DAG_Node<SC_Stiffener> _SC_side_stiffener_1;
   DAG_Node<SC_Stiffener> _SC_side_stiffener_2;
 
-  // Notice that EO_Panel satisfies Has_type_name concept.
-  static inline std::string _type_name = "EO_Panel";
+  // Notice that CS_EO_Panel satisfies Has_type_name concept.
+  static inline std::string _type_name = "CS_EO_Panel";
 
-  // Notice that EO_Panel satisfies Has_Member_Names concept.
+  // Notice that CS_EO_Panel satisfies Has_Member_Names concept.
   static inline auto _member_names = std::vector<std::string>{
     "_type_container_index",
     "_thickness",
@@ -3807,7 +3821,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "_SC_side_stiffener_1",
     "_SC_side_stiffener_2"};
 
-  // Notice that EO_Panel satisfies Has_Member_Types concept.
+  // Notice that CS_EO_Panel satisfies Has_Member_Types concept.
   static inline std::string member_names = std::vector<std::string>{
     "std::size_t",
     "double",
@@ -3818,8 +3832,8 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     "DAG_Node",
     "DAG_Node"};
 
-  // Notice that EO_Panel satisfies Json_Constructible concept.
-  EO_Panel(std::size_t type_container_index, const json& json_) {
+  // Notice that CS_EO_Panel satisfies Json_Constructible concept.
+  CS_EO_Panel(std::size_t type_container_index, const json& json_) {
     if (
         !json_.contains("_thickness") ||
         !json_.contains("_width_a") ||
@@ -3828,7 +3842,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
         !json_.contains("_SC_panel") ||
         !json_.contains("_SC_side_stiffener_1") ||
         !json_.contains("_SC_side_stiffener_2"))
-      throw std::exception("Wrong inputs for EO_Panel type.");
+      throw std::exception("Wrong inputs for CS_EO_Panel type.");
     
     _type_container_index = type_container_index;
     _thickness = json_["_thickness"];
@@ -3840,7 +3854,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     _SC_side_stiffener_2 = DAG_Node<SC_Stiffener>(json_["_SC_side_stiffener_2"]);
   };
 
-  // Notice that EO_Panel satisfies CBindable concept.
+  // Notice that CS_EO_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
     auto EO_mat1{ DAG_->create_bind_object<EO_Mat1>(_EO_mat1._index) };
     return std::make_shared<bind_type>(
@@ -3851,7 +3865,7 @@ struct EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   };
 
   // IUI interface function: get_type_name
-  inline std::string get_type_name() const { return "EO_Panel"; };
+  inline std::string get_type_name() const { return "CS_EO_Panel"; };
 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
@@ -4043,7 +4057,7 @@ After defining the SC interface, we can implement SC_Panel:
 
 #include "~/src/system/ISC.h"
 #include "~/src/plugins/core/stiffener/EO_Stiffener.h"
-#include "EO_Panel.h"
+#include "CS_EO_Panel.h"
 #include "SA_Panel_Buckling.h"
 #include "SA_Panel_Pressure.h"
 
@@ -4051,7 +4065,7 @@ using json = nlohmann::json;
 
 struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
   std::size_t _type_container_index;
-  DAG_Node<EO_Panel> _EO_panel;
+  DAG_Node<CS_EO_Panel> _EO_panel;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
   DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
   DAG_Node<SA_Panel_Buckling> _SA_panel_pressure;
@@ -4089,7 +4103,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
       throw std::exception("Wrong inputs for SC_Panel type.");
     
     _type_container_index = type_container_index;
-    _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
+    _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
     _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
     _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
     _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
@@ -4098,7 +4112,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
   // Notice that SC_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_panel{ DAG_->create_bind_object<EO_Panel>(_EO_panel._index) };
+    auto EO_panel{ DAG_->create_bind_object<CS_EO_Panel>(_EO_panel._index) };
     auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
     auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
     auto SA_panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
@@ -4116,7 +4130,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
-    if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<EO_Panel>(json_["_EO_panel"]);
+    if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
     if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
     if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
     if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
@@ -4231,7 +4245,7 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
 #endif
 ```
 
-As mentioned before for EO_Panel, the following interface functions would be moved to the CS
+As mentioned before for CS_EO_Panel, the following interface functions would be moved to the CS
 by defining the members with CS_Data wrapper:
 - `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
 - Json_Compatible concept (as covered by `ICS_Data` interface),

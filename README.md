@@ -1316,26 +1316,24 @@ Below are the current features of the SAA based on the previous sections:
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 - A three component application: the CS, the SP and the frontend
-- The CS language: C++
+- The CS language: Python
 - The SP language: Python
 - The frontend language: js/react
 - UI contains three interactive components: OETV, user forms and FE display
-- Backend/frontend communication | backend: Crow
-- Backend/frontend communication | frontend: HTTP or WebSocket
-- The CS base types (i.e. current interfaces): SC, LC, SCL, SAR
-- Create a wrapper for each CS type to support the SP
+- Backend/frontend communication: fastapi
+- The CS base types (i.e. current interfaces): EO, SC, SCL, SA, SAR
 - Plugin style extensibility
-- The core plugins for the fundamental types (e.g. panel) are shipped with the installation
+- The core plugins for the fundamental types (e.g. CS_EO_Panel) are shipped with the installation
 - The core framework provides the type registration
 - Follow TDD approach for the core plugins
 - The CS data structure: Functionally persistent DAG with structural sharing
 - Core manages two DAGs: online and offline
 - The DAG manages the state for each node which is visualized by the frontend
 - DAG_Node_Handle undo/redo operations making use of the persistency of the DAG
-- DAG configuration field: the FE version (e.g. fe-v0.1), the DAG version (e.g. dcg-v0.1) and the SP version (e.g. sp-v0.1)
+- DAG configuration field: the FE version (e.g. fe-v0.1), the DAG version (e.g. dag-v0.1) and the SP version (e.g. sp-v0.1)
 - The SP keeps the SAMMs and their versions
 - The SP version: sp-v0.1
-- The SP applicability: DAG type version (e.g. dcg-v0.1)
+- The SP applicability: DAG type version (e.g. dag-v0.1)
 - User profile with the role definition
 - DBs for the standard items like material and fastener (per project)
 - DBs for the SCL and SAR data (per DAG)
@@ -1344,12 +1342,12 @@ Below are the current features of the SAA based on the previous sections:
 
 The architecture section defines three components for the SAA: the UI, the CS and the SP:
 1. The UI is composed of three sub-components: the tree, the forms and the FE display.
-2. The CS is responsible from the memory and state management, the MySQL DB interactions, the frontend interactions and the SP interactions.
+2. The CS is responsible from the memory and state management and the interactions with the other components of the SAA.
 3. The SP handles the structural analyses computations.
 
 ### 4.1. The UI <a id='sec41'></a>
 
-[Use Case Diagrams](#sec36) section inspects three scenarios from which we can deduce the expected functionality for the UI:
+[Use Case Diagrams](#sec36) section inspects three scenarios from which we can deduce the expected functionality from the UI:
 - Present the current shape of the DAG via the OETV.
 - Present the data stored in the DAG via the user forms.
 - Present the node state data stored in the DAG via the OETV, user forms and the FE display.

@@ -756,7 +756,7 @@ from abc import ABC, abstractmethod
 class ISP(ABC):
   @abstractmethod
   def create(self, CS_: CS, index:int) -> ISP: # CS is the CS class
-    """creates the corresponding SP object (e.g. SP_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    """creates the corresponding SP object (e.g. SP_Py_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
     pass
 ```
 
@@ -857,8 +857,8 @@ class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
     ...
 
   def create(self, CS_: CS, index:int) -> ISP: # CS is the CS class
-    """creates the corresponding SP object (e.g. SP_Panel object for the data stored in CS_EO_Panel_Container class)"""
-    return SP_Panel(
+    """creates the corresponding SP object (e.g. SP_Py_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    return SP_Py_EO_Panel(
       self._ts[index],
       CS_.CS_EO_Stiffeners.create(CS_, self._EO_side_stiffeners_1[index]),
       ...
@@ -2924,11 +2924,11 @@ PYBIND11_MODULE(panel_bindings, m) {
 The SP python class definition for the panel would be:
 
 ```
-# ~/src/plugins/core/panel/SP_Panel.py
+# ~/src/plugins/core/panel/SP_Py_EO_Panel.py
 
 from panel_bindings import CS_Bind_EO_Panel
 
-class SP_Panel:
+class SP_Py_EO_Panel:
   def __init__(self, bind_panel: CS_Bind_EO_Panel):
     self._bind_panel = bind_panel
 
@@ -2937,8 +2937,8 @@ class SP_Panel:
     return buckling_coeff
 
 def calculate_buckling_coefficient(bind_panel):
-  sp_panel = SP_Panel(bind_panel)
-  sp_panel.calculate_buckling_coefficient()
+  panel = SP_Py_EO_Panel(bind_panel)
+  panel.calculate_buckling_coefficient()
 ```
 
 The CS defines all operations required by the flow at the beginning:
@@ -3560,7 +3560,7 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
   CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
 
-  // Get the names of the memebrs.
+  // Get the names of the members.
   // Add get_member_names into the ICS interface.
   std::vector<std::string> get_member_names{
     return std::vector<std::string>{
@@ -3572,7 +3572,7 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
     };
   };
 
-  // Get the pointers to the above memebrs.
+  // Get the pointers to the above members.
   // Add get_member_ptrs into the ICS interface.
   std::vector<ICS_Data*> get_member_ptrs{
     return std::vector<ICS_Data*>{

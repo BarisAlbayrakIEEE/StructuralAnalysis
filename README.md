@@ -354,7 +354,7 @@ Hence, both the panel and the stiffener depend on each other.
 However, this problem can be solved by delaying the dependencies to a higher definition.
 The SAA contains two fundamental types: engineering object (EO) and structural component (SC).
 The dependencies can be defined in the SCs (i.e. SC_Panel and SC_Stiffener)
-leaving the EOs (i.e. CS_EO_Panel and EO_Stiffener) with the raw data (e.g. thickness).
+leaving the EOs (i.e. CS_EO_Panel and CS_EO_Stiffener) with the raw data (e.g. thickness).
 Now the SAA is free of the **cyclic relations**.
 Hence, the core data structure of the SAA is a **directed acyclic graph (DAG)**.
 
@@ -860,7 +860,7 @@ class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
     """creates the corresponding SP object (e.g. SP_Panel object for the data stored in CS_EO_Panel_Container class)"""
     return SP_Panel(
       self._ts[index],
-      CS_.EO_Stiffeners.create(CS_, self._EO_side_stiffeners_1[index]),
+      CS_.CS_EO_Stiffeners.create(CS_, self._EO_side_stiffeners_1[index]),
       ...
       )
 
@@ -901,9 +901,9 @@ Hence, there is nothing to worry about the memory usage.
 
 An important point about the memory aspect is that the objects of the SP are temporary
 such that they are only required during an SA.
-When the CS is requested to execute an SA via the SP (e.g. SP_SA_Panel_Buckling),
+When the CS is requested to execute an SA via the SP (e.g. SP_CS_SA_Panel_Buckling),
 the SP creates the required objects (e.g. SP_CS_EO_Panel and SP_SCL_Panel_Buckling_Load),
-run the analysis, store the results in the analysis object (i.e. SP_SA_Panel_Buckling)
+run the analysis, store the results in the analysis object (i.e. SP_CS_SA_Panel_Buckling)
 or in an SAR object (e.g. SP_SAR_Panel_Buckling) and return the results to CS.
 The CS would store the results in its own format which means that all the objects created by the SP
 are not needed anymore.
@@ -1383,7 +1383,7 @@ export class UIRegistry {
   }
 
   /**
-   * @param {string} typeName   e.g. "CS_EO_Panel", "EO_Stiffener"
+   * @param {string} typeName   e.g. "CS_EO_Panel", "CS_EO_Stiffener"
    * @param {object} schema     JSON/schema describing fields, labels, types
    */
   registerFormSchema(typeName, schema) {
@@ -1532,13 +1532,13 @@ struct TypeList {};
 //   This is the only CS modification the client has to perform to add a new type via a plugin!!!
 using CS_Types_t = TypeList<
   CS_EO_Panel,
-  EO_Stiffener,
+  CS_EO_Stiffener,
   EO_Mat1,
   EO_Mat2,
   EO_Mat8,
   EO_Mat9,
   CS_EO_PanelLoading,
-  EO_StiffenerLoading,
+  CS_EO_StiffenerLoading,
   SC_Panel,
   SC_Stiffener,
   SA_PanelBuckling,
@@ -2072,7 +2072,7 @@ Lets start by recalling the data that should be stored by the DAG:
 A corresponding member list definition for the DAG would be:
 1. _ancestors: Stores the ancestor type container indices.
 2. _descendants: Stores the descendant type container indices.
-3. _states__DAG: Stores the states.
+3. _states__DAG: Stores the DAG states.
 4. _type_containers: Stores the data.
 5. _FE_link: A descriptor for the linked FEM.
 
@@ -2086,8 +2086,8 @@ For example, a panel type would be:
 ...
 
 class Panel {
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1;
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2;
   ...
 };
 ```
@@ -2137,8 +2137,8 @@ struct CS_EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
   // Notice that CS_EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "CS_EO_Panel";
@@ -2156,8 +2156,8 @@ struct CS_EO_Panel : public IUI, IDAG {
     thickness = json_["thickness"];
     width_a = json_["width_a"];
     width_b = json_["width_b"];
-    _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   };
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2165,8 +2165,8 @@ struct CS_EO_Panel : public IUI, IDAG {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
     if (json_.contains("width_b")) width_b = json_["width_b"];
-    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   }
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2175,8 +2175,8 @@ struct CS_EO_Panel : public IUI, IDAG {
       {"thickness", thickness},
       {"width_a", width_a},
       {"width_b", width_b},
-      {"_EO_side_stiffener_1", ["EO_Stiffener", _EO_side_stiffener_1._index]},
-      {"_EO_side_stiffener_1", ["EO_Stiffener", _EO_side_stiffener_2._index]}
+      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_1._index]},
+      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_2._index]}
     };
   }
 
@@ -2478,10 +2478,10 @@ struct CS_EO_Panel : public IUI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
-  DAG_Node<SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the object relations.
 
   // Notice that CS_EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "CS_EO_Panel";
@@ -2499,8 +2499,8 @@ struct CS_EO_Panel : public IUI, IDAG {
     thickness = json_["thickness"];
     width_a = json_["width_a"];
     width_b = json_["width_b"];
-    _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   };
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2508,8 +2508,8 @@ struct CS_EO_Panel : public IUI, IDAG {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
     if (json_.contains("width_b")) width_b = json_["width_b"];
-    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
   }
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2518,8 +2518,8 @@ struct CS_EO_Panel : public IUI, IDAG {
       {"thickness", thickness},
       {"width_a", width_a},
       {"width_b", width_b},
-      {"_EO_side_stiffener_1", ["EO_Stiffener", _EO_side_stiffener_1._index]},
-      {"_EO_side_stiffener_1", ["EO_Stiffener", _EO_side_stiffener_2._index]}
+      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_1._index]},
+      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_2._index]}
     };
   }
 
@@ -2545,7 +2545,7 @@ struct CS_EO_Panel : public IUI, IDAG {
 #endif
 ```
 
-I excluded the root and the tail node definitions and the iterators (const aand non-const) of the DAG intensionally.
+I excluded the root and the tail node definitions and the iterators (const and non-const) of the DAG intensionally.
 [The persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository describes these issues in detail.
 **Its worth to note only that the relations of both the root and the tail nodes are runtime dependent.**
 Hence, the descendants of the root node and the ancestors of the tail node
@@ -2751,7 +2751,7 @@ I will use pybind11 for this interface as it allows flexible and efficient acces
 The problem in case of the CS/SP interface is that the CS types delegates the definition of the relations/dependencies to the DAG.
 However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
-- The CS defines the types: Ex: EO_Material, CS_EO_Panel and SA_Panel_Buckling.
+- The CS defines the types: Ex: EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
 - The CS defines the python binding (i.e. pybind11) types: Ex: Bind_Material, Bind_Panel and Bind_Panel_Buckling.
 - The SP defines the python wrapper classes if needed: Ex: Py_Material, Py_Panel and Py_Panel_Buckling.
 
@@ -2837,14 +2837,14 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in SC_Panel! I involved here to show the Bind object creation in detail.
   
   ...
 
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
-    auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto EO_side_stiffener_1{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
     return std::make_shared<bind_type>(_thickness, _width_a, _width_b, EO_side_stiffener_1, EO_side_stiffener_2);
   };
 
@@ -3560,8 +3560,8 @@ struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
   CS_DT_double _thickness{};
   CS_DT_double _width_a{};
   CS_DT_double _width_b{};
-  CS_DT_DN<EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
-  CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in SC_Panel! to show the Bind object creation in detail.
 
   // Get the names of the memebrs.
   // Add get_member_names into the ICS interface.
@@ -4056,20 +4056,20 @@ After defining the SC interface, we can implement SC_Panel:
 #define _SC_Panel_h
 
 #include "~/src/system/ISC.h"
-#include "~/src/plugins/core/stiffener/EO_Stiffener.h"
+#include "~/src/plugins/core/stiffener/CS_EO_Stiffener.h"
 #include "CS_EO_Panel.h"
-#include "SA_Panel_Buckling.h"
-#include "SA_Panel_Pressure.h"
+#include "CS_SA_Panel_Buckling.h"
+#include "CS_SA_Panel_Pressure.h"
 
 using json = nlohmann::json;
 
 struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
   std::size_t _type_container_index;
   DAG_Node<CS_EO_Panel> _EO_panel;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_1;
-  DAG_Node<EO_Stiffener> _EO_side_stiffener_2;
-  DAG_Node<SA_Panel_Buckling> _SA_panel_pressure;
-  DAG_Node<SA_Panel_Pressure> _SA_panel_buckling;
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1;
+  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2;
+  DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure;
+  DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling;
 
   // Notice that SC_Panel satisfies Has_type_name concept.
   static inline std::string _type_name = "SC_Panel";
@@ -4104,19 +4104,19 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
     
     _type_container_index = type_container_index;
     _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
-    _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
-    _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
-    _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
+    _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _SA_panel_pressure = DAG_Node<CS_SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
+    _SA_panel_buckling = DAG_Node<CS_SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   };
 
   // Notice that SC_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
     auto EO_panel{ DAG_->create_bind_object<CS_EO_Panel>(_EO_panel._index) };
-    auto EO_side_stiffener_1{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_1._index) };
-    auto EO_side_stiffener_2{ DAG_->create_bind_object<EO_Stiffener>(_EO_side_stiffener_2._index) };
-    auto SA_panel_pressure{ DAG_->create_bind_object<SA_Panel_Buckling>(_SA_panel_pressure._index) };
-    auto SA_panel_buckling{ DAG_->create_bind_object<SA_Panel_Pressure>(_SA_panel_buckling._index) };
+    auto EO_side_stiffener_1{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto SA_panel_pressure{ DAG_->create_bind_object<CS_SA_Panel_Buckling>(_SA_panel_pressure._index) };
+    auto SA_panel_buckling{ DAG_->create_bind_object<CS_SA_Panel_Pressure>(_SA_panel_buckling._index) };
     return std::make_shared<bind_type>(
       EO_panel,
       EO_side_stiffener_1,
@@ -4131,10 +4131,10 @@ struct SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, 
   // IUI interface function: get_from_json
   void get_from_json(const json& json_) {
     if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
-    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<EO_Stiffener>(json_["_EO_side_stiffener_2"]);
-    if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
-    if (json_.contains("_SA_panel_buckling")) _SA_panel_buckling = DAG_Node<SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
+    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
+    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<CS_SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
+    if (json_.contains("_SA_panel_buckling")) _SA_panel_buckling = DAG_Node<CS_SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   }
 
   // IUI interface function: set_to_json
@@ -4306,11 +4306,11 @@ class SC_Panel:
   def __init__(
       self,
       EO_panel: EO_panel,
-      EO_side_stiffener_1: EO_Stiffener,
-      EO_side_stiffener_2: EO_Stiffener,
+      EO_side_stiffener_1: CS_EO_Stiffener,
+      EO_side_stiffener_2: CS_EO_Stiffener,
       EO_SCL_panel: EO_SCL_Panel,
-      SA_panel_buckling: SA_Panel_Buckling,
-      SA_panel_pressure: SA_Panel_Pressure):
+      SA_panel_buckling: CS_SA_Panel_Buckling,
+      SA_panel_pressure: CS_SA_Panel_Pressure):
     self._EO_panel = EO_panel
     self._EO_side_stiffener_1 = EO_side_stiffener_1
     self._EO_side_stiffener_2 = EO_side_stiffener_2

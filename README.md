@@ -872,12 +872,7 @@ which would not be a part of `ICS`.
 For example EOs would not define the `run_analysis` function.
 The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
 In other words, these components define additional interfaces on top of `ICS`.
-Lets name these interfaces as well:
--`ICS_EO`,
--`ICS_SC`,
--`ICS_SCL`,
--`ICS_SA` and
--`ICS_SAR`.
+Lets name these interfaces as well: `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
 
 Hence, the DAG should define five members instead of a single one pointing to the containers derived from `ICS`.
 

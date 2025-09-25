@@ -968,7 +968,7 @@ Lets examine the operations handled by the CS in order to visualize the performa
 
 The 1st two operations involve SAMMs.
 In case of the SAA, the SAs are naturally long running
-so that the runtime of any system operation (e.g. creating an SP object based on the DAG data) can be neglected.
+so that the runtime of any system operation (e.g. creating a temporary SP object based on the DAG data) can be neglected.
 Hence, the 1st two operations are out of the consideration.
 
 The 3rd one would be the most complex and time consuming process.
@@ -993,7 +993,7 @@ Lets consider the copy construction of the DAG.
 The data stored in the DAG can be copied bitwise if the DAG stores the data in contiguous buffers (e.g. the data of all panels).
 The only problem with this approach is that the existance of the pointers/references hidden in the data will cause a shallow copy.
 The problem is out of the concern by default since the DOD approach suggests the usage of the indices instead of the pointers.
-All the three languages (i.e. C++, java and python) allow this approach.
+All the three languages (i.e. C++, java and python) allow this approach and a sample solution is given in [The CS in Python](sec352) section.
 The 4th process is actually similar to this copy construction
 such that the contiguous buffers can be accessed from the MySQL DB.
 
@@ -1012,12 +1012,12 @@ The operation involves following three:
 The 1st and the last operations are handled efficiently by all the three languages
 according to my benchmarks even for large heap allocated arrays.
 Hence, I will focus on the 2nd operation.
-C++ and java store the object data in contiguous arrays (i.e. an array of CS_EO_Panel)
-while python stores the object data in separate containers (i.e. arrays of panel thickness, panel width, etc.).
-Hence, in case of C++ and java the CPU needs to fetch the data from an array
-while in case of python the CPU needs to fetch a number of arrays.
-This means a little delay for the python.
-However, this delay would not cause significant delays that can affect the user statistics.
+C++ and java can store the object data in contiguous arrays (i.e. CS_EO_Panel[]) while python cannot.
+Python needs to follow the SoA approach of the DOD (i.e. arrays of panel thickness, panel width, etc.).
+Hence, in case of the object arrays the CPU needs to fetch the data from an array
+while in case of SoA containers the CPU needs to fetch a number of arrays.
+This means a little delay for the SoA containers.
+However, this delay would not be as significant to affect the user statistics.
 
 The 7th process is also executed efficiently by all the three languages considering the DOD approach
 that stores the names in a separate container.
@@ -1025,7 +1025,7 @@ that stores the names in a separate container.
 The 8th operation simulates a traversal through the DAG.
 [The Core](sec35) section highlights very important points about the DAG in case of the SAA.
 Firstly, the depth of the DAG is too small (i.e. a finite number like ten).
-Second, the DAG is single-threaded as it does not allow cycled nodes and deleting nodes with descendants.
+Second, the DAG is single-threaded as it does not allow the formation of the cycled nodes and the removal of the nodes with descendants.
 Hence, the DAG traversal involves a loop within a highly small range and performs a simple operation.
 The 8th operation is an update which means that the state of the descendants of the updated element must be re-inspected.
 The ith cycle of the loop contains the following operations:
@@ -1037,7 +1037,7 @@ The ith cycle of the loop contains the following operations:
 The 1st and the 3rd operations require the state field while the 4th operation requires the field storing the descendants.
 Hence, within each cycle, the algorithm requires the CPU to fetch two fields data.
 The important point here is that each cycle would involve an object of a different type
-which means that for each cycle the CPU needs to fetch data from an array (or some arrays).
+which means that for each cycle the CPU needs to fetch data from a new array (or some arrays).
 C++ may solve the problem more elegantly considering that the descendants of the types can be defined statically.
 For example, the types of the descendants of CS_EO_Panel type are CS_SC_Panel and CS_SC_Stiffener.
 Hence, the compiler can be informed for these types statically
@@ -1045,7 +1045,7 @@ which may result with fetching the data from the two arrays at the same time.
 This would absolutely make the loop run faster.
 However, the descendant types are not known for all types such as the materials
 which shows that the situation involves a dynamic behaviour.
-Hence, the compiler optimizations would not work for this problem.
+Hence, the compiler optimizations would not work efficiently for this problem.
 
 This is the usual situation when defining a DAG for managing objects of various types based on the DOD approach.
 The languages would somehow perform similarly in our case.
@@ -1056,7 +1056,7 @@ The two languages manages the memory applying a Garbage Collection (GC) strategy
 while C++ runs based on the ownership mechanism.
 The GC would pause the execution if the object data contains circular references.
 The circular references are more dangerous in case of C++ which would cause memory leaks, dangling pointers and double deletes.
-In case of java and python, the circular references should be dealt during the design as the GCs are annoying for the user.
+The circular references should be dealt during the design as the GCs are annoying for the user.
 However, the DOD style DAG replaces the pointers/references with indices.
 In other words, the DAG takes the memory management responsibility from the GC.
 
@@ -1105,31 +1105,31 @@ Basically, below three rules covers the comparison of the three languages:
 - Use java if a **complex** class hierarchy exists **without** a realy tight performance requirement as it deals with the problem **idiomatically**.
 - Use python if a **flat** class hierarchy exists as it allows **easy** development.
 
-By the way, the rules assumes that all the three languages can be used with all power
-including the open source libraries and the experienced software engineers are available to develop in that language efficiently.
+By the way, the rules assumes that all the three languages can be used with all power including the open source libraries.
+Besidese, the experienced software engineers are available to develop in that language efficiently.
 
 Lets examine the CS with respect to the above rules.
-The CS involves a number of interfaces with the UI, FE, MySQL DB and SP.
-Additionally, the DAG requires an interface.
-These interfaces define a base for the CS.
-On top of these interfaces, the CS shall also include a couple of interfaces to define the analysis procedure (i.e. EO, SC, SA and SAR).
-These are all interfaces on top of which the CS would define the concrete types (e.g. CS_EO_Panel).
+The CS involves a number of interfaces with the DAG, UI, FE, MySQL DB and SP.
+These interfaces define a base for the CS (i.e. `ICS`).
+On top of these interfaces, the CS shall also include a couple of interfaces
+to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
+These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
 
 On the other hand, the concrete objects does not require additional relations
 which extends the above class hierarchy further.
-For example, panels and joints has no relation in the class hierachy.
+For example, panels and joints have no relation in the class hierachy.
 The object relations are handled by the DAG.
 In other words, the class hierarchy holds the following three levels:
-1. The base interfaces to interact with the DAG and the other components of the SAA,
-2. The interfaces that define the analysis procedure (i.e. EO, SC, SA and SAR),
-3. The concrete types (e.g. CS_EO_Panel).
+1. The base interface to interact with the DAG and the other components of the SAA (i.e. `ICS`),
+2. The interfaces that define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`),
+3. The concrete types (e.g. `CS_EO_Panel`).
 
 The above architecture is a result of the fact that the CS is not involved in the physical definitions.
 The physics of the structural analyses are defined by the SP and left to the client.
 In other words, the CS deals with only the data management and the process flow.
 
 Considering the flatness of the CS class hierarchy, python would offer enough
-if powered by the runtime checks and unit tests.
+**if powered by the runtime checks and unit tests.**
 
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.
@@ -1138,9 +1138,20 @@ However, the python interface would require a data wrapper for each type (e.g. C
 Java has a strong-grade API with js while a medium-grade API with python.
 Java would not need wrapper classes in order to manage python objects of the SP.
 Python has a strong-grade API with js.
+Hence, in terms of the harmony, python would be the bbest language for the CS.
 
 **Summary:**\
-**The above arguments clearly show that python is the best language choice for the CS.**
+The above arguments shows that C++ would not provide a significant performance difference.
+Hence, I would exclude C++ considering the complexity and the multiplatform development difficulties comes with it.
+
+Python solution looks well but it brings a big safety problem.
+Although the application would be shipped including the fundamental types of the structural engineering field (e.g. CS_EO_Panel),
+theoretically the client is allowed to add new types into the CS.
+In other words, the core system of the application is not fully hidden from the client
+which would cause safety and security problems.
+
+**Hence, I would choose java as the language of the CS.**
+**However, I will include all the three languages in the software design section.**
 
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 
@@ -1373,7 +1384,7 @@ Below are the current features of the SAA based on the previous sections:
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 - A three component application: the CS, the SP and the frontend
-- The CS language: C++ or java or python
+- The CS language: Java, but [Software Design](sec4) section includes C++ and python as well
 - The SP language: Python
 - The frontend language: js/react
 - UI contains three interactive components: OETV, user forms and FE display
@@ -1381,6 +1392,8 @@ Below are the current features of the SAA based on the previous sections:
 - Backend/frontend communication (C++) | frontend: HTTP or WebSocket
 - Backend/frontend communication (python): fastapi
 - Backend/frontend communication (java): Spring Boot
+- CS/SP communication (C++): pybind11
+- CS/SP communication (java): Py4J
 - The CS base types (i.e. current interfaces): EO, SC, SCL, SA, SAR
 - Plugin style extensibility
 - The core plugins for the fundamental types (e.g. CS_EO_Panel) are shipped with the installation

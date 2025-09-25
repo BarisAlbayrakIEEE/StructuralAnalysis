@@ -4458,7 +4458,7 @@ For example, CS_SC_Panel cannot define the side stiffeners with `std::weak_ptr<C
 as it will turn out to be an association.
 Or, CS_EO_Stiffener cannot define the descendant panel SCs with `std::shared_ptr<CS_SC_Panel>` type
 as it will turn out to be an ownership.
-**The plugin types shall define the relations with position descriptors (i.e. the type and the container index).**
+**The plugin types shall define the relations with position descriptors (i.e. the type descriptor and the container index).**
 
 Another point about the DAG is related with the cyclic relations.
 I mentioned about this issue before under **Memory Mangement** subtitle in [The Core System](#sec35).

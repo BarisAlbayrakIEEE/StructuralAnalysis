@@ -612,7 +612,7 @@ We can summarize the highlights of the CS in C++:
 - **The static programming would eliminate the need for the type registration.**
 
 Considering that the CS would involve some interfaces mentioned before (e.g. the interface for the MySQL DB),
-the C++ solution would require the followings skills to be met by the clients:
+the C++ solution would require the following skills to be met by the clients:
 1. C++: Capability to add new concrete types that will be involved in an existing class hierarchy.
 2. Python: Capability to generate a class hierarchy and corresponding concrete types.
 3. Cython: Capability to define new types (a wrapper class for each type, e.g. CS_Bind_EO_Panel) based on some interface.

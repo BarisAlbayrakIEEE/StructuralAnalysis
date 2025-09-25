@@ -4462,6 +4462,14 @@ Or, CS_EO_Stiffener cannot define the descendant panel SCs with `std::shared_ptr
 as it will turn out to be an ownership.
 **The plugin types shall define the relations with position descriptors (i.e. the type and the container index).**
 
+Another point about the DAG is related with the cyclic relations.
+I mentioned about this issue before under **Memory Mangement** subtitle in [The Core System](#sec35).
+The DAG by definition does accept cyclic relations but it cannot detect the cyclic relations during the compilation
+as it defines the relations with indices.
+Hence, the DAG can only perform runtime checks which may not be detected during the tests.
+**Hence, the client shall define the types without cyclic relations.**
+The example given under **Memory Mangement** subtitle simulates the situation quite well.
+
 ## 6. Other Issues <a id='sec6'></a>
 
 Previously, I mentioned that each type shall be defined with a user form.

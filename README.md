@@ -657,7 +657,7 @@ class IDAG(ABC):
 **The sample interface for the UI:**
 
 ```
-# ~/src/system/iui.py
+# ~/src/system/ics_ui.py
 
 from abc import ABC, abstractmethod
 
@@ -681,7 +681,7 @@ class ICS_UI(ABC):
 **The sample interface for the MySQL DB:**
 
 ```
-# ~/src/system/idb.py
+# ~/src/system/ics_db.py
 
 from abc import ABC, abstractmethod
 
@@ -718,13 +718,13 @@ class ICS_DB(ABC):
 **The sample interface for the SP:**
 
 ```
-# ~/src/system/isp.py
+# ~/src/system/ics_sp.py
 
 from abc import ABC, abstractmethod
 
-class ISP(ABC):
+class ICS_SP(ABC):
   @abstractmethod
-  def create(self, CS_: CS, index:int) -> ISP: # CS is the CS class
+  def create(self, CS_: CS, index:int) -> ICS_SP: # CS is the CS class
     """creates the corresponding SP object (e.g. SP_Py_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
     pass
 ```
@@ -757,7 +757,7 @@ Notice the `TODO` comments warning about the circular reference with CS_EO_Stiff
 
 import array
 
-class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ISP, ICS_FE):
+class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
   def __init__():
     self._names = array.array(dtype=str)
     self._states__DB = array.array(dtype=bool) # bool holds whether the item is modified during the session
@@ -826,7 +826,7 @@ class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ISP, ICS_FE):
     table_EO_panel__column_EO_side_stiffeners_1__row_index = self._EO_side_stiffeners_1 # TODO: set DB data using DB_descriptor
     ...
 
-  def create(self, CS_: CS, index:int) -> ISP: # CS is the CS class
+  def create(self, CS_: CS, index:int) -> ICS_SP: # CS is the CS class
     """creates the corresponding SP object (e.g. SP_Py_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
     return SP_Py_EO_Panel(
       self._ts[index],

@@ -304,11 +304,11 @@ The core system has the following responsibilities:
 3. Forwarding the requests between the frontend and the memory, the MySQL DB, the SP and the FE.
 
 While performing the above duties, the core needs to satisfy the three requirements related to the extensibility from [the overview of the problem](#sec31):
-- The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+- The SAA will provide a plugin style extensibility in terms of the engineering objects (EOs), SCs, SCLs, SAs, SARs and SAMMs.
 - The plugins could be developed by the customer.
 - There may exist hundreds even thousands of types and correspondingly too many objects may need to be managed.
 
-The SCs, SAs and SARs are the objects of the application which need type definitions
+The EOs, SCs, SCLs, SAs and SARs are the objects of the application which need type definitions
 while SAMMs present the behaviours of these types.
 Considering that the SAMMs involve the implementation of some scientific calculations,
 **python is the best choice for the SAMMs**

@@ -41,14 +41,16 @@
 - [6. Other Issues](#sec6)
 
 **Nomenclature**
+- **CS:** Core System
+- **SP:** Solver Pack
+- **EO:** Engineering Object
 - **SC:** Structural Component
 - **SCL:** Structural Component Loading
 - **SA:** Structural Analysis
-- **SAD:** Structural Analysis Dataset
+- **SAR:** Structural Analysis Result
 - **SAA:** Structural Analysis Application
 - **SAE:** Structural Analysis Engineer (i.e. the user of the application)
 - **SAMM:** Structural Analysis Method & Module
-- **SAR:** Structural Analysis Result
 - **FE:** Finite Element
 - **FEM:** Finite Element Model
 - **FEA:** Finite Element Analysis
@@ -57,8 +59,6 @@
 - **LC:** LoadCase
 - **RF:** Reserve Factor
 - **R&L:** Requirements and Limitations
-- **CS:** Core System
-- **SP:** Solver Pack
 - **OETV:** Object Explorer Tree View
 - **OETVN:** Object Explorer Tree View Node
 

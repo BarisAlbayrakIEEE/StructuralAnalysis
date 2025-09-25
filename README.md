@@ -351,7 +351,7 @@ For example, when a material is updated, all the descendants of the material sha
 In other words, an action on an element shall be propogated through the descendants of the element.
 This could be performed using a proxy design pattern.
 However, a better/compact solution is to use a **directed graph** data structure for the memory management.
-There, by physical definition, exists mutual dependencies in case of the SAA.
+There semantically exists mutual dependencies in case of the SAA.
 For example, a panel is formed by a plate supported by two side stiffeners against the axial loading while
 a stiffener is an extruded cross-section balanced by two side panels against the shear loading.
 Hence, both the panel and the stiffener depend on each other.

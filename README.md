@@ -1398,13 +1398,13 @@ Below are the current features of the SAA based on the previous sections:
 - CS/SP communication (java): Py4J
 - The CS base types (i.e. current interfaces): EO, SC, SCL, SA, SAR
 - Plugin style extensibility
-- The core plugins for the fundamental types (e.g. CS_EO_Panel) are shipped with the installation
-- The core framework provides the type registration
-- Follow TDD approach for the core plugins
+- The plugins for the fundamental types (e.g. CS_EO_Panel) are shipped with the installation
+- The CS provides the type registration
+- The shipped plugins follow TDD approach
 - The CS data structure: Functionally persistent DAG with structural sharing
-- Core manages two DAGs: online and offline
+- The CS manages two DAGs: online and offline
 - The DAG manages the state for each node which is visualized by the frontend
-- DAG_Node_Handle undo/redo operations making use of the persistency of the DAG
+- Undo/redo operations make use of the persistency of the DAG
 - DAG configuration field: the FE version (e.g. fe-v0.1), the DAG version (e.g. dag-v0.1) and the SP version (e.g. sp-v0.1)
 - The SP keeps the SAMMs and their versions
 - The SP version: sp-v0.1

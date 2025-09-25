@@ -1129,7 +1129,9 @@ The physics of the structural analyses are defined by the SP and left to the cli
 In other words, the CS deals with only the data management and the process flow.
 
 Considering the flatness of the CS class hierarchy, python would offer enough
-**if powered by the runtime checks and unit tests.**
+**only if powered by the runtime checks and unit tests.**
+In other words, python would not serve well for the safety and security.
+Java looks best from the design perspective.
 
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.

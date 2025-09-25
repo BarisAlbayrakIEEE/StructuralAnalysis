@@ -371,7 +371,8 @@ can reach up to millions or more.
 The DAG is acyclic as a point cannot be created from a curve which has a relation with the point somewhere in the history.
 On the other hand, the application may allow cycled nodes (e.g. Catia) and continue in an **invalid state**.
 A background thread would inspect the cycled nodes asynchronously as the cycles would be terminated by the user actions.
-Catia also allows removing an element without removing the decendants which requires a background thread as well.
+Catia also allows removing an element without removing the decendants as the descendants may go very deep.
+This feature requires a background thread as well.
 [My persistent DAG](https://github.com/BarisAlbayrakIEEE/PersistentDAG.git) repository examines the background thread in detail.
 Please see the Readme file for a detailed discussion.
 

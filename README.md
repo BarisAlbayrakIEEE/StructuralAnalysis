@@ -26,13 +26,16 @@
 - [4. Software Design](#sec4)
   - [4.1. The UI](#sec41)
   - [4.2. The Core System (CS)](#sec42)
-    - [4.2.1. The UI Interface](#sec421)
-    - [4.2.2. The Functionally Persistent DAG](#sec422)
-    - [4.2.3. The SP Interface](#sec423)
-    - [4.2.4. The FE Interface](#sec424)
-    - [4.2.5. The MySQL DB Interface](#sec425)
-    - [4.2.6. The Class Hierarchy](#sec426)
-    - [4.2.7. The UML Diagram](#sec427)
+    - [4.2.1. The CS in C++](#sec421)
+      - [4.2.1.1. The UI Interface](#sec4211)
+      - [4.2.1.2. The Functionally Persistent DAG](#sec4212)
+      - [4.2.1.3. The SP Interface](#sec4213)
+      - [4.2.1.4. The FE Interface](#sec4214)
+      - [4.2.1.5. The MySQL DB Interface](#sec4215)
+      - [4.2.1.6. The Class Hierarchy](#sec4216)
+      - [4.2.1.7. The UML Diagram](#sec4217)
+    - [4.2.2. The CS in Python](#sec422)
+    - [4.2.3. The CS in Java](#sec423)
   - [4.3. The Solver Pack (SP)](#sec43)
 - [5. Other Issues](#sec5)
 
@@ -932,12 +935,12 @@ The alignments and paddings can be controlled and the memory pools can be utiliz
 Java and python, on the other hand, use the heap memory if the fundamental OOP approach is followed.
 However, switching to DOD approaches eliminates this problem for java and python.
 As an example, python can be forced to use contiguous memory segments by activating the NumPy or array libraries
-which can be achieved by a DOD embedded OOP approach explained in [The CS in Python](sec352) section clearly.
+which can be achieved by a DOD embedded OOP approach explained in [The CS in Python](#sec352) section clearly.
 This approach fulfills the memory requirements effectively.
 
 In terms of the memory, java would add little type overhead comparing with C++.
 This overhead gets larger in case of python.
-However, the type container approach given in [The CS in Python](sec352) section
+However, the type container approach given in [The CS in Python](#sec352) section
 corresponds to an additional memory not per object but per type
 which ends up with a tiny amount of memory (i.e. a few KBs for thousands of types).
 Hence, there is nothing to worry about the memory usage.
@@ -993,7 +996,7 @@ Lets consider the copy construction of the DAG.
 The data stored in the DAG can be copied bitwise if the DAG stores the data in contiguous buffers (e.g. the data of all panels).
 The only problem with this approach is that the existance of the pointers/references hidden in the data will cause a shallow copy.
 The problem is out of the concern by default since the DOD approach suggests the usage of the indices instead of the pointers.
-All the three languages (i.e. C++, java and python) allow this approach and a sample solution is given in [The CS in Python](sec352) section.
+All the three languages (i.e. C++, java and python) allow this approach and a sample solution is given in [The CS in Python](#sec352) section.
 The 4th process is actually similar to this copy construction
 such that the contiguous buffers can be accessed from the MySQL DB.
 
@@ -1023,7 +1026,7 @@ The 7th process is also executed efficiently by all the three languages consider
 that stores the names in a separate container.
 
 The 8th operation simulates a traversal through the DAG.
-[The Core](sec35) section highlights very important points about the DAG in case of the SAA.
+[The Core](#sec35) section highlights very important points about the DAG in case of the SAA.
 Firstly, the depth of the DAG is too small (i.e. a finite number like ten).
 Second, the DAG is single-threaded as it does not allow the formation of the cycled nodes and the removal of the nodes with descendants.
 Hence, the DAG traversal involves a loop within a highly small range and performs a simple operation.
@@ -1078,7 +1081,7 @@ forcing the developer to switch to the Rule of 3.
 This single issue would require a quite large effort as the SAA may contain thousands of types.
 
 On the other hand, C++ provides great tools with templates (e.g. traits).
-C++ solution has superiorities especially compared with java which are explained in detail in [The CS in C++](sec351) section.
+C++ solution has superiorities especially compared with java which are explained in detail in [The CS in C++](#sec351) section.
 
 The client side is also similar.
 Python is the easiest among the three which would decrease the development time dramatically.
@@ -1384,7 +1387,7 @@ Below are the current features of the SAA based on the previous sections:
 - A client-Server DB: MySQL
 - An HPC solver distributed by a powerful server
 - A three component application: the CS, the SP and the frontend
-- The CS language: Java, but [Software Design](sec4) section includes C++ and python as well
+- The CS language: Java, but [Software Design](#sec4) section includes C++ and python as well
 - The SP language: Python
 - The frontend language: js/react
 - UI contains three interactive components: OETV, user forms and FE display
@@ -1521,6 +1524,20 @@ When, for example, the user clicks on an OETVN, the frontend:
 
 ### 4.2. The CS <a id='sec42'></a>
 
+I stated before that java is the best choice for the CS development.
+However, I will include here three sections for the three languages.
+
+#### 4.2.1. The CS in C++ <a id='sec421'></a>
+
+[Software Architecture](#sec3) section states that the DAG shall follow SoA strategy of the DOD.
+One of the reasons for this decission is the load operation from the MySQL DB.
+It will allow bitwise copy of the data buffers extracted from the DB
+which increases the efficiency of the load operation significantly.
+However, I will not follow this strategy here in this C++ solution
+in order to visualize how another solution would be.
+The SoA strategy will be followed by the next two sections ([The CS in Python](#sec422) and [The CS in Java](#sec423))
+obeying the contract described in [Software Architecture](#sec3) section.
+
 The CS contains the following interfaces:
 1. The UI interface
 2. The DAG interface
@@ -1530,7 +1547,7 @@ The CS contains the following interfaces:
 
 I will describe the CS following these interfaces.
 
-#### 4.2.1. The UI Interface <a id='sec421'></a>
+##### 4.2.1.1. The UI Interface <a id='sec4211'></a>
 
 The CS and the DAG shall define the below interface in order to handle the UI requests:
 - create_DAG_node(data_type, json)
@@ -1589,20 +1606,26 @@ struct TypeList {};
 //   Each new type needs to be added to this type list.
 //   This is the only CS modification when a new type is added via a plugin!!!
 using CS_Types_t = TypeList<
+  CS_EO_Mat1,
+  CS_EO_Mat2,
+  CS_EO_Mat8,
+  CS_EO_Mat9,
   CS_EO_Panel,
   CS_EO_Stiffener,
-  CS_EO_Mat1,
-  EO_Mat2,
-  EO_Mat8,
-  EO_Mat9,
-  CS_EO_PanelLoading,
-  CS_EO_StiffenerLoading,
   CS_SC_Panel,
   CS_SC_Stiffener,
-  SA_PanelBuckling,
-  SA_PanelPressure,
-  SA_StiffenerInstability,
-  SA_StiffenerStrength>;
+  CS_SCL_Panel_Buckling,
+  CS_SCL_Panel_Pressure,
+  CS_SCL_Stiffener_Strength,
+  CS_SCL_Stiffener_Instability,
+  CS_SA_Panel_Buckling,
+  CS_SA_Panel_Pressure,
+  CS_SA_Stiffener_Strength,
+  CS_SA_Stiffener_Instability,
+  CS_SAR_Panel_Buckling,
+  CS_SAR_Panel_Pressure,
+  CS_SAR_Stiffener_Strength,
+  CS_SAR_Stiffener_Instability>;
 
 // -----------------------------------------------------------------------
 
@@ -2055,7 +2078,7 @@ The frontend library shall provide simple solutions for the UI form representati
 Actually, many SAA types can be visualized by standard UI forms.
 In some cases, an additional picture can be added to support the table view.
 
-#### 4.2.2. The Functionally Persistent DAG <a id='sec422'></a>
+##### 4.2.1.2. The Functionally Persistent DAG <a id='sec4212'></a>
 
 The architecture chapter underlined that we need two DAG definitions which are online and offline respectively.
 **I will skip the offline DAG in order for the simplicity of this repository.**
@@ -2796,7 +2819,7 @@ many aspects of the DAG data structure such as the DFS/BFS iterators.
 There, offcourse, exist many significant differences in the two data structures.
 However, I think, up to this point, I clearified the fundamental aspects of the issue in terms of the software architecture and design.
 
-#### 4.2.3. The SP Interface <a id='sec423'></a>
+##### 4.2.1.3. The SP Interface <a id='sec4213'></a>
 
 The CS/SP interface requires the communication between C++ and python in both directions.
 I will use `pybind11` for this interface as it allows flexible and efficient access from both sides.
@@ -2805,8 +2828,8 @@ The problem in case of the CS/SP interface is that the CS types delegates the de
 However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types. Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
-- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_EO_Material, CS_Bind_EO_Panel and CS_Bind_SA_Panel_Buckling.
-- The SP defines the python wrapper classes if needed. Ex: SP_Py_EO_Material, SP_Py_EO_Panel and SP_Py_SA_Panel_Buckling.
+- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_CS_EO_Material, CS_Bind_EO_Panel and CS_Bind_SA_Panel_Buckling.
+- The SP defines the python wrapper classes if needed. Ex: SP_Py_CS_EO_Material, SP_Py_EO_Panel and SP_Py_SA_Panel_Buckling.
 
 The SP python wrapper classes (e.g. SP_Py_EO_Panel) is defined when there is a need.
 Some EOs would have behaviours which is strongly related with the processes executed by the SP.
@@ -3071,7 +3094,7 @@ Lets exemine the components of this strategy:
 The 2nd, the 3rd and the 4th are quite standard processes which would not put too much load on the client.
 **The CS safely implements all the connections and the patterns required for C++/Python interaction.**
 
-#### 4.2.4. The FE Interface <a id='sec424'></a>
+##### 4.2.1.4. The FE Interface <a id='sec4214'></a>
 
 In terms of the FE interface, we can mainly define 4 types:
 1. ICS_FE_Non: No FE utility
@@ -3114,7 +3137,7 @@ struct ICS_FE_Importable_Exportable {
 
 Most of the types are expected to be FE_Importable_Exportable.
 
-#### 4.2.5. The MySQL DB Interface <a id='sec425'></a>
+##### 4.2.1.5. The MySQL DB Interface <a id='sec4215'></a>
 
 The below database class is simple enough to implement the DB access algorithms such as:
 - DB and table creation,
@@ -3667,7 +3690,7 @@ The following interfaces and concepts defined previously would not be needed any
 For example, for a panel, the thickness is sizeable while the widths are not.
 Hence, `CS_Data` would be improved with a sizeability interface.
 
-#### 4.2.6. The Class Hierarchy <a id='sec426'></a>
+##### 4.2.1.6. The Class Hierarchy <a id='sec4216'></a>
 
 In this document, I mentioned about the following base types for the SAA:
 - engineering object (EO),
@@ -3985,7 +4008,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
 #endif
 ```
 
-As mentioned before at the end of the [Section 4.2.5](#sec425), the following interface functions would be moved to the CS
+As mentioned before at the end of the [Section 4.2.1.5](#sec4215), the following interface functions would be moved to the CS
 by defining the members with CS_Data wrapper:
 - `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
 - Json_Compatible concept (as covered by `ICS_Data` interface),
@@ -4330,7 +4353,7 @@ The master users shall have write access to these parameters.
 I will not introduce the pseudocode for the SAs as I think the design process is quite clear now.
 Similarly, I will skip the SARs.
 
-#### 4.2.7. The UML Diagram <a id='sec427'></a>
+##### 4.2.1.7. The UML Diagram <a id='sec4217'></a>
 
 The UML diagram is not readable as the templated interfaces extend in the same level in the architecture.
 <img src="uml/CS.svg" alt="UML Diagram" width="100%">
@@ -4338,9 +4361,29 @@ The UML diagram is not readable as the templated interfaces extend in the same l
 I will present a sample UML diagram for the DAG which is more readable and traceable:
 ![Sample UML for the DAG](./uml/DAG.png)
 
+#### 4.2.2. The CS in Python <a id='sec422'></a>
+
+[The CS in C++](#sec421) section introduced a detail description about the design of the CS.
+Hence, I will skip some of the discussions in this section.
+An important point to note here is that in this section
+I will follow the SoA strategy described in [Software Architecture](#sec3) section.
+
+
+
+
+#### 4.2.3. The CS in Java <a id='sec423'></a>
+
+[The CS in C++](#sec421) section introduced a detail description about the design of the CS.
+Hence, I will skip some of the discussions in this section.
+An important point to note here is that in this section
+I will follow the SoA strategy described in [Software Architecture](#sec3) section.
+
+
+
+
 ### 4.3. The Solver Pack (SP) <a id='sec43'></a>
 
-The design of the SP is based on a single behaviour: performing the analytical strength calculations.
+The design of the SP is based on a single behaviour: performing the analytical calculations for a structural analysis.
 The design strategy would be based on the FOD approach for the efficiency.
 The companies would have libraries already existing for the strength calculations.
 The FOD strategy would allow involving the already existing libraries easily.
@@ -4353,9 +4396,9 @@ I will skip the design of the SP.
 Lets see an example SP type definition:
 
 ```
-# ~/src/plugins/core/panel/CS_SC_Panel.py
+# ~/src/plugins/core/panel/SP_SC_Panel.py
 
-class CS_SC_Panel:
+class SP_SC_Panel:
   def __init__(
       self,
       EO_panel: EO_panel,

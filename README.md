@@ -860,7 +860,7 @@ The interface would combine all of the interfaces required by the CS defined in 
 
 However, there is still a problem with this approach.
 Consider the use case with a structural analysis request coming from the user.
-The CS would get the SC from the DAG and request an aanalysis run from the SP.
+The CS would get the SC from the DAG and request an analysis run from the SP.
 However, analysis run function would be a member of the SC interface only
 which would not be a part of the EO interface.
 

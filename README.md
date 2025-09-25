@@ -749,8 +749,8 @@ class ICS_FE(ABC):
 ```
 
 The container types of the CS implement these interfaces.
-**A sample container definition for the panel EO would be:**
-Notice the `TODO` comments warning about the circular reference with CS_EO_Stiffener which is mentioned before.
+**A sample container definition for the panel EO is given below.**
+**Notice the `TODO` comments warning about the circular reference with CS_EO_Stiffener which is mentioned before.**
 
 ```
 # ~/src/plugins/core/panel/cs_eo_panel.py

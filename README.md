@@ -1106,7 +1106,7 @@ Basically, below three rules covers the comparison of the three languages:
 - Use python if a **flat** class hierarchy exists as it allows **easy** development.
 
 By the way, the rules assumes that all the three languages can be used with all power including the open source libraries.
-Besidese, the experienced software engineers are available to develop in that language efficiently.
+Besides, the experienced software engineers are available to develop in that language efficiently.
 
 Lets examine the CS with respect to the above rules.
 The CS involves a number of interfaces with the DAG, UI, FE, MySQL DB and SP.

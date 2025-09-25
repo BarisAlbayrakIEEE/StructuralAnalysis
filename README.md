@@ -37,7 +37,8 @@
     - [4.2.2. The CS in Python](#sec422)
     - [4.2.3. The CS in Java](#sec423)
   - [4.3. The Solver Pack (SP)](#sec43)
-- [5. Other Issues](#sec5)
+- [5. Documentation](#sec5)
+- [6. Other Issues](#sec6)
 
 **Nomenclature**
 - **SC:** Structural Component
@@ -4368,6 +4369,7 @@ Hence, I will skip some of the discussions in this section.
 An important point to note here is that in this section
 I will follow the SoA strategy described in [Software Architecture](#sec3) section.
 
+I will skip the UI interface code (i.e. fastapi) as the related issues are covered in [The CS in C++](#sec421) section.
 
 
 
@@ -4378,6 +4380,7 @@ Hence, I will skip some of the discussions in this section.
 An important point to note here is that in this section
 I will follow the SoA strategy described in [Software Architecture](#sec3) section.
 
+I will skip the UI interface code (i.e. fastapi) as the related issues are covered in [The CS in C++](#sec421) section.
 
 
 
@@ -4427,7 +4430,39 @@ class SP_SC_Panel:
     # TODO
 ```
 
-## 5. Other Issues <a id='sec5'></a>
+## 5. Documentation <a id='sec5'></a>
+
+The documentation for the SAA is significant like all software applications.
+Here, I want to mention about two points that makes the documentation more crucial:
+1. The distinction between the CS and the SP must be clear for the clients.
+2. The DAG manages the object relations so that the user defined types must follow this contract.
+
+Many times I noted that the client is **mainly** responsible for the development of the SAMMs which is a part of the SP.
+However, I also noted that the CS is extensible by defining new types via plugins
+which means that the client is somehow involved in the CS development as well.
+
+In the discussions and code snippets I used prefices **CS** and **SP** (e.g. `CS_EO_Panel` and `SP_EO_Panel`)
+in order for the reader to clear out to which component the type belongs.
+This may be confusing for the users and will be for the clients.
+As an edge case scenario, the source files of CS and SP may be located in the same plugin.
+Even more, one can define `CS_SC_Panel` and `SP_SC_Panel` in the same source file.
+**Hence, the documentation shall clearly identify the two components, the design and the interaction between the two.**
+
+The 2nd issue is related with the DAG.
+As stated before, DAG is a link based data structure which holds the relations between the nodes.
+The relationships are semantically devided into two types: ancestor and descendant.
+The ancestor relationship infer the association while the other infers the ownership.
+However, as the DAG here is a DOD data structure that simulates the relations via indices
+it moves this semantic information from the definitions to the algorithms.
+Anyway, the DAG holds this information.
+**The plugin types shall not define these relations with the semantic meaning (association or ownership).**
+For example, CS_SC_Panel cannot define the side stiffeners with `std::weak_ptr<CS_EO_Stiffener>` type
+as it will turn out to be an association.
+Or, CS_EO_Stiffener cannot define the descendant panel SCs with `std::shared_ptr<CS_SC_Panel>` type
+as it will turn out to be an ownership.
+**The plugin types shall define the relations with position descriptors (i.e. the type and the container index).**
+
+## 6. Other Issues <a id='sec6'></a>
 
 Previously, I mentioned that each type shall be defined with a user form.
 However, a standard form would satisfy the user needs in case of the SAA.

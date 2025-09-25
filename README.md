@@ -14,8 +14,8 @@
   - [3.4. The Frontend](#sec34)
   - [3.5. The Core](#sec35)
     - [3.5.1. The CS in C++](#sec351)
-    - [3.5.2. The CS in Java](#sec352)
-    - [3.5.3. The CS in Python](#sec353)
+    - [3.5.2. The CS in Python](#sec352)
+    - [3.5.3. The CS in Java](#sec353)
     - [3.5.4. The CS Language Comparison](#sec354)
   - [3.6. Use Case Diagrams](#sec36)
     - [3.6.1. Use Case scenario #1](#sec361)
@@ -618,44 +618,7 @@ This approach requires an additional wrapper class definition for each new type.
 The interface between the CS in C++ and the SP in python (i.e. cython or `pybind11`) is an issue to be solved
 and some part of this interface would have to be managed by the client.
 
-#### 3.5.2. The CS in Java <a id='sec352'></a>
-
-Java handles the problem applying the type erasure which loses the compile-time static definition capability.
-Additionally, java does not have type utilities provided by C++ such that the type containers of the DAG must be hardcoded:
-
-```
-// ~/src/system/dag.java
-
-import java.util.ArrayList;
-
-class DAG{
-  private ArrayList<Panel> panels;
-  private ArrayList<Stiffener> stiffeners;
-  ...
-};
-```
-
-In this architecture, the client is supposed to update the DAG source file for each new type.
-This issue would arise for the other interfaces of the application as well (e.g. interface with the MySQL DB)
-which requires the client to update the core parts of the application for each new type.
-A codegen would do this on behalf of the client, but the codegen would absolutely be more complex than the one we had in the C++ solution.
-
-I will not go through the details with the java solution
-since in this problem case I am more interested in C++ and python.
-
-Below presents some of the superiorities of java in case of the SAA:
-- cross-platform applicability,
-- wide worldwide use and shorter learning curves for the clients comparing with C++,
-- good enterprise libraries,
-- ensured type and memory safety,
-- simpler multithreading interface (i.e. java.util.concurrent) comparing with C++.
-
-Below presents some of the disadvantages of java in case of the SAA:
-- The dynamism involved in the static type definitions and the heap allocated memory,
-- lack of the type traits utilities and harder type transformations comparing with C++,
-- garbage collection (GC) might pause unpredictably.
-
-#### 3.5.3. The CS in Python <a id='sec353'></a>
+#### 3.5.2. The CS in Python <a id='sec352'></a>
 
 As mentioned above, python uses heap for the memory management.
 The alternative is to use raw data types or NumPy data types for the data management.
@@ -663,6 +626,7 @@ However, this approach cannot involve the pre-mentioned interfaces required by t
 The solution is separating the data and the interfaces.
 Consider the following interfaces for the DAG, UI, MySQL DB, SP and FE.
 The interfaces will be implemented by data containers which store the data in contiguous DOD style arrays.
+In other words, the SoA based containers implement the interfaces.
 The index argument in the function definitions represents the index of the data within the container.
 The interfaces here are defined quite basic as they will be inspected in the [Software Design]('sect4') section in detail.
 
@@ -781,9 +745,10 @@ class IFE(ABC):
 
 The container types of the CS implement these interfaces.
 **A sample container definition for the panel EO would be:**
+Notice the `TODO` comments warning about the circular reference with CS_EO_Stiffener which is mentioned before.
 
 ```
-# ~/src/plugins/core/panel/eo_panel.py
+# ~/src/plugins/core/panel/cs_eo_panel.py
 
 import array
 
@@ -792,8 +757,8 @@ class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
     self._names = array.array(dtype=str)
     self._states__DB = array.array(dtype=bool) # bool holds whether the item is modified during the session
     self._ts = array.array(dtype=float)
-    self._EO_side_stiffeners_1 = array.array(dtype=int) # ancestors: indices of the EOs - the side stiffeners - 1
-    self._EO_side_stiffeners_2 = array.array(dtype=int) # ancestors: indices of the EOs - the side stiffeners - 2
+    self._EO_side_stiffeners_1 = array.array(dtype=int) # TODO: to visualize ancestors. cause circular reference. move to CS_SC_Panel
+    self._EO_side_stiffeners_2 = array.array(dtype=int) # TODO: to visualize ancestors. cause circular reference. move to CS_SC_Panel
     self._SC_panels = array.array(dtype=int) # descendants: indices of the SCs - the panels
     self._SC_stiffeners_1 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 1
     self._SC_stiffeners_2 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 2
@@ -879,6 +844,71 @@ The only measurable performance loss would be the absence of the static definiti
 The static definitions would transfer some work to the compile time which we cannot achieve by python.
 However, I dont think that this performance loss would affect the end user statistics significantly.
 
+#### 3.5.3. The CS in Java <a id='sec353'></a>
+
+Java handles the problem applying the type erasure which loses the compile-time static definition capability.
+Additionally, java does not have type utilities provided by C++ to statically define the containers for the CS types.
+Hence, defining the data containers statically would require a manual update in the `dag.class` file
+everytime a new type is added via a plugin.
+Even worst, the manual code update would not be limited to this source file only.
+A codegen similar to the one defined for the C++ solution would be required
+but it will be more and more complex.
+
+The solution is to create an interface for the containers and
+store the pointers/references to these containers in `dag.class`.
+The interface would combine all of the interfaces required by the CS defined in the previous section.
+
+However, there is still a problem with this approach.
+Consider the use case with a structural analysis request coming from the user.
+The CS would get the SC from the DAG and request an aanalysis run from the SP.
+However, analysis run function would be a member of the SC interface only
+which would not be a part of the EO interface.
+
+Review the *caution* within the below code snippet for more details.
+
+
+
+```
+// ~/src/system/dag.class
+
+import java.util.HashMap;
+
+class DAG{
+  /*
+  CAUTION:
+    Java does not provide type utilities to define the CS type data statically.
+    Hence, the container for each data type must be hardcoded.
+    This is not a good solution as it requires a manual update each time a new type is added.
+
+  private List<Panel> _panels = new ArrayList<Panel>();
+  private List<Stiffener> _stiffeners = new ArrayList<Stiffener>();
+  ...
+  */
+
+  // The real solution is to create an interface for the CS data containers.
+  // Each container (e.g. EO_Panel_Container) needs to extend this interface.
+  private java.util.HashMap<String, ICS_Type_Container> _type_containers;
+
+  ...
+};
+```
+
+I will not go through the details with the java solution
+as the previous two sections covers the main points about the architectural issues.
+
+Below presents some of the superiorities of java in case of the SAA:
+- cross-platform applicability,
+- wide worldwide use and shorter learning curves for the clients comparing with C++,
+- good enterprise libraries,
+- ensured type and memory safety,
+- better software design achieved by idiomatic and encouraged application of the design patterns,
+- simpler multithreading interface (i.e. java.util.concurrent) comparing with C++,
+- no codegen is needed.
+
+Below presents some of the disadvantages of java in case of the SAA:
+- The dynamism involved in the static type definitions and the heap allocated memory,
+- lack of the type traits utilities and harder type transformations comparing with C++.
+
 #### 3.5.4. The CS Language Comparison <a id='sec354'></a>
 
 In order to select the CS language, I will discuss about some critical issues such as memory management, performance and compatibility.
@@ -886,24 +916,24 @@ In order to select the CS language, I will discuss about some critical issues su
 **Memory Management:**\
 First of all, C++ is the best language to manage the memory and the access patterns efficiently.
 The alignments and paddings can be controlled and the memory pools can be utilized perfectly.
-Java and python, on the other hand, uses heap memory if the fundamental OOP approach is followed.
-
-Python can be forced to use contiguous memory segments by activating the NumPy or array libraries
-which can be achieved by a DOD embedded OOP approach explained in [The CS in Python](sec353) section clearly.
+Java and python, on the other hand, use the heap memory if the fundamental OOP approach is followed.
+However, switching to DOD approaches eliminates this problem for java and python.
+As an example, python can be forced to use contiguous memory segments by activating the NumPy or array libraries
+which can be achieved by a DOD embedded OOP approach explained in [The CS in Python](sec352) section clearly.
 This approach fulfills the memory requirements effectively.
 
-In terms of memory, java would add little type overhead comparing with C++.
+In terms of the memory, java would add little type overhead comparing with C++.
 This overhead gets larger in case of python.
-However, the type container approach given in [The CS in Python](sec353) section
+However, the type container approach given in [The CS in Python](sec352) section
 corresponds to an additional memory not per object but per type
 which ends up with a tiny amount of memory (i.e. a few KBs for thousands of types).
 Hence, there is nothing to worry about the memory usage.
 
 An important point about the memory aspect is that the objects of the SP are temporary
-such that they are only required during an SA.
-When the CS is requested to execute an SA via the SP (e.g. SP_CS_SA_Panel_Buckling),
-the SP creates the required objects (e.g. SP_CS_EO_Panel and SP_SCL_Panel_Buckling_Load),
-run the analysis, store the results in the analysis object (i.e. SP_CS_SA_Panel_Buckling)
+such that they are only required while the SP is running.
+When the CS is requested to execute an SA via the SP (e.g. SP_SA_Panel_Buckling),
+the SP creates the required objects (e.g. SP_EO_Panel and SP_SCL_Panel_Buckling_Load),
+run the analysis, store the results in the analysis object (i.e. SP_SA_Panel_Buckling)
 or in an SAR object (e.g. SP_SAR_Panel_Buckling) and return the results to CS.
 The CS would store the results in its own format which means that all the objects created by the SP
 are not needed anymore.

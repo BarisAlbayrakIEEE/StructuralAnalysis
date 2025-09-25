@@ -377,7 +377,7 @@ Please see the Readme file for a detailed discussion.
 
 We have different requirements and usage in case of the SAA:
 - The depth of the DAG in case of the SAA is very small: Ex: material -> panel -> panel buckling -> RF.
-- No need to allow cycled nodes as it doesn't make sence in case of the SAA.
+- No need to allow cycled nodes as the SAA does not have cycled relations sematically.
 - No need to allow deleting the nodes with descendants as it doesn't make sence in case of the SAA.
 
 **The above three points show that the DAG of the SAA shall be single-threaded.**

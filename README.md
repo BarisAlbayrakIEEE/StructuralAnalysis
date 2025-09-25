@@ -400,7 +400,7 @@ For example, lets consider a sample SA method defined by the SP: panel buckling.
 Before, I stated that the SP shall implement the SAMMs in python.
 The client would prefer simple OOP objects while working on the SAMMs.
 For example, a Panel class would encapsulate the panel data (e.g. thickness)
-in order to access data with dot notation easily (e.g. panel.t).
+in order to access data with dot notation easily (e.g. panel.thickness).
 Additionally, Panel class would have some methods.
 In other words, SAMMs would contain simple classes without a complex class hierarchy
 in order for the simplicity and traceability of the SAMMs.

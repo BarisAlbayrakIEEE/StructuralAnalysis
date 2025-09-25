@@ -656,7 +656,7 @@ class IDAG(ABC):
 
 from abc import ABC, abstractmethod
 
-class IUI(ABC):
+class ICS_UI(ABC):
   @abstractmethod
   def get_type_name(self, index:int) -> None:
     """gets the type name"""
@@ -680,7 +680,7 @@ class IUI(ABC):
 
 from abc import ABC, abstractmethod
 
-class IDB(ABC):
+class ICS_DB(ABC):
   def get_modified_indexs(self) -> []:
     """gets the items modified during the session"""
     modified_indexs = []
@@ -731,7 +731,7 @@ class ISP(ABC):
 
 from abc import ABC, abstractmethod
 
-class IFE(ABC):
+class ICS_FE(ABC):
   @abstractmethod
   def import_FE(self, index:int, FE_file_path:str) -> None:
     """imports the data of the indexth item within the container from an FE file (e.g. a bdf file)"""
@@ -752,7 +752,7 @@ Notice the `TODO` comments warning about the circular reference with CS_EO_Stiff
 
 import array
 
-class CS_EO_Panel_Container(IDAG, IUI, IDB, ISP, IFE):
+class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ISP, ICS_FE):
   def __init__():
     self._names = array.array(dtype=str)
     self._states__DB = array.array(dtype=bool) # bool holds whether the item is modified during the session
@@ -856,17 +856,25 @@ but it will be more and more complex.
 
 The solution is to create an interface for the containers and
 store the pointers/references to these containers in `dag.class`.
-The interface would combine all of the interfaces required by the CS defined in the previous section.
+The interface would combine all of the interfaces required by the CS which were defined in the previous section (e.g. `ICS_UI`).
+Lets call this interface `ICS`.
 
 However, there is still a problem with this approach.
 Consider the use case with a structural analysis request coming from the user.
 The CS would get the SC from the DAG and request an analysis run from the SP.
-However, analysis run function would be a member of the SC interface only
-which would not be a part of the EO interface.
+However, `run_analysis` function would be a member of the SC interface only
+which would not be a part of `ICS`.
+For example EOs would not define the `run_analysis` function.
+The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
+In other words, these components define additional interfaces on top of `ICS`.
+Lets name these interfaces as well:
+-`ICS_EO`,
+-`ICS_SC`,
+-`ICS_SCL`,
+-`ICS_SA` and
+-`ICS_SAR`.
 
-Review the *caution* within the below code snippet for more details.
-
-
+Hence, the DAG should define five members instead of a single one pointing to the containers derived from `ICS`.
 
 ```
 // ~/src/system/dag.class
@@ -876,25 +884,30 @@ import java.util.HashMap;
 class DAG{
   /*
   CAUTION:
+    A bad solution to achieve static type definitions ddefined in the C++ solution.
+
     Java does not provide type utilities to define the CS type data statically.
     Hence, the container for each data type must be hardcoded.
     This is not a good solution as it requires a manual update each time a new type is added.
 
-  private List<Panel> _panels = new ArrayList<Panel>();
-  private List<Stiffener> _stiffeners = new ArrayList<Stiffener>();
+  private List<CS_EO_Panel> _EO_panels = new ArrayList<CS_EO_Panel>();
+  private List<CS_EO_Stiffener> _EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
   ...
   */
 
-  // The real solution is to create an interface for the CS data containers.
-  // Each container (e.g. EO_Panel_Container) needs to extend this interface.
-  private java.util.HashMap<String, ICS_Type_Container> _type_containers;
+  // The interfaces below shall be defined on top of ICS.
+  private java.util.HashMap<String, ICS_EO> _type_containers__EO;
+  private java.util.HashMap<String, ICS_SC> _type_containers__SC;
+  private java.util.HashMap<String, ICS_SCL> _type_containers__SCL;
+  private java.util.HashMap<String, ICS_SA> _type_containers__SA;
+  private java.util.HashMap<String, ICS_SAR> _type_containers__SAR;
 
   ...
 };
 ```
 
 I will not go through the details with the java solution
-as the previous two sections covers the main points about the architectural issues.
+as the previous two sections covers the main points about the architecture.
 
 Below presents some of the superiorities of java in case of the SAA:
 - cross-platform applicability,
@@ -1681,21 +1694,21 @@ The type traits provide static constraints for the CS types.
 The CS also needs to define an interface in order to allow the CS objects to interact with the UI efficiently:
 
 ```
-// ~/src/system/IUI.h
+// ~/src/system/ICS_UI.h
 
-#ifndef _IUI_h
-#define _IUI_h
+#ifndef _ICS_UI_h
+#define _ICS_UI_h
 
 #include <string>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-struct IUI {
+struct ICS_UI {
   virtual std::string get_type_name() const = 0;
   virtual void get_from_json(json) = 0;
   virtual json set_to_json() const = 0;
-  virtual ~IUI() = default;
+  virtual ~ICS_UI() = default;
 };
 
 #endif
@@ -1979,7 +1992,7 @@ The final pseudocode represents a sample SAA type, CS_EO_Panel, with create, get
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public IUI {
+struct CS_EO_Panel : public ICS_UI {
   double _thickness;
   double _width_a;
   double _width_b;
@@ -1997,17 +2010,17 @@ struct CS_EO_Panel : public IUI {
     width_b = json_["width_b"];
   };
 
-  // IUI interface function: get_type_name
+  // ICS_UI interface function: get_type_name
   inline std::string get_type_name() const { return "CS_EO_Panel"; };
 
-  // IUI interface function: get_from_json
+  // ICS_UI interface function: get_from_json
   void get_from_json(const json& json_) {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
     if (json_.contains("width_b")) width_b = json_["width_b"];
   }
 
-  // IUI interface function: set_to_json
+  // ICS_UI interface function: set_to_json
   json set_to_json() const {
     return {
       {"thickness", thickness},
@@ -2159,13 +2172,13 @@ Correspondingly, the source file defined before for the sample CS_EO_Panel class
 #define _CS_EO_Panel_h
 
 #include <nlohmann/json.hpp>
-#include "~/src/system/IUI.h"
+#include "~/src/system/ICS_UI.h"
 #include "~/src/system/IDAG.h"
 #include "~/src/system/DAG_Node.h"
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public IUI, IDAG {
+struct CS_EO_Panel : public ICS_UI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
@@ -2500,13 +2513,13 @@ The descendants are moved to the type definitions:
 #define _CS_EO_Panel_h
 
 #include <nlohmann/json.hpp>
-#include "~/src/system/IUI.h"
+#include "~/src/system/ICS_UI.h"
 #include "~/src/system/IDAG.h"
 #include "~/src/system/DAG_node.h"
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public IUI, IDAG {
+struct CS_EO_Panel : public ICS_UI, IDAG {
   double _thickness;
   double _width_a;
   double _width_b;
@@ -2858,7 +2871,7 @@ The CS panel class becomes:
 
 ...
 
-struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
+struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
   using bind_type = CS_Bind_EO_Panel;
 
   double _thickness;
@@ -3048,18 +3061,18 @@ The 2nd, the 3rd and the 4th are quite standard processes which would not put to
 #### 4.2.4. The FE Interface <a id='sec424'></a>
 
 In terms of the FE interface, we can mainly define 4 types:
-1. IFE_Non: No FE utility
-2. IFE_Importable: import_FE(const std::string& FE_file_path)
-3. IFE_Exportable: export_FE(const std::string& FE_file_path) const
-4. IFE_Importable_Exportable: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
+1. ICS_FE_Non: No FE utility
+2. ICS_FE_Importable: import_FE(const std::string& FE_file_path)
+3. ICS_FE_Exportable: export_FE(const std::string& FE_file_path) const
+4. ICS_FE_Importable_Exportable: import_FE(const std::string& FE_file_path) and export_FE(const std::string& FE_file_path) const
 
 The FE importability is required for all types existing in an online DAG.
 The FE exportability is required for all types which is involved in an FEA solution (the SP may involve SA methods executing the FEA).
 Hence:
-1. IFE_Non: Cannot involve in an FE import/export process.
-2. IFE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot be involved in an FEA.
-3. IFE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
-4. IFE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
+1. ICS_FE_Non: Cannot involve in an FE import/export process.
+2. ICS_FE_Importable: Can be constructed by the FE data (i.e. both online and offline) but cannot be involved in an FEA.
+3. ICS_FE_Exportable: Cannot be constructed by the FE data (i.e. only offline) but can be involved in an FEA.
+4. ICS_FE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
 ```
 // ~/src/system/FE.h
@@ -3067,20 +3080,20 @@ Hence:
 #ifndef _FE_h
 #define _FE_h
 
-struct IFE_Importable {
+struct ICS_FE_Importable {
   virtual void import_FE(const std::string& FE_file_path) = 0;
-  virtual ~IFE_Importable() = default;
+  virtual ~ICS_FE_Importable() = default;
 };
 
-struct IFE_Exportable {
+struct ICS_FE_Exportable {
   virtual void export_FE(const std::string& FE_file_path) const = 0;
-  virtual ~IFE_Exportable() = default;
+  virtual ~ICS_FE_Exportable() = default;
 };
 
-struct IFE_Importable_Exportable {
+struct ICS_FE_Importable_Exportable {
   virtual void import_FE(const std::string& FE_file_path) = 0;
   virtual void export_FE(const std::string& FE_file_path) const = 0;
-  virtual ~IFE_Importable_Exportable() = default;
+  virtual ~ICS_FE_Importable_Exportable() = default;
 };
 
 #endif
@@ -3333,15 +3346,15 @@ The fields like member names and member types would also support automization of
 Following defines a short and clean interface which would most probably be improved while designing the DB in more detail.
 
 ```
-// ~/src/system/IDB.h
+// ~/src/system/ICS_DB.h
 
-#ifndef _IDB_h
-#define _IDB_h
+#ifndef _ICS_DB_h
+#define _ICS_DB_h
 
-struct IDB {
+struct ICS_DB {
   virtual void load_from_DB(const DB&) = 0;
   virtual void save_to_DB(const DB&) const = 0;
-  virtual ~IDB() = default;
+  virtual ~ICS_DB() = default;
 };
 
 #endif
@@ -3583,7 +3596,7 @@ The CS panel class becomes:
 
 ...
 
-struct CS_EO_Panel : public IUI, Abstract_Invariant_Updatable {
+struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
   CS_DT_double _thickness{};
   CS_DT_double _width_a{};
   CS_DT_double _width_b{};
@@ -3631,10 +3644,10 @@ The following interfaces and concepts defined previously would not be needed any
 - `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
 - Json_Compatible concept (as covered by `ICS_Data` interface),
 - CBindable concept (as covered by `ICS_Data` interface),
-- IUI interface function: `get_from_json` (as covered by `ICS_Data` interface),
-- IUI interface function: `set_to_json` (as covered by `ICS_Data` interface),
-- IDB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
-- IDB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
+- ICS_UI interface function: `get_from_json` (as covered by `ICS_Data` interface),
+- ICS_UI interface function: `set_to_json` (as covered by `ICS_Data` interface),
+- ICS_DB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
+- ICS_DB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
 - etc.
 
 `CS_Data` wrapper also would provide a chance to automize the structural sizing which will be discussed later.
@@ -3665,7 +3678,7 @@ Hence, the CS shall form a class hierarchy which roots to a base class visualizi
 #ifndef _ICS_h
 #define _ICS_h
 
-struct ICS : public IUI, IDAG, IDB, ICS_Data {
+struct ICS : public ICS_UI, IDAG, ICS_DB, ICS_Data {
   virtual ~ICS() = default;
 };
 
@@ -3694,26 +3707,26 @@ template<typename T>
 struct ICS_0 {};
 
 template<>
-struct ICS_0<FE_Non_t> : public IFE_Non {
+struct ICS_0<FE_Non_t> : public ICS_FE_Non {
   virtual ~ICS_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Importable_t> : public IFE_Importable {
+struct ICS_0<FE_Importable_t> : public ICS_FE_Importable {
   virtual ~ICS_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Exportable_t> : public IFE_Exportable {
+struct ICS_0<FE_Exportable_t> : public ICS_FE_Exportable {
   virtual ~ICS_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Importable_Exportable_t> : public IFE_Importable_Exportable {
+struct ICS_0<FE_Importable_Exportable_t> : public ICS_FE_Importable_Exportable {
   virtual ~ICS_0() = default;
 };
 
-struct ICS_1 : public IUI, IDAG, IDB, ICS_Data {};
+struct ICS_1 : public ICS_UI, IDAG, ICS_DB, ICS_Data {};
 
 // ---------------------------------------------
 // Updateability interface
@@ -3774,10 +3787,10 @@ Hence, the most important feature of the EOs is that they allow us to size the s
 In other words, the EOs extends an interface related to the structural sizing:
 
 ```
-// ~/src/system/IEO.h
+// ~/src/system/ICS_EO.h
 
-#ifndef _IEO_h
-#define _IEO_h
+#ifndef _ICS_EO_h
+#define _ICS_EO_h
 
 #include "ICS.h"
 
@@ -3786,24 +3799,24 @@ struct Auto_Sizeable_t;
 struct Manual_Sizeable_t;
 
 template<typename FEType, typename UpdateableType, typename SizeableType>
-struct IEO : public ICS<FEType, UpdateableType> {};
+struct ICS_EO : public ICS<FEType, UpdateableType> {};
 
 template<typename FEType, typename UpdateableType>
-struct IEO<FEType, UpdateableType, Non_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ICS_EO<FEType, UpdateableType, Non_Sizeable_t> : public ICS<FEType, UpdateableType> {
   void size_for_RF() { ; };
-  virtual ~IEO() = default;
+  virtual ~ICS_EO() = default;
 };
 
 template<typename FEType, typename UpdateableType>
-struct IEO<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ICS_EO<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
-  virtual ~IEO() = default;
+  virtual ~ICS_EO() = default;
 };
 
 template<typename FEType, typename UpdateableType>
-struct IEO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ICS_EO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
   virtual void size_for_RF() = 0;
-  virtual ~IEO() = default;
+  virtual ~ICS_EO() = default;
 };
 
 #endif
@@ -3817,14 +3830,14 @@ Defining the EO interface, the full version of CS_EO_Panel can be defined:
 #ifndef _CS_EO_Panel_h
 #define _CS_EO_Panel_h
 
-#include "~/src/system/IEO.h"
+#include "~/src/system/ICS_EO.h"
 #include "~/src/plugins/core/material/CS_EO_Mat1.h"
 #include "~/src/plugins/core/stiffener/CS_SC_Stiffener.h"
 #include "CS_SC_Panel.h"
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
+struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
   std::size_t _type_container_index;
   double _thickness;
   double _width_a;
@@ -3891,10 +3904,10 @@ struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_
       EO_mat1);
   };
 
-  // IUI interface function: get_type_name
+  // ICS_UI interface function: get_type_name
   inline std::string get_type_name() const { return "CS_EO_Panel"; };
 
-  // IUI interface function: get_from_json
+  // ICS_UI interface function: get_from_json
   void get_from_json(const json& json_) {
     if (json_.contains("_thickness")) _thickness = json_["_thickness"];
     if (json_.contains("_width_a")) _width_a = json_["_width_a"];
@@ -3905,7 +3918,7 @@ struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_
     if (json_.contains("_SC_side_stiffener_2")) _SC_side_stiffener_2 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_2"]);
   }
 
-  // IUI interface function: set_to_json
+  // ICS_UI interface function: set_to_json
   json set_to_json() const {
     return {
       {"_thickness", _thickness},
@@ -3917,12 +3930,12 @@ struct CS_EO_Panel : public IEO<FE_Importable_Exportable_t, Invariant_Updatable_
       {"_SC_side_stiffener_2", _SC_side_stiffener_2._index}
     };
   
-  // IDB interface function: load_from_DB
+  // ICS_DB interface function: load_from_DB
   void load_from_DB(const DB&) {
     // TODO
   };
   
-  // IDB interface function: save_to_DB
+  // ICS_DB interface function: save_to_DB
   void save_to_DB(const DB&) const {
     // TODO
   };
@@ -3964,10 +3977,10 @@ by defining the members with CS_Data wrapper:
 - `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
 - Json_Compatible concept (as covered by `ICS_Data` interface),
 - CBindable concept (as covered by `ICS_Data` interface),
-- IUI interface function: `get_from_json` (as covered by `ICS_Data` interface),
-- IUI interface function: `set_to_json` (as covered by `ICS_Data` interface),
-- IDB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
-- IDB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
+- ICS_UI interface function: `get_from_json` (as covered by `ICS_Data` interface),
+- ICS_UI interface function: `set_to_json` (as covered by `ICS_Data` interface),
+- ICS_DB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
+- ICS_DB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
 - etc.
 
 **The SCs**\
@@ -4027,12 +4040,12 @@ Hence, one must locate this process under the SC definition where both are defin
 Considering the above discussions, the interface for the SCs is as follows:
 
 ```
-// ~/src/system/ISC.h
+// ~/src/system/ICS_SC.h
 
-#ifndef _ISC_h
-#define _ISC_h
+#ifndef _ICS_SC_h
+#define _ICS_SC_h
 
-#include "IEO.h"
+#include "ICS_EO.h"
 
 struct IExecutable {
   virtual void run_analyses() = 0;
@@ -4047,28 +4060,28 @@ struct ILoad {
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
-struct ISC_0 : public IExecutable, IReportable, ILoad {
+struct ICS_SC_0 : public IExecutable, IReportable, ILoad {
   virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
 template<typename FEType, typename UpdateableType, typename SizeableType>
-struct ISC : public ICS<FEType, UpdateableType> {};
+struct ICS_SC : public ICS<FEType, UpdateableType> {};
 
 // CAUTION: SCs cannot be Non_Sizeable_t. All SCs are the subject of structural sizing.
 
 // Auto_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType>, ISC_0 {
+struct ICS_SC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType>, ICS_SC_0 {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
-  virtual ~ISC() = default;
+  virtual ~ICS_SC() = default;
 };
 
 // Manual_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ISC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType>, ISC_0 {
+struct ICS_SC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType>, ICS_SC_0 {
   virtual void size_for_RF() = 0;
-  virtual ~ISC() = default;
+  virtual ~ICS_SC() = default;
 };
 
 #endif
@@ -4082,7 +4095,7 @@ After defining the SC interface, we can implement CS_SC_Panel:
 #ifndef _CS_SC_Panel_h
 #define _CS_SC_Panel_h
 
-#include "~/src/system/ISC.h"
+#include "~/src/system/ICS_SC.h"
 #include "~/src/plugins/core/stiffener/CS_EO_Stiffener.h"
 #include "CS_EO_Panel.h"
 #include "CS_SA_Panel_Buckling.h"
@@ -4090,7 +4103,7 @@ After defining the SC interface, we can implement CS_SC_Panel:
 
 using json = nlohmann::json;
 
-struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
+struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
   std::size_t _type_container_index;
   DAG_Node<CS_EO_Panel> _EO_panel;
   DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1;
@@ -4152,10 +4165,10 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
       SA_panel_buckling);
   };
 
-  // IUI interface function: get_type_name
+  // ICS_UI interface function: get_type_name
   inline std::string get_type_name() const { return "CS_SC_Panel"; };
 
-  // IUI interface function: get_from_json
+  // ICS_UI interface function: get_from_json
   void get_from_json(const json& json_) {
     if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
     if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
@@ -4164,7 +4177,7 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
     if (json_.contains("_SA_panel_buckling")) _SA_panel_buckling = DAG_Node<CS_SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   }
 
-  // IUI interface function: set_to_json
+  // ICS_UI interface function: set_to_json
   json set_to_json() const {
     return {
       {"_EO_panel", _EO_panel._index},
@@ -4175,12 +4188,12 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
     };
   }
   
-  // IDB interface function: load_from_DB
+  // ICS_DB interface function: load_from_DB
   void load_from_DB(const DB&) {
     // TODO
   };
   
-  // IDB interface function: save_to_DB
+  // ICS_DB interface function: save_to_DB
   void save_to_DB(const DB&) const {
     // TODO
   };
@@ -4222,7 +4235,7 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
     // TODO
   };
 
-  // ISC interface function: run_analyses
+  // ICS_SC interface function: run_analyses
   void run_analyses() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
@@ -4230,7 +4243,7 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
     SA_panel_buckling.run_analysis();
   };
 
-  // ISC interface function: create_report
+  // ICS_SC interface function: create_report
   void create_report() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
@@ -4238,7 +4251,7 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
     SA_panel_buckling.create_report();
   };
 
-  // ISC interface function: get_effective_LCs
+  // ICS_SC interface function: get_effective_LCs
   std::vector<std::size_t> get_effective_LCs() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
@@ -4258,7 +4271,7 @@ struct CS_SC_Panel : public ISC<FE_Importable_Exportable_t, Invariant_Updatable_
     return effective_LCs;
   };
 
-  // ISC interface function: get_critical_LC
+  // ICS_SC interface function: get_critical_LC
   std::size_t get_critical_LC() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
@@ -4277,10 +4290,10 @@ by defining the members with CS_Data wrapper:
 - `Has_Member_Names` and `Has_Member_Types` concepts (replaced by `get_member_names` and `get_member_types`),
 - Json_Compatible concept (as covered by `ICS_Data` interface),
 - CBindable concept (as covered by `ICS_Data` interface),
-- IUI interface function: `get_from_json` (as covered by `ICS_Data` interface),
-- IUI interface function: `set_to_json` (as covered by `ICS_Data` interface),
-- IDB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
-- IDB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
+- ICS_UI interface function: `get_from_json` (as covered by `ICS_Data` interface),
+- ICS_UI interface function: `set_to_json` (as covered by `ICS_Data` interface),
+- ICS_DB interface function: `load_from_DB` (as covered by `ICS_Data` interface),
+- ICS_DB interface function: `save_to_DB` (as covered by `ICS_Data` interface),
 - etc.
 
 **The SAs**\

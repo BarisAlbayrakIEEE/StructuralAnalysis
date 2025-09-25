@@ -12,7 +12,7 @@
     - [3.3.5. Concurrency](#sec335)
     - [3.3.6. Summary of the 1st Overview](#sec336)
   - [3.4. The Frontend](#sec34)
-  - [3.5. The Core](#sec35)
+  - [3.5. The Core System](#sec35)
     - [3.5.1. The CS in C++](#sec351)
     - [3.5.2. The CS in Python](#sec352)
     - [3.5.3. The CS in Java](#sec353)
@@ -114,7 +114,7 @@ However, the cost of the uniform analysis interface is the requirement for a lar
 In other words, an inspection handled in a few miliseconds by the analytical approach may take hours by an FE solver.
 Nevertheless, the FE approach contains some inevitable assumptions which results with the loss of the accuracy.
 
-**The aim of this repository is to design the core framework of a *closed form stand-alone* solution for the analytical approach**.
+**The aim of this repository is to design the core framework of an application for the analytical approach**.
 
 ## 3. Software Architecture <a id='sec3'></a>
 
@@ -296,9 +296,9 @@ Based on these requirements, I will continue with **javascript/react as the fron
 Additionally, the separation of responsibility between the main framework and the UI is satisfied
 as react executes asynchronously with the core framework.
 
-### 3.5. The Core <a id='sec35'></a>
+### 3.5. The Core System <a id='sec35'></a>
 
-The core systems has the following responsibilities:
+The core system has the following responsibilities:
 1. Memory management,
 2. Data transformations,
 3. Forwarding the requests between the frontend and the memory, the MySQL DB, the SP and the FE.

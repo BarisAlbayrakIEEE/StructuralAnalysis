@@ -911,7 +911,7 @@ as the previous two sections covers the main points about the architecture.
 
 Below presents some of the superiorities of java in case of the SAA:
 - cross-platform applicability,
-- wide worldwide use and shorter learning curves for the clients comparing with C++,
+- worldwide use and shorter learning curves for the clients comparing with C++,
 - good enterprise libraries,
 - ensured type and memory safety,
 - better software design achieved by idiomatic and encouraged application of the design patterns,

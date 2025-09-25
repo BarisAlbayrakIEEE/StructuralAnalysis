@@ -573,7 +573,7 @@ if __name__ == "__main__":
   regenerate_CS_type_list(types, "generated/CS_type_list.generated.h")
 ```
 
-The CmakeLists.txt would execute this custom command:
+The CMakeLists.txt would execute this custom command:
 
 ```
 # ~/CMakeLists.txt

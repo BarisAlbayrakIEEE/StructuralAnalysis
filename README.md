@@ -195,7 +195,7 @@ Firstly, I will summarize the previous two sections as a requirement list:
 4. The SAA will define a UI form for each type.
 5. The SAA will contain a graphics display for the FE model.
 6. The SAA will manage the configuration issues.
-7. The SAA will provide a plugin style extensibility in terms of SCs, SAs, SARs and SAMMs.
+7. The SAA will provide a plugin style extensibility in terms of EOs, SCs, SCLs, SAs, SARs and SAMMs.
 8. The plugins could be developed by the customer.
 
 I will review the following major aspects of the software architecture to make some decisions:
@@ -314,7 +314,7 @@ Considering that the SAMMs involve the implementation of some scientific calcula
 **python is the best choice for the SAMMs**
 as Python is the most popular language (even can be considered as de-facto) among various engineering fields including the SAEs.
 
-A plugin style architecture for the SCs, SAs and SARs needs a type registration.
+A plugin style architecture for the EOs, SCs, SCLs, SAs and SARs needs a type registration.
 **Hence, the core framework shall provide the type registration.**
 
 The requirements arised from [the overview of the problem](#sec31) underline that the application

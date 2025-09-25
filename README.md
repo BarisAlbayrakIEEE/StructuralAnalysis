@@ -4378,7 +4378,7 @@ Hence, I will skip some of the discussions in this section.
 An important point to note here is that in this section
 I will follow the SoA strategy described in [Software Architecture](#sec3) section.
 
-I will skip the UI interface code (i.e. fastapi) as the related issues are covered in [The CS in C++](#sec421) section.
+I will skip the UI interface code (i.e. Spring Boot) as the related issues are covered in [The CS in C++](#sec421) section.
 
 
 

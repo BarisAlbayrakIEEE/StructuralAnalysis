@@ -750,7 +750,7 @@ class ICS_FE(ABC):
 
 The container types of the CS implement these interfaces.
 **A sample container definition for the panel EO is given below.**
-**Notice the `TODO` comments warning about the circular reference with CS_EO_Stiffener which is mentioned before.**
+**Notice the `TODO` warnings in the comments about the circular reference with CS_EO_Stiffener which is mentioned before.**
 
 ```
 # ~/src/plugins/core/panel/cs_eo_panel.py
@@ -844,23 +844,24 @@ class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
 ```
 
 The above definition satisfies the DOD principles while supporting all the required interfaces.
-**I would not expect a significant performance difference for this architecture comparing with the one formed by C++.**
 The only measurable performance loss would be the absence of the static definitions obtained by C++.
 The static definitions would transfer some work to the compile time which we cannot achieve by python.
-However, I dont think that this performance loss would affect the end user statistics significantly.
+**However, I dont think that this performance loss would affect the end user statistics significantly comparing with the C++ solution.**
 
 #### 3.5.3. The CS in Java <a id='sec353'></a>
 
-Java handles the problem applying the type erasure which loses the compile-time static definition capability.
+Java would perform the type erasure which loses the compile-time static definitions
+if we try to define a generic DAG similar to the one defined in [The CS in C++](#sec351) section.
 Additionally, java does not have type utilities provided by C++ to statically define the containers for the CS types.
 Hence, defining the data containers statically would require a manual update in the `dag.class` file
 everytime a new type is added via a plugin.
 Even worst, the manual code update would not be limited to this source file only.
 A codegen similar to the one defined for the C++ solution would be required
 but it will be more and more complex.
+Hence, the generic DAG definition is not efficient in case of java.
 
 The solution is to create an interface for the containers and
-store the pointers/references to these containers in `dag.class`.
+store the pointers/references to these containers in the DAG.
 The interface would combine all of the interfaces required by the CS which were defined in the previous section (e.g. `ICS_UI`).
 Lets call this interface `ICS`.
 
@@ -873,8 +874,9 @@ For example EOs would not define the `run_analysis` function.
 The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
 In other words, these components define additional interfaces on top of `ICS`.
 Lets name these interfaces as well: `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
+The subsections of [The CS in C++](#sec421) section analyzes these interfaces in C++ in terms of the software design.
 
-Hence, the DAG should define five members instead of a single one pointing to the containers derived from `ICS`.
+The DAG shall define five member containers derived from these interfaces.
 
 ```
 // ~/src/system/dag.class
@@ -1063,11 +1065,36 @@ In other words, the DAG takes the memory management responsibility from the GC.
 **In summary, the three languages would perform similarly if the DOD strategies are applied correctly.**
 
 **Concurrency:**\
+Python has a **powerful multi-prrocessing** capability for the parallel algoritthms but **no multi-threading** interface.
+C++ has a very **powerful** concurrency interface but its quite complex and **requires attention for safety**.
+Java has a **powerful, clear and safe** concurrency interface.
+I would prefer java especially for the separation of responsibility issues.
+
 As I mentioned earlier, the DAG is single-threaded.
-Javascript itself works asynchronously.
-The interfaces (i.e. the SP, MySQL DB and FE) would run sequentially.
-As a result, the CS does not need multi-threading at all even for the separation of the responsibilities.
-Hence, the concurrency is not an aspect for the design of the CS.
+
+Javascript itself is asynchronous and event-driven.
+
+Consider, we decided to run the FE interface concurrently for example while importing an FE file.
+The 3D FE view would visualize the FEM as more data written from the FE file.
+This feature sounds good but does not make much difference in terms of performance.
+**Hence, the FE interface would run sequentially.**
+
+The same situation is applicable to the MySQL DB interface.
+**Hence, the MySQL DB interface would also run sequentially.**
+
+On the other hand, the SP interface mayrun concurrently.
+Consider that the user runs an SA on an SC.
+Without making any changes in the data (i.e. the DAG) the user may run SAs on other SCs.
+This is very usual in the structural analyses discipline.
+The engineer reviews the state of the components and runs analysis when required.
+Actually, this is the routine of a SAE, after the sizing of the components has finished.
+**Hence, the SP component shall run asynchronously.**
+
+
+
+In order to 
+
+I would select java in terms of the concurrency.
 
 **Development:**\
 C++ assigns many duties to the developer related to the memory management and object relations
@@ -1083,10 +1110,10 @@ C++ solution has superiorities especially compared with java which are explained
 The client side is also similar.
 Python is the easiest among the three which would decrease the development time dramatically.
 However, its important to keep in mind that python requires a more and more strict test regime
-comparing with the other two languages especially with java.
+comparing with the other two languages.
 This would add more load on the development cycle
 but still python would require significantly less efort.
-Its again important to note that both the system development (home side)
+Its again important to note that, with python, both the system development (home side)
 and the plugin development (client side) requires strong testing in order to ensure the type safety.
 
 The learning curves for the three languages vary dramatically as well.
@@ -1115,6 +1142,11 @@ On top of these interfaces, the CS shall also include a couple of interfaces
 to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
 These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
 
+
+
+
+Assuming that the concrete types would not require more interfaces (e.g. )
+
 On the other hand, the concrete objects does not require additional relations
 which extends the above class hierarchy further.
 For example, panels and joints have no relation in the class hierachy.
@@ -1131,7 +1163,7 @@ In other words, the CS deals with only the data management and the process flow.
 Considering the flatness of the CS class hierarchy, python would offer enough
 **only if powered by the runtime checks and unit tests.**
 In other words, python would not serve well for the safety and security.
-Java looks best from the design perspective.
+I would select java in terms of the software design.
 
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.
@@ -1140,7 +1172,7 @@ However, the python interface would require a data wrapper for each type (e.g. C
 Java has a strong-grade API with js while a medium-grade API with python.
 Java would not need wrapper classes in order to manage python objects of the SP.
 Python has a strong-grade API with js.
-Hence, in terms of the harmony, python would be the bbest language for the CS.
+Hence, I would select python in terms of the harmony with the other components.
 
 **Summary:**\
 The above arguments shows that C++ would not provide a significant performance difference.

@@ -24,8 +24,8 @@
     - [3.6.4. A Quick Review on the Use Case scenarios](#sec364)
   - [3.7. The Architecture: Summary](#sec37)
 - [4. Software Design](#sec4)
-  - [4.1. The UI](#sec41)
-  - [4.2. The CS](#sec42)
+  - [4.1. The UI Design](#sec41)
+  - [4.2. The CS Design](#sec42)
     - [4.2.1. The CS Design in C++](#sec421)
       - [4.2.1.1. The UI Interface](#sec4211)
       - [4.2.1.2. The Functionally Persistent DAG](#sec4212)
@@ -35,7 +35,7 @@
       - [4.2.1.6. The Class Hierarchy](#sec4216)
       - [4.2.1.7. The UML Diagram](#sec4217)
     - [4.2.2. The CS Design in Java](#sec422)
-  - [4.3. The Solver Pack (SP)](#sec43)
+  - [4.3. The SP Design](#sec43)
 - [5. Documentation](#sec5)
 - [6. Other Issues](#sec6)
 
@@ -1470,7 +1470,7 @@ The architecture section defines three components for the SAA: the UI, the CS an
 2. The CS is responsible from the memory and state management and the interactions with the other components of the SAA.
 3. The SP handles the structural analyses computations.
 
-### 4.1. The UI <a id='sec41'></a>
+### 4.1. The UI Design <a id='sec41'></a>
 
 [Use Case Diagrams](#sec36) section inspects three scenarios from which we can deduce the expected functionality from the UI:
 - Present the current shape of the DAG via the OETV.
@@ -1571,7 +1571,7 @@ When, for example, the user clicks on an OETVN, the frontend:
 - emits a request from the CS to retrieve the type (e.g. panel) and data (e.g. thickness and width_a) belonging to the DAG node and
 - presents the retreived data via the user form corresponding to the retreived type.
 
-### 4.2. The CS <a id='sec42'></a>
+### 4.2. The CS Design <a id='sec42'></a>
 
 I stated before that java is the best choice for the CS development.
 However, I will include here three sections for the three languages.
@@ -4421,7 +4421,7 @@ I will skip the UI interface code (i.e. Spring Boot) as the related issues are c
 
 
 
-### 4.3. The Solver Pack (SP) <a id='sec43'></a>
+### 4.3. The SP Design <a id='sec43'></a>
 
 The design of the SP is based on a single behaviour: performing the analytical calculations for a structural analysis.
 The design strategy would be based on the FOD approach for the efficiency.

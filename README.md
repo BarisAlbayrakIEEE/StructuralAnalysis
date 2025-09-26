@@ -1143,43 +1143,45 @@ On top of these interfaces, the CS shall also include a couple of interfaces
 to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
 These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
 
+**This view of the CS class hierarchy looks flat (i.e. only two levels excluding complex cross-relations).**
+**Lets find out if that is the reality.**
+
 [A Quick Review on the Use Case scenarios](#sec364) section states that
-an offline DAG is required to allow the user work without an FE input
+an offline DAG is required to allow the user to work without an FE input (i.e. and offline DAG)
 in order to perform tradeoffs with SCs.
 For example, the user would like to see quickly how a panel with a given dimensions behaves under a certain amount of loading.
+The user would quickly create object, fill its' data, run the analysis and review the RFs.
 The offline DAG sounds simple but it is not.
 The structural analyses process strictly depends on the FE data which affects the design of the SAA.
-Some fields of the objects of an online DAG (i.e. assigned to an FE) bind to the FE and are read only.
+Some fields of the objects of an online DAG bind to the FE and are read-only.
 For example, the thickness of a panel is a sizeable parameter and can be modified during the design
 but the widths bind to the FE and cannot be modified.
 If the widths are to be modified, the FE file must be updated by re-executing the FEA
 as the load distribution would alter significantly.
-Hence, the fields of online EOs has a mutability issue while the offline EOs are all mutable.
-This issue has other reflections and interactions as well such as the configuration.
+Hence, the fields of online EOs has an immutability issue while the offline EOs are by default mutable.
+This issue has other reflections and interactions such as the configuration.
 **I will not go into the details as I will skip the offline DAG in this repository for the simplicity.**
-However, this issue makes the class hierarchy more and more complex than the one we will achieve based on the current situation
+However, this issue makes the class hierarchy more and more complex than the one we will achieve in this repository
 and must be introduced into the design anyway.
 
-I excluded some requirements of the SAA in this repository like the offline working.
+I excluded some other requirements of the SAA in this repository like the above offline DAG.
 For example, a **structural assembly** definition is required to group the SCs.
-Consider a spar of a web of an airplane.
-The spar would contain hundred of panels, stiffeners and joints which are the SCs.
+Consider a spar of a web of an aircraft.
+The spar would contain hundreds of panels, stiffeners and joints which are the SCs.
 Lets assume that the spar itself is not required to be inspected globally
 although there exist such failure modes (e.g. global buckling).
-Hence, the spar **structurally** is a *structural assembly*
-but **semantically** is a *structural container* that holds the SCs.
-The structural assemblies must be introduced into the class hierarchy as an interface.
+Hence, the spar **structurally is an assembly** but **semantically is just a container** that holds the SCs.
+The structural assemblies must be introduced into the class hierarchy.
 
 Another issue I excluded in this repository is the configuration.
 [The Architecture: Summary](#sec37) section lists some configuration fields that the SAA shall manage.
-The configuration management may couple with the other interfaces
-which would add more complexity into the class hierarchy.
+The configuration management may couple with the other interfaces which would add more complexity into the class hierarchy.
 
 The list of the excluded items would go more.
 Additionally, the customer requests would absolutely inject more requirements as the project grows.
-**Hence, the extensibility of the CS must consider the injection of not only the new concrete types but also the new interfaces.**
-
-**In summary, I would select java in terms of the software design.**
+**The extensibility of the CS must consider the injection of not only the new concrete types but also the new interfaces.**
+From the architectural perspective, the CS needs a powerful tool for the design.
+**In summary, I would select java in terms of the software design, since in reality, the software design is a significant aspect of the SAA.**
 
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.

@@ -25,8 +25,8 @@
   - [3.7. The Architecture: Summary](#sec37)
 - [4. Software Design](#sec4)
   - [4.1. The UI](#sec41)
-  - [4.2. The Core System (CS)](#sec42)
-    - [4.2.1. The CS in C++](#sec421)
+  - [4.2. The CS](#sec42)
+    - [4.2.1. The CS Design in C++](#sec421)
       - [4.2.1.1. The UI Interface](#sec4211)
       - [4.2.1.2. The Functionally Persistent DAG](#sec4212)
       - [4.2.1.3. The SP Interface](#sec4213)
@@ -34,8 +34,7 @@
       - [4.2.1.5. The MySQL DB Interface](#sec4215)
       - [4.2.1.6. The Class Hierarchy](#sec4216)
       - [4.2.1.7. The UML Diagram](#sec4217)
-    - [4.2.2. The CS in Python](#sec422)
-    - [4.2.3. The CS in Java](#sec423)
+    - [4.2.2. The CS Design in Java](#sec422)
   - [4.3. The Solver Pack (SP)](#sec43)
 - [5. Documentation](#sec5)
 - [6. Other Issues](#sec6)
@@ -874,7 +873,7 @@ For example EOs would not define the `run_analysis` function.
 The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
 In other words, these components define additional interfaces on top of `ICS`.
 Lets name these interfaces as well: `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
-The subsections of [The CS in C++](#sec421) section analyzes these interfaces in C++ in terms of the software design.
+The subsections of [The CS Design in C++](#sec421) section analyzes these interfaces in C++ in terms of the software design.
 
 The DAG shall define five member containers derived from these interfaces.
 
@@ -1577,7 +1576,7 @@ When, for example, the user clicks on an OETVN, the frontend:
 I stated before that java is the best choice for the CS development.
 However, I will include here three sections for the three languages.
 
-#### 4.2.1. The CS in C++ <a id='sec421'></a>
+#### 4.2.1. The CS Design in C++ <a id='sec421'></a>
 
 [Software Architecture](#sec3) section states that the DAG shall follow SoA strategy of the DOD.
 One of the reasons for this decission is the load operation from the MySQL DB.
@@ -1585,7 +1584,7 @@ It will allow bitwise copy of the data buffers extracted from the DB
 which increases the efficiency of the load operation significantly.
 However, I will not follow this strategy here in this C++ solution
 in order to visualize how another solution would be.
-The SoA strategy will be followed by the next two sections ([The CS in Python](#sec422) and [The CS in Java](#sec423))
+The SoA strategy will be followed by the [next](#sec422) section
 obeying the contract described in [Software Architecture](#sec3) section.
 
 The CS contains the following interfaces:
@@ -4411,25 +4410,14 @@ The UML diagram is not readable as the templated interfaces extend in the same l
 I will present a sample UML diagram for the DAG which is more readable and traceable:
 ![Sample UML for the DAG](./uml/DAG.png)
 
-#### 4.2.2. The CS in Python <a id='sec422'></a>
+#### 4.2.2. The CS Design in Java <a id='sec422'></a>
 
-[The CS in C++](#sec421) section introduced a detail description about the design of the CS.
+[The CS Design in C++](#sec421) section introduced a detail description about the design of the CS.
 Hence, I will skip some of the discussions in this section.
 An important point to note here is that in this section
 I will follow the SoA strategy described in [Software Architecture](#sec3) section.
 
-I will skip the UI interface code (i.e. fastapi) as the related issues are covered in [The CS in C++](#sec421) section.
-
-
-
-#### 4.2.3. The CS in Java <a id='sec423'></a>
-
-[The CS in C++](#sec421) section introduced a detail description about the design of the CS.
-Hence, I will skip some of the discussions in this section.
-An important point to note here is that in this section
-I will follow the SoA strategy described in [Software Architecture](#sec3) section.
-
-I will skip the UI interface code (i.e. Spring Boot) as the related issues are covered in [The CS in C++](#sec421) section.
+I will skip the UI interface code (i.e. Spring Boot) as the related issues are covered in [The CS Design in C++](#sec421) section.
 
 
 

@@ -1202,6 +1202,7 @@ However, it has some cons which are all vital:
 - low security and
 - weak design.
 
+Java is the answer to the cons of python.
 **Hence, I would choose java as the language of the CS.**
 **However, I will include two sections in the software design chapter for C++ and java respectively.**
 

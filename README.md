@@ -1197,7 +1197,10 @@ C++ is a performance tool but it would not provide a significant performance dif
 Besides, C++ comes with the complexity and the multiplatform development difficulties.
 
 Python provides easiness and harmony and increases the productability significantly.
-However, it has some cons which are all vital: the need for a strict testing regime, low security and weak design.
+However, it has some cons which are all vital:
+- a strict testing regime assignment to the client,
+- low security and
+- weak design.
 
 **Hence, I would choose java as the language of the CS.**
 **However, I will include two sections in the software design chapter for C++ and java respectively.**

@@ -942,7 +942,7 @@ This overhead gets larger in case of python.
 However, the type container approach given in [The CS in Python](#sec352) section
 corresponds to an additional memory not per object but per type
 which ends up with a tiny amount of memory (i.e. a few KBs for thousands of types).
-Hence, there is nothing to worry about the memory usage.
+**Hence, all the three languages may manage the memory effectively if the CS is designed correctly.**
 
 An important point about the memory aspect is that the objects of the SP are temporary
 such that they are only required while the SP is running.
@@ -1065,36 +1065,37 @@ In other words, the DAG takes the memory management responsibility from the GC.
 **In summary, the three languages would perform similarly if the DOD strategies are applied correctly.**
 
 **Concurrency:**\
-Python has a **powerful multi-prrocessing** capability for the parallel algoritthms but **no multi-threading** interface.
-C++ has a very **powerful** concurrency interface but its quite complex and **requires attention for safety**.
-Java has a **powerful, clear and safe** concurrency interface.
-I would prefer java especially for the separation of responsibility issues.
-
-As I mentioned earlier, the DAG is single-threaded.
-
 Javascript itself is asynchronous and event-driven.
+The CS needs to respond to the UI requests concurrently
+which can be achieved best by activating a thread safe queue and a thread pool.
 
 Consider, we decided to run the FE interface concurrently for example while importing an FE file.
-The 3D FE view would visualize the FEM as more data written from the FE file.
+The 3D FE view of the UI would visualize the FEM as more data is extracted from the FE file.
 This feature sounds good but does not make much difference in terms of performance.
 **Hence, the FE interface would run sequentially.**
 
 The same situation is applicable to the MySQL DB interface.
 **Hence, the MySQL DB interface would also run sequentially.**
 
-On the other hand, the SP interface mayrun concurrently.
+On the other hand, the SP interface may run concurrently.
 Consider that the user runs an SA on an SC.
 Without making any changes in the data (i.e. the DAG) the user may run SAs on other SCs.
 This is very usual in the structural analyses discipline.
 The engineer reviews the state of the components and runs analysis when required.
-Actually, this is the routine of a SAE, after the sizing of the components has finished.
+Actually, this is the routine of an SAE, after the sizing of the components has finished.
 **Hence, the SP component shall run asynchronously.**
 
+C++ has a very **powerful** concurrency interface but its quite complex and **requires attention for safety**.
+Java has a **powerful, clear and safe** concurrency interface.
+Python has a **powerful multi-prrocessing** capability for the parallel algorithms
+but **multi-threading** is limitted due to the Global Interpreter Lock (GIL).
+Python supports multi-threading for the I/O bound problems, concurrent network requests and concurrent DB interactions but not for the CPU bound tasks.
+Python would satisfy the multi-threading requirements of the CS considering the followings:
+- The DAG is single-threaded.
+- The UI interface requires a concurrent network access which is supported.
+- The MySQL DB interface requires DB interactions which is supported.
 
-
-In order to 
-
-I would select java in terms of the concurrency.
+**Hence, all the three languages may handle the required concurrency similarly.**
 
 **Development:**\
 C++ assigns many duties to the developer related to the memory management and object relations
@@ -1125,7 +1126,7 @@ Compatibility is the main problem that makes the people think twice when talking
 One of the main reasons for the birth of java is actually to achieve a language running on any machine.
 Use of C++ as the CS language would require too much effort in the development process due to the compatibility.
 
-**Design:**\
+**Software Design:**\
 The software design is an important parameter while making decissions about the architecture of an application.
 Basically, below three rules covers the comparison of the three languages:
 - Use C++ if a **complex** class hierarchy exists and the **performance** is crucial as it allows **static** definitions.
@@ -1142,50 +1143,62 @@ On top of these interfaces, the CS shall also include a couple of interfaces
 to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
 These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
 
+[A Quick Review on the Use Case scenarios](#sec364) section states that
+an offline DAG is required to allow the user work without an FE input
+in order to perform tradeoffs with SCs.
+For example, the user would like to see quickly how a panel with a given dimensions behaves under a certain amount of loading.
+The offline DAG sounds simple but it is not.
+The structural analyses process strictly depends on the FE data which affects the design of the SAA.
+Some fields of the objects of an online DAG (i.e. assigned to an FE) bind to the FE and are read only.
+For example, the thickness of a panel is a sizeable parameter and can be modified during the design
+but the widths bind to the FE and cannot be modified.
+If the widths are to be modified, the FE file must be updated by re-executing the FEA
+as the load distribution would alter significantly.
+Hence, the fields of online EOs has a mutability issue while the offline EOs are all mutable.
+This issue has other reflections and interactions as well such as the configuration.
+**I will not go into the details as I will skip the offline DAG in this repository for the simplicity.**
+However, this issue makes the class hierarchy more and more complex than the one we will achieve based on the current situation
+and must be introduced into the design anyway.
 
+I excluded some requirements of the SAA in this repository like the offline working.
+For example, a **structural assembly** definition is required to group the SCs.
+Consider a spar of a web of an airplane.
+The spar would contain hundred of panels, stiffeners and joints which are the SCs.
+Lets assume that the spar itself is not required to be inspected globally
+although there exist such failure modes (e.g. global buckling).
+Hence, the spar **structurally** is a *structural assembly*
+but **semantically** is a *structural container* that holds the SCs.
+The structural assemblies must be introduced into the class hierarchy as an interface.
 
+Another issue I excluded in this repository is the configuration.
+[The Architecture: Summary](#sec37) section lists some configuration fields that the SAA shall manage.
+The configuration management may couple with the other interfaces
+which would add more complexity into the class hierarchy.
 
-Assuming that the concrete types would not require more interfaces (e.g. )
+The list of the excluded items would go more.
+Additionally, the customer requests would absolutely inject more requirements as the project grows.
+**Hence, the extensibility of the CS must consider the injection of not only the new concrete types but also the new interfaces.**
 
-On the other hand, the concrete objects does not require additional relations
-which extends the above class hierarchy further.
-For example, panels and joints have no relation in the class hierachy.
-The object relations are handled by the DAG.
-In other words, the class hierarchy holds the following three levels:
-1. The base interface to interact with the DAG and the other components of the SAA (i.e. `ICS`),
-2. The interfaces that define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`),
-3. The concrete types (e.g. `CS_EO_Panel`).
-
-The above architecture is a result of the fact that the CS is not involved in the physical definitions.
-The physics of the structural analyses are defined by the SP and left to the client.
-In other words, the CS deals with only the data management and the process flow.
-
-Considering the flatness of the CS class hierarchy, python would offer enough
-**only if powered by the runtime checks and unit tests.**
-In other words, python would not serve well for the safety and security.
-I would select java in terms of the software design.
+**In summary, I would select java in terms of the software design.**
 
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.
 C++ has a medium-grade API with js while a native API with python.
-However, the python interface would require a data wrapper for each type (e.g. CS_Wrapper_CS_EO_Panel).
+However, the python interface would require a data wrapper for each type (e.g. CS_Bind_EO_Panel).
 Java has a strong-grade API with js while a medium-grade API with python.
 Java would not need wrapper classes in order to manage python objects of the SP.
 Python has a strong-grade API with js.
-Hence, I would select python in terms of the harmony with the other components.
+**Hence, I would select python in terms of the harmony with the other components.**
 
 **Summary:**\
-The above arguments shows that C++ would not provide a significant performance difference.
-Hence, I would exclude C++ considering the complexity and the multiplatform development difficulties comes with it.
+C++ is a performance tool but it would not provide a significant performance difference in the case of SAA.
+Besides, C++ comes with the complexity and the multiplatform development difficulties.
 
-Python solution looks well but it brings a big safety problem.
-Although the application would be shipped including the fundamental types of the structural engineering field (e.g. CS_EO_Panel),
-theoretically the client is allowed to add new types into the CS.
-In other words, the core system of the application is not fully hidden from the client
-which would cause safety and security problems.
+Python provides easiness and harmony and increases the productability significantly.
+However, it has some cons which are all vital: the need for a strict testing regime, low security and weak design.
 
 **Hence, I would choose java as the language of the CS.**
-**However, I will include all the three languages in the software design section.**
+**However, I will include two sections in the software design chapter for C++ and java respectively.**
 
 ### 3.6. Use Case Diagrams <a id='sec36'></a>
 

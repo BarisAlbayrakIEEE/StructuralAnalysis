@@ -637,7 +637,7 @@ The interfaces here are defined quite basic as they will be inspected in the [So
 **The sample interface for the DAG:**
 
 ```
-# ~/src/system/idag.py
+# ~/src/system/ICS_DAG.py
 
 from abc import ABC, abstractmethod
 
@@ -656,7 +656,7 @@ class ICS_DAG(ABC):
 **The sample interface for the UI:**
 
 ```
-# ~/src/system/ics_ui.py
+# ~/src/system/ICS_UI.py
 
 from abc import ABC, abstractmethod
 
@@ -680,7 +680,7 @@ class ICS_UI(ABC):
 **The sample interface for the MySQL DB:**
 
 ```
-# ~/src/system/ics_db.py
+# ~/src/system/ICS_DB.py
 
 from abc import ABC, abstractmethod
 
@@ -717,21 +717,21 @@ class ICS_DB(ABC):
 **The sample interface for the SP:**
 
 ```
-# ~/src/system/ics_sp.py
+# ~/src/system/ICS_SP.py
 
 from abc import ABC, abstractmethod
 
 class ICS_SP(ABC):
   @abstractmethod
   def create(self, CS_: CS, index:int) -> ICS_SP: # CS is the CS class
-    """creates the corresponding SP object (e.g. SP_Py_CS_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    """creates the corresponding SP object (e.g. SP_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
     pass
 ```
 
 **The sample interface for the FE:**
 
 ```
-# ~/src/system/ife.py
+# ~/src/system/ICS_FE.py
 
 from abc import ABC, abstractmethod
 
@@ -752,7 +752,7 @@ The container types of the CS implement these interfaces.
 **Notice the `TODO` warnings in the comments about the circular reference with CS_EO_Stiffener which is mentioned before.**
 
 ```
-# ~/src/plugins/core/panel/cs_eo_panel.py
+# ~/src/plugins/core/panel/CS_EO_Panel.py
 
 import array
 
@@ -826,8 +826,8 @@ class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
     ...
 
   def create(self, CS_: CS, index:int) -> ICS_SP: # CS is the CS class
-    """creates the corresponding SP object (e.g. SP_Py_CS_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
-    return SP_Py_CS_EO_Panel(
+    """creates the corresponding SP object (e.g. SP_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    return SP_EO_Panel(
       self._ts[index],
       CS_.CS_EO_Stiffeners.create(CS_, self._CS_EO_side_stiffeners_1[index]),
       ...
@@ -852,7 +852,7 @@ The static definitions would transfer some work to the compile time which we can
 Java would perform the type erasure which loses the compile-time static definitions
 if we try to define a generic DAG similar to the one defined in [The CS in C++](#sec351) section.
 Additionally, java does not have type utilities provided by C++ to statically define the containers for the CS types.
-Hence, defining the data containers statically would require a manual update in the `dag.class` file
+Hence, defining the data containers statically would require a manual update in the `dag.java` file
 everytime a new type is added via a plugin.
 Even worst, the manual code update would not be limited to this source file only.
 A codegen similar to the one defined for the C++ solution would be required
@@ -878,7 +878,7 @@ The subsections of [The CS Design in C++](#sec421) section analyzes these interf
 The DAG shall define five member containers derived from these interfaces.
 
 ```
-// ~/src/system/dag.class
+// ~/src/system/dag.java
 
 import java.util.HashMap;
 
@@ -1389,7 +1389,7 @@ Below are some observations I realized by examining the UML diagrams of the use 
 - **The DAG shall define and manage a state (e.g. UpToDate) for each node in the DAG.**
 - The routines of the DAG related to the node states would be based on the ancestor/descendant relations.
 - **The OETV and the FE display components of the UI shall reflect the current node states (i.e. SCs and SARs).**
-- The CS needs a temporary DAG to manage the lifetime of the objects constructed in an offline process.
+- The CS needs a temporary DAG to manage the lICS_FEtime of the objects constructed in an offline process.
 - The SAA needs role definitions such as: System User, Admin User, Master User and Ordinary User.
 - System Users would manage the plugins and SAMMs.
 - Admin Users would manage the standard parts (e.g. material and fastener).
@@ -2692,7 +2692,7 @@ Below are the possible states for a DAG node:
 
 The 1st two are obvious where the 1st one is the only positive state for a DAG node.
 The 3rd one simulates the invariant of the types.
-For example, a joint would fail from the knife edge condition if the following law breaks:
+For example, a joint would fail from the knICS_FE edge condition if the following law breaks:
 - edge distance >= 2 * D + 1 where D is the nominal diameter of the fastener.
 
 The 4th one simulates the ancestor/descendant relations of the DAG.
@@ -2878,9 +2878,9 @@ However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types. Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
 - The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_CS_EO_Material, CS_Bind_CS_EO_Panel and CS_Bind_SA_Panel_Buckling.
-- The SP defines the python wrapper classes if needed. Ex: SP_Py_CS_EO_Material, SP_Py_CS_EO_Panel and SP_Py_SA_Panel_Buckling.
+- The SP defines the python wrapper classes if needed. Ex: SP_Py_CS_EO_Material, SP_EO_Panel and SP_Py_SA_Panel_Buckling.
 
-The SP python wrapper classes (e.g. SP_Py_CS_EO_Panel) is defined when there is a need.
+The SP python wrapper classes (e.g. SP_EO_Panel) is defined when there is a need.
 Some EOs would have behaviours which is strongly related with the processes executed by the SP.
 For example, the cross-sectional properties of a stiffener is needed frequently during the SAs of the stiffeners.
 Hence, the SP would need the SP_Py_CS_EO_Stiffener wrapper.
@@ -2889,7 +2889,7 @@ The process flow for this strategy is as follows:
 1. The user requests an analysis on an SC with type and index,
 2. The CS asks to the DAG to create a temporary Bind SC object corresponding to the type and index,
 3. The CS exposes the Bind object to python and requests an SP analysis,
-4. If needed, the SP analysis function creates a Python object (e.g. SP_Py_CS_EO_Panel) wrapping the Bind object,
+4. If needed, the SP analysis function creates a Python object (e.g. SP_EO_Panel) wrapping the Bind object,
 5. The SP analysis function performs the calculations and updates the results (i.e. Bind SAR object composed by the Bind SC object),
 6. The CS reads the results and updates CS SAR object stored by the DAG or MySQL DB,
 7. The CS releases all temporary shared objects.
@@ -3052,11 +3052,11 @@ PYBIND11_MODULE(panel_bindings, m) {
 The SP python class definition for the panel would be:
 
 ```
-# ~/src/plugins/core/panel/SP_Py_CS_EO_Panel.py
+# ~/src/plugins/core/panel/SP_EO_Panel.py
 
 from panel_bindings import CS_Bind_CS_EO_Panel
 
-class SP_Py_CS_EO_Panel:
+class SP_EO_Panel:
   def __init__(self, bind_panel: CS_Bind_CS_EO_Panel):
     self._bind_panel = bind_panel
 
@@ -3065,7 +3065,7 @@ class SP_Py_CS_EO_Panel:
     return buckling_coeff
 
 def calculate_buckling_coefficient(bind_panel):
-  panel = SP_Py_CS_EO_Panel(bind_panel)
+  panel = SP_EO_Panel(bind_panel)
   panel.calculate_buckling_coefficient()
 ```
 
@@ -4422,12 +4422,54 @@ The requirements for these interfaces have been discussed in detail in the previ
 Lets start with the component interaces.
 
 ```
+// ~/src/system/ICS_UI.java
+
+#include <string>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+interface ICS_UI {
+  virtual std::string get_type_name() const = 0;
+  virtual void get_from_json(json) = 0;
+  virtual json set_to_json() const = 0;
+};
+```
+
+
+
+
+```
+// ~/src/system/ICS_FE.java
+
+interface ICS_FE_Importable {
+  virtual void import_FE(const std::string& FE_file_path) = 0;
+};
+
+interface ICS_FE_Exportable {
+  virtual void export_FE(const std::string& FE_file_path) const = 0;
+};
+
+interface ICS_FE_Importable_Exportable {
+  virtual void import_FE(const std::string& FE_file_path) = 0;
+  virtual void export_FE(const std::string& FE_file_path) const = 0;
+};
+```
+
 
 
 
 
 
 ```
+// ~/src/system/ICS_DB.java
+
+interface ICS_DB {
+  virtual void load_from_DB(const DB&) = 0;
+  virtual void save_to_DB(const DB&) const = 0;
+};
+```
+
 
 
 
@@ -4439,10 +4481,10 @@ while very efficient DAG definitions exist outside.
 A better solution is wrapping a generic DAG with a special one (i.e. CS_DAG) in order to cover the interfaces required by the CS:
 
 ```
-// ~/src/system/DAG/CS_DAG.class
+// ~/src/system/DAG/CS_DAG.java
 
 import java.util.HashMap;
-import ICS_DAG.class
+import ICS_DAG.java
 
 class CS_DAG{
 

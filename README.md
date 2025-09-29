@@ -891,17 +891,17 @@ class CS_DAG{
     Hence, the container for each data type must be hardcoded.
     This is not a good solution as it requires a manual update each time a new type is added.
 
-  private List<CS_EO_Panel> _CS_EO_panels = new ArrayList<CS_EO_Panel>();
-  private List<CS_EO_Stiffener> _CS_EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
+  private VectorTree<CS_EO_Panel> _CS_EO_panels = new VectorTree<CS_EO_Panel>();
+  private VectorTree<CS_EO_Stiffener> _CS_EO_stiffeners = new VectorTree<CS_EO_Stiffener>();
   ...
   */
 
   // The interfaces below shall be defined on top of ICS_Base.
-  private java.util.HashMap<String, ICS_EO> _type_containers__CS_EO;
-  private java.util.HashMap<String, ICS_SC> _type_containers__CS_SC;
-  private java.util.HashMap<String, ICS_SCL> _type_containers__CS_SCL;
-  private java.util.HashMap<String, ICS_SA> _type_containers__CS_SA;
-  private java.util.HashMap<String, ICS_SAR> _type_containers__CS_SAR;
+  private java.util.HashMap<String, VectorTree<ICS_EO>> _type_containers__CS_EO;
+  private java.util.HashMap<String, VectorTree<ICS_SC>> _type_containers__CS_SC;
+  private java.util.HashMap<String, VectorTree<ICS_SCL>> _type_containers__CS_SCL;
+  private java.util.HashMap<String, VectorTree<ICS_SA>> _type_containers__CS_SA;
+  private java.util.HashMap<String, VectorTree<ICS_SAR>> _type_containers__CS_SAR;
 
   ...
 };

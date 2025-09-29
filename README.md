@@ -614,7 +614,7 @@ Considering that the CS would involve some interfaces mentioned before (e.g. the
 the C++ solution would require the following skills to be met by the clients:
 1. C++: Capability to add new concrete types that will be involved in an existing class hierarchy.
 2. Python: Capability to generate a class hierarchy and corresponding concrete types.
-3. Cython: Capability to define new types (a wrapper class for each type, e.g. CS_Bind_EO_Panel) based on some interface.
+3. Cython: Capability to define new types (a wrapper class for each type, e.g. CS_Bind_CS_EO_Panel) based on some interface.
 
 For the 3rd one, there exist other solutions (e.g. `pybind11`).
 **I would prefer `pybind11` as it is very elegant in sharing C++ objects considering the reference counting.**
@@ -724,7 +724,7 @@ from abc import ABC, abstractmethod
 class ICS_SP(ABC):
   @abstractmethod
   def create(self, CS_: CS, index:int) -> ICS_SP: # CS is the CS class
-    """creates the corresponding SP object (e.g. SP_Py_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    """creates the corresponding SP object (e.g. SP_Py_CS_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
     pass
 ```
 
@@ -761,8 +761,8 @@ class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
     self._names = array.array(dtype=str)
     self._states__DB = array.array(dtype=bool) # bool holds whether the item is modified during the session
     self._ts = array.array(dtype=float)
-    self._EO_side_stiffeners_1 = array.array(dtype=int) # TODO: to visualize ancestors. cause circular reference. move to CS_SC_Panel
-    self._EO_side_stiffeners_2 = array.array(dtype=int) # TODO: to visualize ancestors. cause circular reference. move to CS_SC_Panel
+    self._CS_EO_side_stiffeners_1 = array.array(dtype=int) # TODO: to visualize ancestors. cause circular reference. move to CS_SC_Panel
+    self._CS_EO_side_stiffeners_2 = array.array(dtype=int) # TODO: to visualize ancestors. cause circular reference. move to CS_SC_Panel
     self._SC_panels = array.array(dtype=int) # descendants: indices of the SCs - the panels
     self._SC_stiffeners_1 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 1
     self._SC_stiffeners_2 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 2
@@ -771,8 +771,8 @@ class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
   def get_ancestors(self, index:int, CS_DAG_:CS_DAG) -> []:
     """Getter for the ancestor DAG node indices"""
     return [
-      self._EO_side_stiffeners_1[index],
-      self._EO_side_stiffeners_2[index]]
+      self._CS_EO_side_stiffeners_1[index],
+      self._CS_EO_side_stiffeners_2[index]]
 
   def get_descendants(self, index:int, CS_DAG_:CS_DAG) -> []:
     """Getter for the descendant DAG node indices"""
@@ -788,7 +788,7 @@ class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
   def get_from_json(self, index:int, josn_:json) -> None:
     """gets the member data from a json input"""
     self._ts[index] = json_["_ts"]
-    self._EO_side_stiffeners_1[index] = json_["_EO_side_stiffeners_1"]
+    self._CS_EO_side_stiffeners_1[index] = json_["_CS_EO_side_stiffeners_1"]
     ...
 
   def set_to_json(self, index:int) -> json:
@@ -796,21 +796,21 @@ class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
     return create_json(
       {
         {"_ts": self._ts[index]},
-        {"_EO_side_stiffeners_1": self._EO_side_stiffeners_1[index]},
+        {"_CS_EO_side_stiffeners_1": self._CS_EO_side_stiffeners_1[index]},
         ...
       }
     )
 
   def load_from_DB_1(self, DB_descriptor) -> None:
     """loads all data for this type from the MySQL DB"""
-    self._ts = table_EO_panel__column_ts # TODO: get DB data using DB_descriptor
-    self._EO_side_stiffeners_1 = table_EO_panel__column_EO_side_stiffeners_1 # TODO: get DB data using DB_descriptor
+    self._ts = table_CS_EO_panel__column_ts # TODO: get DB data using DB_descriptor
+    self._CS_EO_side_stiffeners_1 = table_CS_EO_panel__column_CS_EO_side_stiffeners_1 # TODO: get DB data using DB_descriptor
     ...
 
   def load_from_DB_2(self, index:int, DB_descriptor) -> None:
     """loads the data for the indexth element from the MySQL DB"""
     self._ts = table_CS_EO_Panel__column_ts__row_index # TODO: get DB data using DB_descriptor
-    self._EO_side_stiffeners_1 = table_EO_panel__column_EO_side_stiffeners_1__row_index # TODO: get DB data using DB_descriptor
+    self._CS_EO_side_stiffeners_1 = table_CS_EO_panel__column_CS_EO_side_stiffeners_1__row_index # TODO: get DB data using DB_descriptor
     ...
 
   def save_to_DB_1(self, index:int, DB_descriptor) -> None:
@@ -821,15 +821,15 @@ class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
 
   def save_to_DB_2(self, index:int, DB_descriptor) -> None:
     """saves the data for the indexth element to the MySQL DB"""
-    table_EO_panel__column_ts__row_index = self._ts # TODO: set DB data using DB_descriptor
-    table_EO_panel__column_EO_side_stiffeners_1__row_index = self._EO_side_stiffeners_1 # TODO: set DB data using DB_descriptor
+    table_CS_EO_panel__column_ts__row_index = self._ts # TODO: set DB data using DB_descriptor
+    table_CS_EO_panel__column_CS_EO_side_stiffeners_1__row_index = self._CS_EO_side_stiffeners_1 # TODO: set DB data using DB_descriptor
     ...
 
   def create(self, CS_: CS, index:int) -> ICS_SP: # CS is the CS class
-    """creates the corresponding SP object (e.g. SP_Py_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
-    return SP_Py_EO_Panel(
+    """creates the corresponding SP object (e.g. SP_Py_CS_EO_Panel object for the data stored in CS_EO_Panel_Container class)"""
+    return SP_Py_CS_EO_Panel(
       self._ts[index],
-      CS_.CS_EO_Stiffeners.create(CS_, self._EO_side_stiffeners_1[index]),
+      CS_.CS_EO_Stiffeners.create(CS_, self._CS_EO_side_stiffeners_1[index]),
       ...
       )
 
@@ -872,7 +872,7 @@ which would not be a part of `ICS_Base`.
 For example EOs would not define the `run_analysis` function.
 The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
 In other words, these components define additional interfaces on top of `ICS_Base`.
-Lets name these interfaces as well: `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
+Lets name these interfaces as well: `ICS_EO`, `ICS_SC_Base`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
 The subsections of [The CS Design in C++](#sec421) section analyzes these interfaces in C++ in terms of the software design.
 
 The DAG shall define five member containers derived from these interfaces.
@@ -891,14 +891,14 @@ class CS_DAG{
     Hence, the container for each data type must be hardcoded.
     This is not a good solution as it requires a manual update each time a new type is added.
 
-  private List<CS_EO_Panel> _EO_panels = new ArrayList<CS_EO_Panel>();
-  private List<CS_EO_Stiffener> _EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
+  private List<CS_EO_Panel> _CS_EO_panels = new ArrayList<CS_EO_Panel>();
+  private List<CS_EO_Stiffener> _CS_EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
   ...
   */
 
   // The interfaces below shall be defined on top of ICS_Base.
-  private java.util.HashMap<String, ICS_EO> _type_containers__EO;
-  private java.util.HashMap<String, ICS_SC> _type_containers__SC;
+  private java.util.HashMap<String, ICS_EO> _type_containers__CS_EO;
+  private java.util.HashMap<String, ICS_SC_Base> _type_containers__SC;
   private java.util.HashMap<String, ICS_SCL> _type_containers__SCL;
   private java.util.HashMap<String, ICS_SA> _type_containers__SA;
   private java.util.HashMap<String, ICS_SAR> _type_containers__SAR;
@@ -946,7 +946,7 @@ which ends up with a tiny amount of memory (i.e. a few KBs for thousands of type
 An important point about the memory aspect is that the objects of the SP are temporary
 such that they are only required while the SP is running.
 When the CS is requested to execute an SA via the SP (e.g. SP_SA_Panel_Buckling),
-the SP creates the required objects (e.g. SP_EO_Panel and SP_SCL_Panel_Buckling_Load),
+the SP creates the required objects (e.g. SP_CS_EO_Panel and SP_SCL_Panel_Buckling_Load),
 run the analysis, store the results in the analysis object (i.e. SP_SA_Panel_Buckling)
 or in an SAR object (e.g. SP_SAR_Panel_Buckling) and return the results to CS.
 The CS would store the results in its own format which means that all the objects created by the SP
@@ -1139,7 +1139,7 @@ Lets examine the CS with respect to the above rules.
 The CS involves a number of interfaces with the DAG, UI, FE, MySQL DB and SP.
 These interfaces define a base for the CS (i.e. `ICS_Base`).
 On top of these interfaces, the CS shall also include a couple of interfaces
-to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
+to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC_Base`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
 These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
 
 **This view of the CS class hierarchy looks flat (i.e. only two levels excluding complex cross-relations).**
@@ -1185,7 +1185,7 @@ From the architectural perspective, the CS needs a powerful tool for the design.
 **Harmony:**\
 Its already stated that the UI is in javascript and the SP is in python.
 C++ has a medium-grade API with js while a native API with python.
-However, the python interface would require a data wrapper for each type (e.g. CS_Bind_EO_Panel).
+However, the python interface would require a data wrapper for each type (e.g. CS_Bind_CS_EO_Panel).
 Java has a strong-grade API with js while a medium-grade API with python.
 Java would not need wrapper classes in order to manage python objects of the SP.
 Python has a strong-grade API with js.
@@ -2216,8 +2216,8 @@ For example, a panel type would be:
 ...
 
 class Panel {
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2;
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_1;
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_2;
   ...
 };
 ```
@@ -2267,8 +2267,8 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
 
   // Notice that CS_EO_Panel satisfies Has_type_name!!!
   static inline std::string _type_name = "CS_EO_Panel";
@@ -2279,15 +2279,15 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
         !json_.contains("thickness") ||
         !json_.contains("width_a") ||
         !json_.contains("width_b") ||
-        !json_.contains("_EO_side_stiffener_1") ||
-        !json_.contains("_EO_side_stiffener_2"))
+        !json_.contains("_CS_EO_side_stiffener_1") ||
+        !json_.contains("_CS_EO_side_stiffener_2"))
       throw std::exception("Wrong inputs for CS_EO_Panel type.");
     
     thickness = json_["thickness"];
     width_a = json_["width_a"];
     width_b = json_["width_b"];
-    _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _CS_EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_1"]);
+    _CS_EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_2"]);
   };
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2295,8 +2295,8 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
     if (json_.contains("width_b")) width_b = json_["width_b"];
-    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_CS_EO_side_stiffener_1")) _CS_EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_1"]);
+    if (json_.contains("_CS_EO_side_stiffener_2")) _CS_EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_2"]);
   }
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2305,16 +2305,16 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
       {"thickness", thickness},
       {"width_a", width_a},
       {"width_b", width_b},
-      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_1._index]},
-      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_2._index]}
+      {"_CS_EO_side_stiffener_1", ["CS_EO_Stiffener", _CS_EO_side_stiffener_1._index]},
+      {"_CS_EO_side_stiffener_1", ["CS_EO_Stiffener", _CS_EO_side_stiffener_2._index]}
     };
   }
 
   // ICS_DAG interface function: get_ancestors
   std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
     std::vector<ICS_DAG const*> ancestors{};
-    ancestors.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
-    ancestors.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_side_stiffener_1.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_side_stiffener_2.get_object(CS_DAG_));
     return ancestors;
   };
 };
@@ -2608,8 +2608,8 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
   DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
   DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the object relations.
 
@@ -2622,15 +2622,15 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
         !json_.contains("thickness") ||
         !json_.contains("width_a") ||
         !json_.contains("width_b") ||
-        !json_.contains("_EO_side_stiffener_1") ||
-        !json_.contains("_EO_side_stiffener_2"))
+        !json_.contains("_CS_EO_side_stiffener_1") ||
+        !json_.contains("_CS_EO_side_stiffener_2"))
       throw std::exception("Wrong inputs for CS_EO_Panel type.");
     
     thickness = json_["thickness"];
     width_a = json_["width_a"];
     width_b = json_["width_b"];
-    _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _CS_EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_1"]);
+    _CS_EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_2"]);
   };
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2638,8 +2638,8 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
     if (json_.contains("thickness")) thickness = json_["thickness"];
     if (json_.contains("width_a")) width_a = json_["width_a"];
     if (json_.contains("width_b")) width_b = json_["width_b"];
-    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_CS_EO_side_stiffener_1")) _CS_EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_1"]);
+    if (json_.contains("_CS_EO_side_stiffener_2")) _CS_EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_2"]);
   }
 
   // Notice that CS_EO_Panel satisfies Json_Serializable!!!
@@ -2648,24 +2648,24 @@ struct CS_EO_Panel : public ICS_UI, ICS_DAG {
       {"thickness", thickness},
       {"width_a", width_a},
       {"width_b", width_b},
-      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_1._index]},
-      {"_EO_side_stiffener_1", ["CS_EO_Stiffener", _EO_side_stiffener_2._index]}
+      {"_CS_EO_side_stiffener_1", ["CS_EO_Stiffener", _CS_EO_side_stiffener_1._index]},
+      {"_CS_EO_side_stiffener_1", ["CS_EO_Stiffener", _CS_EO_side_stiffener_2._index]}
     };
   }
 
   // ICS_DAG interface function: get_ancestors
   std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
     std::vector<ICS_DAG const*> ancestors{};
-    ancestors.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
-    ancestors.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_side_stiffener_1.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_side_stiffener_2.get_object(CS_DAG_));
     return ancestors;
   };
 
   // ICS_DAG interface function: get_descendants
   std::vector<ICS_DAG const*> get_descendants(CS_DAG_t const* CS_DAG_) const {
     std::vector<ICS_DAG const*> descendants{};
-    descendants.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
-    descendants.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
+    descendants.push_back(_CS_EO_side_stiffener_1.get_object(CS_DAG_));
+    descendants.push_back(_CS_EO_side_stiffener_2.get_object(CS_DAG_));
     descendants.push_back(_SA_panel_pressure.get_object(CS_DAG_));
     descendants.push_back(_SA_panel_buckling.get_object(CS_DAG_));
     return descendants;
@@ -2877,19 +2877,19 @@ The problem in case of the CS/SP interface is that the CS types delegates the de
 However, the SP should not access the DAG for the security puposes.
 I will apply a C++/python binding strategy to solve this problem:
 - The CS defines the types. Ex: CS_EO_Material, CS_EO_Panel and CS_SA_Panel_Buckling.
-- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_CS_EO_Material, CS_Bind_EO_Panel and CS_Bind_SA_Panel_Buckling.
-- The SP defines the python wrapper classes if needed. Ex: SP_Py_CS_EO_Material, SP_Py_EO_Panel and SP_Py_SA_Panel_Buckling.
+- The CS defines the python binding (i.e. `pybind11`) types. Ex: CS_Bind_CS_EO_Material, CS_Bind_CS_EO_Panel and CS_Bind_SA_Panel_Buckling.
+- The SP defines the python wrapper classes if needed. Ex: SP_Py_CS_EO_Material, SP_Py_CS_EO_Panel and SP_Py_SA_Panel_Buckling.
 
-The SP python wrapper classes (e.g. SP_Py_EO_Panel) is defined when there is a need.
+The SP python wrapper classes (e.g. SP_Py_CS_EO_Panel) is defined when there is a need.
 Some EOs would have behaviours which is strongly related with the processes executed by the SP.
 For example, the cross-sectional properties of a stiffener is needed frequently during the SAs of the stiffeners.
-Hence, the SP would need the SP_Py_EO_Stiffener wrapper.
+Hence, the SP would need the SP_Py_CS_EO_Stiffener wrapper.
 
 The process flow for this strategy is as follows:
 1. The user requests an analysis on an SC with type and index,
 2. The CS asks to the DAG to create a temporary Bind SC object corresponding to the type and index,
 3. The CS exposes the Bind object to python and requests an SP analysis,
-4. If needed, the SP analysis function creates a Python object (e.g. SP_Py_EO_Panel) wrapping the Bind object,
+4. If needed, the SP analysis function creates a Python object (e.g. SP_Py_CS_EO_Panel) wrapping the Bind object,
 5. The SP analysis function performs the calculations and updates the results (i.e. Bind SAR object composed by the Bind SC object),
 6. The CS reads the results and updates CS SAR object stored by the DAG or MySQL DB,
 7. The CS releases all temporary shared objects.
@@ -2902,7 +2902,7 @@ The **executor** is a templated function and shall be registered like the other 
 The **executor** asks the CS types to construct Bind objects.
 Hence, the CS types shall implement a method returning the Bind object which requires an interface while
 the DAG needs a function which would return the Bind objects for the input type and index.
-The function will be templated and the return type (e.g. CS_Bind_EO_Panel) depends on the template type (e.g. CS_EO_Panel).
+The function will be templated and the return type (e.g. CS_Bind_CS_EO_Panel) depends on the template type (e.g. CS_EO_Panel).
 The solution is defining an alias within the CS types that stores the type of the corresponding Bind type.
 This alias would be used in many steps of the above flow.
 
@@ -2957,19 +2957,19 @@ The CS panel class becomes:
 ...
 
 struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
-  using bind_type = CS_Bind_EO_Panel;
+  using bind_type = CS_Bind_CS_EO_Panel;
 
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the Bind object creation in detail.
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_1; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the Bind object creation in detail.
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_2; // CAUTION: Normally, will be defined in CS_SC_Panel! I involved here to show the Bind object creation in detail.
   
   ...
 
   std::shared_ptr<bind_type> create_bind_object(ICS_DAG_Base const* CS_DAG_) const {
-    auto EO_side_stiffener_1{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
-    auto EO_side_stiffener_2{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto EO_side_stiffener_1{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_CS_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_CS_EO_side_stiffener_2._index) };
     return std::make_shared<bind_type>(_thickness, _width_a, _width_b, EO_side_stiffener_1, EO_side_stiffener_2);
   };
 
@@ -2983,30 +2983,30 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
 The Bind class definition for the panel would be:
 
 ```
-// ~/src/plugins/core/panel/CS_Bind_EO_Panel.h
+// ~/src/plugins/core/panel/CS_Bind_CS_EO_Panel.h
 
-#ifndef _CS_Bind_EO_Panel_h
-#define _CS_Bind_EO_Panel_h
+#ifndef _CS_Bind_CS_EO_Panel_h
+#define _CS_Bind_CS_EO_Panel_h
 
-struct CS_Bind_EO_Panel{
+struct CS_Bind_CS_EO_Panel{
   double _thickness;
   double _width_a;
   double _width_b;
-  std::shared_ptr<CS_Bind_EO_Stiffener> _EO_side_stiffener_1;
-  std::shared_ptr<CS_Bind_EO_Stiffener> _EO_side_stiffener_2;
+  std::shared_ptr<CS_Bind_CS_EO_Stiffener> _CS_EO_side_stiffener_1;
+  std::shared_ptr<CS_Bind_CS_EO_Stiffener> _CS_EO_side_stiffener_2;
 
-  CS_Bind_EO_Panel(
+  CS_Bind_CS_EO_Panel(
     double thickness,
     double width_a,
     double width_b,
-    const std::shared_ptr<CS_Bind_EO_Stiffener>& EO_side_stiffener_1,
-    const std::shared_ptr<CS_Bind_EO_Stiffener>& EO_side_stiffener_2
+    const std::shared_ptr<CS_Bind_CS_EO_Stiffener>& EO_side_stiffener_1,
+    const std::shared_ptr<CS_Bind_CS_EO_Stiffener>& EO_side_stiffener_2
   ):
     _thickness(thickness),
     _width_a(width_a),
     _width_b(width_b),
-    _EO_side_stiffener_1(EO_side_stiffener_1),
-    _EO_side_stiffener_2(EO_side_stiffener_2) {};
+    _CS_EO_side_stiffener_1(EO_side_stiffener_1),
+    _CS_EO_side_stiffener_2(EO_side_stiffener_2) {};
 };
 
 #endif
@@ -3024,48 +3024,48 @@ Additionally, we need the `pybind11` binding file for each CS type:
 namespace py = pybind11;
 
 PYBIND11_MODULE(panel_bindings, m) {
-  py::class_<CS_Bind_EO_Panel, std::shared_ptr<CS_Bind_EO_Panel>>(m, "CS_Bind_EO_Panel")
+  py::class_<CS_Bind_CS_EO_Panel, std::shared_ptr<CS_Bind_CS_EO_Panel>>(m, "CS_Bind_CS_EO_Panel")
     .def(
       py::init<
         double,
         double,
         double,
-        const std::shared_ptr<CS_Bind_EO_Stiffener>&,
-        const std::shared_ptr<CS_Bind_EO_Stiffener>&>());
+        const std::shared_ptr<CS_Bind_CS_EO_Stiffener>&,
+        const std::shared_ptr<CS_Bind_CS_EO_Stiffener>&>());
 
-  py::class_<CS_Bind_EO_Panel, std::shared_ptr<CS_Bind_EO_Panel>>(m, "CS_Bind_EO_Panel")
+  py::class_<CS_Bind_CS_EO_Panel, std::shared_ptr<CS_Bind_CS_EO_Panel>>(m, "CS_Bind_CS_EO_Panel")
     .def(
       py::init<
         double,
         double,
         double,
-        const std::shared_ptr<CS_Bind_EO_Stiffener>&,
-        const std::shared_ptr<CS_Bind_EO_Stiffener>&>());
-    .def_readonly("_thickness", &CS_Bind_EO_Panel::_thickness)
-    .def_readonly("_width_a", &CS_Bind_EO_Panel::_width_a)
-    .def_readonly("_width_b", &CS_Bind_EO_Panel::_width_b)
-    .def_readonly("_EO_side_stiffener_1", &CS_Bind_EO_Panel::_EO_side_stiffener_1)
-    .def_readonly("_EO_side_stiffener_2", &CS_Bind_EO_Panel::_EO_side_stiffener_2);
+        const std::shared_ptr<CS_Bind_CS_EO_Stiffener>&,
+        const std::shared_ptr<CS_Bind_CS_EO_Stiffener>&>());
+    .def_readonly("_thickness", &CS_Bind_CS_EO_Panel::_thickness)
+    .def_readonly("_width_a", &CS_Bind_CS_EO_Panel::_width_a)
+    .def_readonly("_width_b", &CS_Bind_CS_EO_Panel::_width_b)
+    .def_readonly("_CS_EO_side_stiffener_1", &CS_Bind_CS_EO_Panel::_CS_EO_side_stiffener_1)
+    .def_readonly("_CS_EO_side_stiffener_2", &CS_Bind_CS_EO_Panel::_CS_EO_side_stiffener_2);
 }
 ```
 
 The SP python class definition for the panel would be:
 
 ```
-# ~/src/plugins/core/panel/SP_Py_EO_Panel.py
+# ~/src/plugins/core/panel/SP_Py_CS_EO_Panel.py
 
-from panel_bindings import CS_Bind_EO_Panel
+from panel_bindings import CS_Bind_CS_EO_Panel
 
-class SP_Py_EO_Panel:
-  def __init__(self, bind_panel: CS_Bind_EO_Panel):
+class SP_Py_CS_EO_Panel:
+  def __init__(self, bind_panel: CS_Bind_CS_EO_Panel):
     self._bind_panel = bind_panel
 
   def calculate_buckling_coefficient(self) -> double:
-    # TODO: perform calculations: t = self._bind_panel._EO_side_stiffener_1.web_thickness
+    # TODO: perform calculations: t = self._bind_panel._CS_EO_side_stiffener_1.web_thickness
     return buckling_coeff
 
 def calculate_buckling_coefficient(bind_panel):
-  panel = SP_Py_EO_Panel(bind_panel)
+  panel = SP_Py_CS_EO_Panel(bind_panel)
   panel.calculate_buckling_coefficient()
 ```
 
@@ -3092,7 +3092,7 @@ void execute(std::size_t type_container_index, const std::string& function_name)
   // execute the requested SP function
   py::module py_module = py::module::import(module_name);
   py::function py_function = py_module.attr(function_name);
-  py_function(bind_object);  // pass shared_ptr<CS_Bind_EO_Panel> to python
+  py_function(bind_object);  // pass shared_ptr<CS_Bind_CS_EO_Panel> to python
 };
 
 ...
@@ -3134,7 +3134,7 @@ Similarly, main.cpp needs an update for the registration of the executor:
 
 Lets exemine the components of this strategy:
 - The CS implements the factory and the strategy patterns.
-- The client needs to define the factory method creating the Bind type object (e.g. CS_Bind_EO_Panel) within each CS type (e.g. CS_EO_Panel).
+- The client needs to define the factory method creating the Bind type object (e.g. CS_Bind_CS_EO_Panel) within each CS type (e.g. CS_EO_Panel).
 - The client needs to define a Bind class for each CS type which is almost a copy of the original CS class.
 - The client needs to implement the `pybind11` interface for each CS class.
 - The client needs to implement the SP processes.
@@ -3685,8 +3685,8 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
   CS_DT_double _thickness{};
   CS_DT_double _width_a{};
   CS_DT_double _width_b{};
-  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
-  CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<CS_EO_Stiffener> _CS_EO_side_stiffener_1{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
+  CS_DT_DN<CS_EO_Stiffener> _CS_EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
 
   // Get the names of the members.
   // Add get_member_names into the ICS_Base interface.
@@ -3695,8 +3695,8 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
       "_thickness",
       "_width_a",
       "_width_b",
-      "_EO_side_stiffener_1",
-      "_EO_side_stiffener_2"
+      "_CS_EO_side_stiffener_1",
+      "_CS_EO_side_stiffener_2"
     };
   };
 
@@ -3707,8 +3707,8 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
       &_thickness,
       &_width_a,
       &_width_b,
-      &_EO_side_stiffener_1,
-      &_EO_side_stiffener_2
+      &_CS_EO_side_stiffener_1,
+      &_CS_EO_side_stiffener_2
     };
   };
 
@@ -3760,8 +3760,8 @@ Hence, the CS shall form a class hierarchy which roots to a base class visualizi
 ```
 // ~/src/system/ICS_Base.h
 
-#ifndef _ICS_h
-#define _ICS_h
+#ifndef _ICS_Base_h
+#define _ICS_Base_h
 
 struct ICS_Base : public ICS_UI, ICS_DAG, ICS_DB, ICS_Data {
   virtual ~ICS_Base() = default;
@@ -3776,38 +3776,38 @@ The ICS_Base interface becomes:
 ```
 // ~/src/system/ICS_Base.h
 
-#ifndef _ICS_h
-#define _ICS_h
+#ifndef _ICS_Base_h
+#define _ICS_Base_h
 
 #include "ICS_DAG.h"
 
 // ---------------------------------------------
 // FE interface
-struct FE_Non_t;
-struct FE_Importable_t;
-struct FE_Exportable_t;
-struct FE_Importable_Exportable_t;
+struct CS_FE_Non_t;
+struct CS_FE_Importable_t;
+struct CS_FE_Exportable_t;
+struct CS_FE_Importable_Exportable_t;
 
 template<typename T>
 struct ICS_Base_0 {};
 
 template<>
-struct ICS_Base_0<FE_Non_t> : public ICS_FE_Non {
+struct ICS_Base_0<CS_FE_Non_t> : public ICS_FE_Non {
   virtual ~ICS_Base_0() = default;
 };
 
 template<>
-struct ICS_Base_0<FE_Importable_t> : public ICS_FE_Importable {
+struct ICS_Base_0<CS_FE_Importable_t> : public ICS_FE_Importable {
   virtual ~ICS_Base_0() = default;
 };
 
 template<>
-struct ICS_Base_0<FE_Exportable_t> : public ICS_FE_Exportable {
+struct ICS_Base_0<CS_FE_Exportable_t> : public ICS_FE_Exportable {
   virtual ~ICS_Base_0() = default;
 };
 
 template<>
-struct ICS_Base_0<FE_Importable_Exportable_t> : public ICS_FE_Importable_Exportable {
+struct ICS_Base_0<CS_FE_Importable_Exportable_t> : public ICS_FE_Importable_Exportable {
   virtual ~ICS_Base_0() = default;
 };
 
@@ -3816,21 +3816,21 @@ struct ICS_Base_1 : public ICS_UI, ICS_DAG, ICS_DB, ICS_Data {};
 // ---------------------------------------------
 // Updateability interface
 
-struct Non_Updatable_t;
-struct Ancestor_Updatable_t;
-struct Invariant_Updatable_t;
+struct CS_Non_Updatable_t;
+struct CS_Ancestor_Updatable_t;
+struct CS_Invariant_Updatable_t;
 
-template<typename FEType, typename UpdateableType>
+template<typename FE_Type, typename Updateable_Type>
 struct ICS_Base {};
 
-template<typename FEType>
-struct ICS_Base<FEType, Non_Updatable_t> : public ICS_Base_0<FEType>, ICS_Base_1 {
+template<typename FE_Type>
+struct ICS_Base<FE_Type, CS_Non_Updatable_t> : public ICS_Base_0<FE_Type>, ICS_Base_1 {
   bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const { return true; };
   virtual ~ICS_Base() = default;
 };
 
-template<typename FEType>
-struct ICS_Base<FEType, Ancestor_Updatable_t> : public ICS_Base_0<FEType>, ICS_Base_1 {
+template<typename FE_Type>
+struct ICS_Base<FE_Type, CS_Ancestor_Updatable_t> : public ICS_Base_0<FE_Type>, ICS_Base_1 {
   bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const { return inspect_ancestors(CS_DAG_); };
   bool inspect_ancestors(CS_DAG_t const* CS_DAG_) const {
     auto ancestors{ get_ancestors(CS_DAG_) };
@@ -3842,8 +3842,8 @@ struct ICS_Base<FEType, Ancestor_Updatable_t> : public ICS_Base_0<FEType>, ICS_B
   virtual ~ICS_Base() = default;
 };
 
-template<typename FEType>
-struct ICS_Base<FEType, Invariant_Updatable_t> : public ICS_Base_0<FEType>, ICS_Base_1 {
+template<typename FE_Type>
+struct ICS_Base<FE_Type, CS_Invariant_Updatable_t> : public ICS_Base_0<FE_Type>, ICS_Base_1 {
   bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const {
     auto inspection{ inspect_ancestors(CS_DAG_) };
     if (!inspection) return false;
@@ -3879,27 +3879,27 @@ In other words, the EOs extends an interface related to the structural sizing:
 
 #include "ICS_Base.h"
 
-struct Non_Sizeable_t;
-struct Auto_Sizeable_t;
-struct Manual_Sizeable_t;
+struct CS_Non_Sizeable_t;
+struct CS_Auto_Sizeable_t;
+struct CS_Manual_Sizeable_t;
 
-template<typename FEType, typename UpdateableType, typename SizeableType>
-struct ICS_EO : public ICS_Base<FEType, UpdateableType> {};
+template<typename FE_Type, typename Updateable_Type, typename Sizeable_Type>
+struct ICS_EO : public ICS_Base<FE_Type, Updateable_Type> {};
 
-template<typename FEType, typename UpdateableType>
-struct ICS_EO<FEType, UpdateableType, Non_Sizeable_t> : public ICS_Base<FEType, UpdateableType> {
+template<typename FE_Type, typename Updateable_Type>
+struct ICS_EO<FE_Type, Updateable_Type, CS_Non_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type> {
   void size_for_RF() { ; };
   virtual ~ICS_EO() = default;
 };
 
-template<typename FEType, typename UpdateableType>
-struct ICS_EO<FEType, UpdateableType, Auto_Sizeable_t> : public ICS_Base<FEType, UpdateableType> {
+template<typename FE_Type, typename Updateable_Type>
+struct ICS_EO<FE_Type, Updateable_Type, CS_Auto_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type> {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
   virtual ~ICS_EO() = default;
 };
 
-template<typename FEType, typename UpdateableType>
-struct ICS_EO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS_Base<FEType, UpdateableType> {
+template<typename FE_Type, typename Updateable_Type>
+struct ICS_EO<FE_Type, Updateable_Type, CS_Manual_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type> {
   virtual void size_for_RF() = 0;
   virtual ~ICS_EO() = default;
 };
@@ -3922,12 +3922,12 @@ Defining the EO interface, the full version of CS_EO_Panel can be defined:
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t> {
+struct CS_EO_Panel : public ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t> {
   std::size_t _type_container_index;
   double _thickness;
   double _width_a;
   double _width_b;
-  DAG_Node<CS_EO_Mat1> _EO_mat1;
+  DAG_Node<CS_EO_Mat1> _CS_EO_mat1;
   DAG_Node<CS_SC_Panel> _SC_panel;
   DAG_Node<CS_SC_Stiffener> _SC_side_stiffener_1;
   DAG_Node<CS_SC_Stiffener> _SC_side_stiffener_2;
@@ -3941,7 +3941,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
     "_thickness",
     "_width_a",
     "_width_b",
-    "_EO_mat1",
+    "_CS_EO_mat1",
     "_SC_panel",
     "_SC_side_stiffener_1",
     "_SC_side_stiffener_2"};
@@ -3963,7 +3963,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
         !json_.contains("_thickness") ||
         !json_.contains("_width_a") ||
         !json_.contains("_width_b") ||
-        !json_.contains("_EO_mat1") ||
+        !json_.contains("_CS_EO_mat1") ||
         !json_.contains("_SC_panel") ||
         !json_.contains("_SC_side_stiffener_1") ||
         !json_.contains("_SC_side_stiffener_2"))
@@ -3973,7 +3973,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
     _thickness = json_["_thickness"];
     _width_a = json_["_width_a"];
     _width_b = json_["_width_b"];
-    _EO_mat1 = DAG_Node<CS_EO_Mat1>(json_["_EO_mat1"]);
+    _CS_EO_mat1 = DAG_Node<CS_EO_Mat1>(json_["_CS_EO_mat1"]);
     _SC_panel = DAG_Node<CS_SC_Panel>(json_["_SC_panel"]);
     _SC_side_stiffener_1 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_1"]);
     _SC_side_stiffener_2 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_2"]);
@@ -3981,7 +3981,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
 
   // Notice that CS_EO_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(ICS_DAG_Base const* CS_DAG_) const {
-    auto EO_mat1{ CS_DAG_->create_bind_object<CS_EO_Mat1>(_EO_mat1._index) };
+    auto EO_mat1{ CS_DAG_->create_bind_object<CS_EO_Mat1>(_CS_EO_mat1._index) };
     return std::make_shared<bind_type>(
       _thickness,
       _width_a,
@@ -3997,7 +3997,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
     if (json_.contains("_thickness")) _thickness = json_["_thickness"];
     if (json_.contains("_width_a")) _width_a = json_["_width_a"];
     if (json_.contains("_width_b")) _width_b = json_["_width_b"];
-    if (json_.contains("_EO_mat1")) _EO_mat1 = DAG_Node<CS_EO_Mat1>(json_["_EO_mat1"]);
+    if (json_.contains("_CS_EO_mat1")) _CS_EO_mat1 = DAG_Node<CS_EO_Mat1>(json_["_CS_EO_mat1"]);
     if (json_.contains("_SC_panel")) _SC_panel = DAG_Node<CS_SC_Panel>(json_["_SC_panel"]);
     if (json_.contains("_SC_side_stiffener_1")) _SC_side_stiffener_1 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_1"]);
     if (json_.contains("_SC_side_stiffener_2")) _SC_side_stiffener_2 = DAG_Node<CS_SC_Stiffener>(json_["_SC_side_stiffener_2"]);
@@ -4009,7 +4009,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
       {"_thickness", _thickness},
       {"_width_a", _width_a},
       {"_width_b", _width_b},
-      {"_EO_mat1", _EO_mat1._index},
+      {"_CS_EO_mat1", _CS_EO_mat1._index},
       {"_SC_panel", _SC_panel._index},
       {"_SC_side_stiffener_1", _SC_side_stiffener_1._index},
       {"_SC_side_stiffener_2", _SC_side_stiffener_2._index}
@@ -4027,7 +4027,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
 
   // ICS_DAG interface function: get_ancestors
   std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
-    return std::vector<ICS_DAG const*>{ _EO_mat1.get_object(CS_DAG_) };
+    return std::vector<ICS_DAG const*>{ _CS_EO_mat1.get_object(CS_DAG_) };
   };
 
   // ICS_DAG interface function: get_descendants
@@ -4038,17 +4038,17 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
       _SC_side_stiffener_2.get_object(CS_DAG_) };
   };
   
-  // FE interface function for FE_Importable_Exportable_t: import_FE
+  // FE interface function for CS_FE_Importable_Exportable_t: import_FE
   virtual void import_FE(const std::string& FE_file_path) {
     // TODO
   };
   
-  // FE interface function for FE_Importable_Exportable_t: export_FE
+  // FE interface function for CS_FE_Importable_Exportable_t: export_FE
   virtual void export_FE(const std::string& FE_file_path) const {
     // TODO
   };
 
-  // Updateability interface function for Invariant_Updatable_t: inspect_invariant
+  // Updateability interface function for CS_Invariant_Updatable_t: inspect_invariant
   bool inspect_invariant(CS_DAG_t const* CS_DAG_) const {
     // TODO
   };
@@ -4125,48 +4125,48 @@ Hence, one must locate this process under the SC definition where both are defin
 Considering the above discussions, the interface for the SCs is as follows:
 
 ```
-// ~/src/system/ICS_SC.h
+// ~/src/system/ICS_SC_Base.h
 
 #ifndef _ICS_SC_h
 #define _ICS_SC_h
 
 #include "ICS_EO.h"
 
-struct IExecutable {
+struct ICS_Executable {
   virtual void run_analyses() = 0;
 }
 
-struct IReportable {
+struct ICS_Reportable {
   virtual void create_report(const std::string& report_type) = 0; // TODO: This is a simple interface. shall be reevaluated.
 }
 
-struct ILoad {
+struct ICS_Load {
   virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
-struct ICS_SC_0 : public IExecutable, IReportable, ILoad {
+struct ICS_SC_Base_0 : public ICS_Executable, ICS_Reportable, ICS_Load {
   virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
-template<typename FEType, typename UpdateableType, typename SizeableType>
-struct ICS_SC : public ICS_Base<FEType, UpdateableType> {};
+template<typename FE_Type, typename Updateable_Type, typename Sizeable_Type>
+struct ICS_SC_Base : public ICS_Base<FE_Type, Updateable_Type> {};
 
-// CAUTION: SCs cannot be Non_Sizeable_t. All SCs are the subject of structural sizing.
+// CAUTION: SCs cannot be CS_Non_Sizeable_t. All SCs are the subject of structural sizing.
 
-// Auto_Sizeable_t
-template<typename FEType, typename UpdateableType>
-struct ICS_SC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS_Base<FEType, UpdateableType>, ICS_SC_0 {
+// CS_Auto_Sizeable_t
+template<typename FE_Type, typename Updateable_Type>
+struct ICS_SC_Base<FE_Type, Updateable_Type, CS_Auto_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type>, ICS_SC_Base_0 {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
-  virtual ~ICS_SC() = default;
+  virtual ~ICS_SC_Base() = default;
 };
 
-// Manual_Sizeable_t
-template<typename FEType, typename UpdateableType>
-struct ICS_SC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS_Base<FEType, UpdateableType>, ICS_SC_0 {
+// CS_Manual_Sizeable_t
+template<typename FE_Type, typename Updateable_Type>
+struct ICS_SC_Base<FE_Type, Updateable_Type, CS_Manual_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type>, ICS_SC_Base_0 {
   virtual void size_for_RF() = 0;
-  virtual ~ICS_SC() = default;
+  virtual ~ICS_SC_Base() = default;
 };
 
 #endif
@@ -4180,7 +4180,7 @@ After defining the SC interface, we can implement CS_SC_Panel:
 #ifndef _CS_SC_Panel_h
 #define _CS_SC_Panel_h
 
-#include "~/src/system/ICS_SC.h"
+#include "~/src/system/ICS_SC_Base.h"
 #include "~/src/plugins/core/stiffener/CS_EO_Stiffener.h"
 #include "CS_EO_Panel.h"
 #include "CS_SA_Panel_Buckling.h"
@@ -4188,11 +4188,11 @@ After defining the SC interface, we can implement CS_SC_Panel:
 
 using json = nlohmann::json;
 
-struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t> {
+struct CS_SC_Panel : public ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t> {
   std::size_t _type_container_index;
-  DAG_Node<CS_EO_Panel> _EO_panel;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_1;
-  DAG_Node<CS_EO_Stiffener> _EO_side_stiffener_2;
+  DAG_Node<CS_EO_Panel> _CS_EO_panel;
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_1;
+  DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_2;
   DAG_Node<CS_SA_Panel_Buckling> _SA_panel_pressure;
   DAG_Node<CS_SA_Panel_Pressure> _SA_panel_buckling;
 
@@ -4202,9 +4202,9 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
   // Notice that CS_SC_Panel satisfies Has_Member_Names concept.
   static inline auto _member_names = std::vector<std::string>{
     "_type_container_index",
-    "_EO_panel",
-    "_EO_side_stiffener_1",
-    "_EO_side_stiffener_2",
+    "_CS_EO_panel",
+    "_CS_EO_side_stiffener_1",
+    "_CS_EO_side_stiffener_2",
     "_SA_panel_pressure",
     "_SA_panel_buckling"};
 
@@ -4220,26 +4220,26 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
   // Notice that CS_SC_Panel satisfies Json_Constructible concept.
   CS_SC_Panel(std::size_t type_container_index, const json& json_) {
     if (
-        !json_.contains("_EO_panel") ||
-        !json_.contains("_EO_side_stiffener_1") ||
-        !json_.contains("_EO_side_stiffener_2") ||
+        !json_.contains("_CS_EO_panel") ||
+        !json_.contains("_CS_EO_side_stiffener_1") ||
+        !json_.contains("_CS_EO_side_stiffener_2") ||
         !json_.contains("_SA_panel_pressure") ||
         !json_.contains("_SA_panel_buckling"))
       throw std::exception("Wrong inputs for CS_SC_Panel type.");
     
     _type_container_index = type_container_index;
-    _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
-    _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    _CS_EO_panel = DAG_Node<CS_EO_Panel>(json_["_CS_EO_panel"]);
+    _CS_EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_1"]);
+    _CS_EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_2"]);
     _SA_panel_pressure = DAG_Node<CS_SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
     _SA_panel_buckling = DAG_Node<CS_SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   };
 
   // Notice that CS_SC_Panel satisfies CBindable concept.
   std::shared_ptr<bind_type> create_bind_object(ICS_DAG_Base const* CS_DAG_) const {
-    auto EO_panel{ CS_DAG_->create_bind_object<CS_EO_Panel>(_EO_panel._index) };
-    auto EO_side_stiffener_1{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
-    auto EO_side_stiffener_2{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto EO_panel{ CS_DAG_->create_bind_object<CS_EO_Panel>(_CS_EO_panel._index) };
+    auto EO_side_stiffener_1{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_CS_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_CS_EO_side_stiffener_2._index) };
     auto SA_panel_pressure{ CS_DAG_->create_bind_object<CS_SA_Panel_Buckling>(_SA_panel_pressure._index) };
     auto SA_panel_buckling{ CS_DAG_->create_bind_object<CS_SA_Panel_Pressure>(_SA_panel_buckling._index) };
     return std::make_shared<bind_type>(
@@ -4255,9 +4255,9 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
 
   // ICS_UI interface function: get_from_json
   void get_from_json(const json& json_) {
-    if (json_.contains("_EO_panel")) _EO_panel = DAG_Node<CS_EO_Panel>(json_["_EO_panel"]);
-    if (json_.contains("_EO_side_stiffener_1")) _EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_1"]);
-    if (json_.contains("_EO_side_stiffener_2")) _EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_EO_side_stiffener_2"]);
+    if (json_.contains("_CS_EO_panel")) _CS_EO_panel = DAG_Node<CS_EO_Panel>(json_["_CS_EO_panel"]);
+    if (json_.contains("_CS_EO_side_stiffener_1")) _CS_EO_side_stiffener_1 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_1"]);
+    if (json_.contains("_CS_EO_side_stiffener_2")) _CS_EO_side_stiffener_2 = DAG_Node<CS_EO_Stiffener>(json_["_CS_EO_side_stiffener_2"]);
     if (json_.contains("_SA_panel_pressure")) _SA_panel_pressure = DAG_Node<CS_SA_Panel_Buckling>(json_["_SA_panel_pressure"]);
     if (json_.contains("_SA_panel_buckling")) _SA_panel_buckling = DAG_Node<CS_SA_Panel_Pressure>(json_["_SA_panel_buckling"]);
   }
@@ -4265,9 +4265,9 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
   // ICS_UI interface function: set_to_json
   json set_to_json() const {
     return {
-      {"_EO_panel", _EO_panel._index},
-      {"_EO_side_stiffener_1", _EO_side_stiffener_1._index},
-      {"_EO_side_stiffener_2", _EO_side_stiffener_2._index},
+      {"_CS_EO_panel", _CS_EO_panel._index},
+      {"_CS_EO_side_stiffener_1", _CS_EO_side_stiffener_1._index},
+      {"_CS_EO_side_stiffener_2", _CS_EO_side_stiffener_2._index},
       {"_SA_panel_pressure", _SA_panel_pressure._index},
       {"_SA_panel_buckling", _SA_panel_buckling._index}
     };
@@ -4286,9 +4286,9 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
   // ICS_DAG interface function: get_ancestors
   std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
     std::vector<ICS_DAG const*> ancestors{};
-    ancestors.push_back(_EO_panel.get_object(CS_DAG_));
-    ancestors.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
-    ancestors.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_panel.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_side_stiffener_1.get_object(CS_DAG_));
+    ancestors.push_back(_CS_EO_side_stiffener_2.get_object(CS_DAG_));
     return ancestors;
   };
 
@@ -4300,27 +4300,27 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
     return descendants;
   };
   
-  // FE interface function for FE_Importable_Exportable_t: import_FE
+  // FE interface function for CS_FE_Importable_Exportable_t: import_FE
   virtual void import_FE(const std::string& FE_file_path) {
     // TODO
   };
   
-  // FE interface function for FE_Importable_Exportable_t: export_FE
+  // FE interface function for CS_FE_Importable_Exportable_t: export_FE
   virtual void export_FE(const std::string& FE_file_path) const {
     // TODO
   };
 
-  // Updateability interface function for Invariant_Updatable_t: inspect_invariant
+  // Updateability interface function for CS_Invariant_Updatable_t: inspect_invariant
   bool inspect_invariant(CS_DAG_t const* CS_DAG_) const {
     // TODO
   };
 
-  // Sizeability interface function for Manual_Sizeable_t: size_for_RF
+  // Sizeability interface function for CS_Manual_Sizeable_t: size_for_RF
   void size_for_RF() {
     // TODO
   };
 
-  // ICS_SC interface function: run_analyses
+  // ICS_SC_Base interface function: run_analyses
   void run_analyses() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4328,7 +4328,7 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
     SA_panel_buckling.run_analysis();
   };
 
-  // ICS_SC interface function: create_report
+  // ICS_SC_Base interface function: create_report
   void create_report() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4336,7 +4336,7 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
     SA_panel_buckling.create_report();
   };
 
-  // ICS_SC interface function: get_effective_LCs
+  // ICS_SC_Base interface function: get_effective_LCs
   std::vector<std::size_t> get_effective_LCs() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4356,7 +4356,7 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
     return effective_LCs;
   };
 
-  // ICS_SC interface function: get_critical_LC
+  // ICS_SC_Base interface function: get_critical_LC
   std::size_t get_critical_LC() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4443,8 +4443,8 @@ class CS_DAG{
     Hence, the container for each data type must be hardcoded.
     This is not a good solution as it requires a manual update each time a new type is added.
 
-  private List<CS_EO_Panel> _EO_panels = new ArrayList<CS_EO_Panel>();
-  private List<CS_EO_Stiffener> _EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
+  private List<CS_EO_Panel> _CS_EO_panels = new ArrayList<CS_EO_Panel>();
+  private List<CS_EO_Stiffener> _CS_EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
 
 };
 
@@ -4503,10 +4503,10 @@ class SP_SC_Panel:
       EO_SCL_panel: EO_SCL_Panel,
       SA_panel_buckling: CS_SA_Panel_Buckling,
       SA_panel_pressure: CS_SA_Panel_Pressure):
-    self._EO_panel = EO_panel
-    self._EO_side_stiffener_1 = EO_side_stiffener_1
-    self._EO_side_stiffener_2 = EO_side_stiffener_2
-    self._EO_SCL_panel = EO_SCL_panel
+    self._CS_EO_panel = EO_panel
+    self._CS_EO_side_stiffener_1 = EO_side_stiffener_1
+    self._CS_EO_side_stiffener_2 = EO_side_stiffener_2
+    self._CS_EO_SCL_panel = EO_SCL_panel
     self._SA_panel_buckling = SA_panel_buckling
     self._SA_panel_pressure = SA_panel_pressure
   
@@ -4534,7 +4534,7 @@ Many times I noted that the client is **mainly** responsible for the development
 However, I also noted that the CS is extensible by defining new types via plugins
 which means that the client is somehow involved in the CS development as well.
 
-In the discussions and code snippets I used prefices **CS** and **SP** (e.g. `CS_EO_Panel` and `SP_EO_Panel`)
+In the discussions and code snippets I used prefices **CS** and **SP** (e.g. `CS_EO_Panel` and `SP_CS_EO_Panel`)
 in order for the reader to clear out to which component the type belongs.
 This may be confusing for the users and will be for the clients.
 As an edge case scenario, the source files of CS and SP may be located in the same plugin.

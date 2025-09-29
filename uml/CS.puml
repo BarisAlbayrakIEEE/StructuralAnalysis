@@ -205,34 +205,34 @@ ICS_Base_1 <|-- "ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_
 "ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
 "ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
 
-ICS_Executable <|-- ICS_SC_0
-ICS_Reportable <|-- ICS_SC_0
-ICS_Load <|-- ICS_SC_0
+ICS_Executable <|-- ICS_SC_Base_0
+ICS_Reportable <|-- ICS_SC_Base_0
+ICS_Load <|-- ICS_SC_Base_0
 
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
-ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Non_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Ancestor_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Ancestor_Updatable_t, CS_Manual_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
+ICS_SC_Base_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
 
 class CS_EO_Mat1 {
     +std::string _DB_descriptor
@@ -242,14 +242,14 @@ class CS_EO_Panel {
     +double _thickness
     +double _width_a
     +double _width_b
-    +CS_DT_DN<CS_EO_Mat1>" _EO_mat1
+    +CS_DT_DN<CS_EO_Mat1>" _CS_EO_mat1
 }
 
 class CS_SC_Panel {
-    +CS_DT_DN<CS_EO_Panel>" _EO_panel
-    +CS_DT_DN<EO_Stiffener>" _EO_side_stiffener_1
-    +CS_DT_DN<EO_Stiffener>" _EO_side_stiffener_2
-    +CS_DT_DN<EO_SCL_Panel>" _EO_SCL_panel
+    +CS_DT_DN<CS_EO_Panel>" _CS_EO_panel
+    +CS_DT_DN<EO_Stiffener>" _CS_EO_side_stiffener_1
+    +CS_DT_DN<EO_Stiffener>" _CS_EO_side_stiffener_2
+    +CS_DT_DN<EO_SCL_Panel>" _CS_EO_SCL_panel
 }
 
 "ICS_EO<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Non_Sizeable_t>" <|-- CS_EO_Mat1

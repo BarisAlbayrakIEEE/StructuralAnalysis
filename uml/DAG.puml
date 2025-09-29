@@ -50,13 +50,13 @@ class CS_EO_Panel {
     +double _thickness
     +double _width_a
     +double _width_b
-    +CS_DT_DN<CS_EO_Mat1> _EO_mat1
+    +CS_DT_DN<CS_EO_Mat1> _CS_EO_mat1
 }
 CS_EO_Panel o-- CS_EO_Mat1
 
 class CS_EO_Stiffener {
     +std::vector _dimensions
-    +CS_DT_DN<CS_EO_Mat1> _EO_mat1
+    +CS_DT_DN<CS_EO_Mat1> _CS_EO_mat1
 }
 CS_EO_Stiffener o-- CS_EO_Mat1
 
@@ -76,10 +76,10 @@ ICS_SC_Base_0 <|-- "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Upda
 "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>" <|-- CS_SC_Panel
 
 class CS_SC_Panel {
-    +CS_DT_DN<CS_EO_Panel> _EO_panel
-    +CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1
-    +CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2
-    +CS_DT_DN<CS_EO_SCL_Panel> _EO_SCL_panel
+    +CS_DT_DN<CS_EO_Panel> _CS_EO_panel
+    +CS_DT_DN<CS_EO_Stiffener> _CS_EO_side_stiffener_1
+    +CS_DT_DN<CS_EO_Stiffener> _CS_EO_side_stiffener_2
+    +CS_DT_DN<CS_EO_SCL_Panel> _CS_EO_SCL_panel
 }
 CS_SC_Panel o-- CS_EO_Panel
 CS_SC_Panel o-- CS_EO_Stiffener

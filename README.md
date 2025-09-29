@@ -460,7 +460,7 @@ C++ solution for the DAG would look like:
 // ~/src/system/dag.h
 
 template<typename... Ts>
-class DAG {
+class CS_DAG {
   private:
     std::tuple<std::vector<Ts>...> _type_containers;
   ...
@@ -641,14 +641,14 @@ The interfaces here are defined quite basic as they will be inspected in the [So
 
 from abc import ABC, abstractmethod
 
-class IDAG(ABC):
+class ICS_DAG(ABC):
   @abstractmethod
-  def get_ancestors(self, index:int, DAG_:DAG) -> []:
+  def get_ancestors(self, index:int, CS_DAG_:CS_DAG) -> []:
     """Getter for the ancestor DAG node indices"""
     pass
 
   @abstractmethod
-  def get_descendants(self, index:int, DAG_:DAG) -> []:
+  def get_descendants(self, index:int, CS_DAG_:CS_DAG) -> []:
     """Getter for the descendant DAG node indices"""
     pass
 ```
@@ -756,7 +756,7 @@ The container types of the CS implement these interfaces.
 
 import array
 
-class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
+class CS_EO_Panel_Container(ICS_DAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
   def __init__():
     self._names = array.array(dtype=str)
     self._states__DB = array.array(dtype=bool) # bool holds whether the item is modified during the session
@@ -768,13 +768,13 @@ class CS_EO_Panel_Container(IDAG, ICS_UI, ICS_DB, ICS_SP, ICS_FE):
     self._SC_stiffeners_2 = array.array(dtype=int) # descendants: indices of the SCs - the stiffeners - 2
     ...
   
-  def get_ancestors(self, index:int, DAG_:DAG) -> []:
+  def get_ancestors(self, index:int, CS_DAG_:CS_DAG) -> []:
     """Getter for the ancestor DAG node indices"""
     return [
       self._EO_side_stiffeners_1[index],
       self._EO_side_stiffeners_2[index]]
 
-  def get_descendants(self, index:int, DAG_:DAG) -> []:
+  def get_descendants(self, index:int, CS_DAG_:CS_DAG) -> []:
     """Getter for the descendant DAG node indices"""
     return [
       self._SC_panels[index],
@@ -862,16 +862,16 @@ Hence, the generic DAG definition is not efficient in case of java.
 The solution is to create an interface for the containers and
 store the pointers/references to these containers in the DAG.
 The interface would combine all of the interfaces required by the CS which were defined in the previous section (e.g. `ICS_UI`).
-Lets call this interface `ICS`.
+Lets call this interface `ICS_Base`.
 
 However, there is still a problem with this approach.
 Consider the use case with a structural analysis request coming from the user.
 The CS would get the SC from the DAG and request an analysis run from the SP.
 However, `run_analysis` function would be a member of the SC interface only
-which would not be a part of `ICS`.
+which would not be a part of `ICS_Base`.
 For example EOs would not define the `run_analysis` function.
 The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
-In other words, these components define additional interfaces on top of `ICS`.
+In other words, these components define additional interfaces on top of `ICS_Base`.
 Lets name these interfaces as well: `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
 The subsections of [The CS Design in C++](#sec421) section analyzes these interfaces in C++ in terms of the software design.
 
@@ -882,7 +882,7 @@ The DAG shall define five member containers derived from these interfaces.
 
 import java.util.HashMap;
 
-class DAG{
+class CS_DAG{
   /*
   CAUTION:
     A bad solution to achieve static type definitions ddefined in the C++ solution.
@@ -896,7 +896,7 @@ class DAG{
   ...
   */
 
-  // The interfaces below shall be defined on top of ICS.
+  // The interfaces below shall be defined on top of ICS_Base.
   private java.util.HashMap<String, ICS_EO> _type_containers__EO;
   private java.util.HashMap<String, ICS_SC> _type_containers__SC;
   private java.util.HashMap<String, ICS_SCL> _type_containers__SCL;
@@ -1137,7 +1137,7 @@ Besides, experienced software engineers are available to develop in that languag
 
 Lets examine the CS with respect to the above rules.
 The CS involves a number of interfaces with the DAG, UI, FE, MySQL DB and SP.
-These interfaces define a base for the CS (i.e. `ICS`).
+These interfaces define a base for the CS (i.e. `ICS_Base`).
 On top of these interfaces, the CS shall also include a couple of interfaces
 to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
 These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
@@ -1193,12 +1193,12 @@ Python has a strong-grade API with js.
 
 **Summary:**\
 C++ is a performance tool but it would not provide a significant performance difference in the case of SAA.
-Besides, C++ comes with the complexity and the multiplatform development difficulties.
+Besides, C++ comes with a significant complexity and the multiplatform development difficulties.
 
 Python provides easiness and harmony and increases the productability significantly.
 However, it has some cons which are all vital:
 - a strict testing regime assignment to the client,
-- low security and
+- low security,
 - weak design.
 
 Java is the answer to the cons of python.
@@ -1804,7 +1804,7 @@ The DAG makes use of the structural sharing by utilizing the [vector tree](https
 As mentioned above, the pseudocode represents only the backend/frontend interface at the CS side including only three functions: create, get and set.
 
 ```
-// ~/src/system/DAG.h
+// ~/src/system/CS_DAG.h
 
 /*
  * CAUTION:
@@ -1822,7 +1822,7 @@ using json = nlohmann::json;
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DAG {
+class CS_DAG {
   std::shared_ptr<VectorTree<TODO>> _object_positions{}; // TODO: needs some type traits work
   std::shared_ptr<VectorTree<std::vector<std::size_t>>> _descendant_DAG_node_indices{};
   std::tuple<std::shared_ptr<VectorTree<Ts>>...> _type_containers{};
@@ -1830,8 +1830,8 @@ class DAG {
 
 public:
 
-  DAG() = default;
-  DAG(
+  CS_DAG() = default;
+  CS_DAG(
     std::shared_ptr<VectorTree<TODO>> object_positions,
     std::shared_ptr<VectorTree<std::vector<std::size_t>>> descendant_DAG_node_indices,
     std::tuple<std::shared_ptr<VectorTree<Ts>>...> type_containers,
@@ -1844,7 +1844,7 @@ public:
 
   // create
   template<typename T>
-  auto emplace(const json& json_) const ->  DAG<Ts...>
+  auto emplace(const json& json_) const ->  CS_DAG<Ts...>
   {
     // get the containet for type T
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
@@ -1859,7 +1859,7 @@ public:
 
     // TODO: update node positions, ancestors/descendants, etc.
     
-    return DAG<Ts...>(new_object_positions, new_descendant_DAG_node_indices, new_container_T, ...);
+    return CS_DAG<Ts...>(new_object_positions, new_descendant_DAG_node_indices, new_container_T, ...);
   };
   
   // get
@@ -1877,7 +1877,7 @@ public:
   
   // set
   template<typename T>
-  void set(std::size_t DAG_node_index, const json& json_) const -> DAG<Ts...>
+  void set(std::size_t DAG_node_index, const json& json_) const -> CS_DAG<Ts...>
   {
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
@@ -1891,7 +1891,7 @@ public:
 
     // TODO: update node positions, ancestors/descendants, etc.
     
-    return DAG<Ts...>(new_object_positions, new_descendant_DAG_node_indices, new_container_T, ...);
+    return CS_DAG<Ts...>(new_object_positions, new_descendant_DAG_node_indices, new_container_T, ...);
   };
 };
 
@@ -1924,13 +1924,13 @@ The next pseudocode represents the CS with create, get and set.
 #define _CS_h
 
 #include <stack>
-#include "DAG.h"
+#include "CS_DAG.h"
 
 // Define the type of the DAG
-using DAG_t = typename UnpackTypeList<CS_Types_t>::apply<DAG>;
+using CS_DAG_t = typename UnpackTypeList<CS_Types_t>::apply<CS_DAG>;
 
 // Store the DAGs for undo/redo
-std::stack<DAG_t> _DAGs();
+std::stack<CS_DAG_t> _DAGs();
 constexpr unsigned char undo_count = 10;
 
 // UI synch
@@ -1941,8 +1941,8 @@ using _lg = std::lock_guard<std::mutex>;
 template <Json_Compatible T>
 std::size_t create(const json& json_) {
   _lg lock(_mutex);
-  const auto& DAG_ = _DAGs.top();
-  _DAGs.push_back(std::move(DAG_.emplace<T>(json_)));
+  const auto& CS_DAG_ = _DAGs.top();
+  _DAGs.push_back(std::move(CS_DAG_.emplace<T>(json_)));
   if (_DAGs.size() > undo_count) _DAGs.pop_front();
 
   return _DAGs.top().size() - 1;
@@ -1955,8 +1955,8 @@ json get(std::size_t DAG_node_index) {
   if (_DAGs.empty())
     return json{{"error", "No DAGs found"}};
 
-  const auto& DAG_ = _DAGs.top();
-  return DAG_.get<T>(DAG_node_index);
+  const auto& CS_DAG_ = _DAGs.top();
+  return CS_DAG_.get<T>(DAG_node_index);
 };
 
 // set
@@ -1966,8 +1966,8 @@ void set(std::size_t DAG_node_index, const json& json_) {
   if (_DAGs.empty())
     return json{{"error", "No DAGs found"}};
 
-  const auto& DAG_ = _DAGs.top();
-  _DAGs.push_back(std::move(DAG_.set<T>(DAG_node_index, json_)));
+  const auto& CS_DAG_ = _DAGs.top();
+  _DAGs.push_back(std::move(CS_DAG_.set<T>(DAG_node_index, json_)));
   if (_DAGs.size() > undo_count) _DAGs.pop_front();
 };
 
@@ -2233,16 +2233,16 @@ Hence, the DAG members become:
 **An interface is required in order for the DAG to get the ancestors from the types.**
 
 ```
-// ~/src/system/IDAG.h
+// ~/src/system/ICS_DAG.h
 
-#ifndef _IDAG_h
-#define _IDAG_h
+#ifndef _ICS_DAG_h
+#define _ICS_DAG_h
 
 #include <vector>
 
-struct IDAG {
-  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
-  virtual ~IDAG() = default;
+struct ICS_DAG {
+  virtual std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual ~ICS_DAG() = default;
 };
 
 #endif
@@ -2258,12 +2258,12 @@ Correspondingly, the source file defined before for the sample CS_EO_Panel class
 
 #include <nlohmann/json.hpp>
 #include "~/src/system/ICS_UI.h"
-#include "~/src/system/IDAG.h"
+#include "~/src/system/ICS_DAG.h"
 #include "~/src/system/DAG_Node.h"
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public ICS_UI, IDAG {
+struct CS_EO_Panel : public ICS_UI, ICS_DAG {
   double _thickness;
   double _width_a;
   double _width_b;
@@ -2310,11 +2310,11 @@ struct CS_EO_Panel : public ICS_UI, IDAG {
     };
   }
 
-  // IDAG interface function: get_ancestors
-  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
-    std::vector<IDAG const*> ancestors{};
-    ancestors.push_back(_EO_side_stiffener_1.get_object(DAG_));
-    ancestors.push_back(_EO_side_stiffener_2.get_object(DAG_));
+  // ICS_DAG interface function: get_ancestors
+  std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
+    std::vector<ICS_DAG const*> ancestors{};
+    ancestors.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
+    ancestors.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
     return ancestors;
   };
 };
@@ -2331,15 +2331,15 @@ DAG_Node class needs to define get_object method.
 #define _DAG_Node_h
 
 #include "core_type_traits.h"
-#include "IDAG.h"
+#include "ICS_DAG.h"
 
 // This class defines the index of an object within the DAG type container.
 // This class can work statically with zero overhead over the DAG containers as it holds the type information.
 template <typename T>
 class DAG_Node {
   std::size_t _index{};
-  IDAG const* get_object(DAG_t const* DAG_) const {
-    const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(DAG_->_type_containers);
+  ICS_DAG const* get_object(CS_DAG_t const* CS_DAG_) const {
+    const auto type_container = std::get<std::shared_ptr<VectorTree<T>>>(CS_DAG_->_type_containers);
     return &(type_container->operator[](_index));
   };
 };
@@ -2363,9 +2363,9 @@ using DAG_node_variant = UnpackTypeList<CS_Types_t>::apply<type_list_to_variant_
 ```
 
 **The Dynamic Behaviour**\
-The static definition of the DAG is problematic in case of the dynamically dominated behaviours.
+The static definition of the DAG offers no efficiency in case of the dynamically dominated behaviours.
 As edge case examples, the descendants of the root node or the ancestors of the tail node cannot be defined statically.
-Another example would be Material class such that too many objects of too many types would depend on material objects.
+Another example is the material such that too many objects of too many types would depend on material objects.
 In such cases, an algorithm is required to access statically defined data (e.g. _type_containers) with the runtime information.
 The efficiency of this algorithm is crucial as it would help central algorithms used frequently (e.g. the descendant traversal for the state propogation).
 **I will create a function hierarchy to apply the FP solutions to the problem.**
@@ -2374,7 +2374,7 @@ Then, the functions of the DAG (e.g. DFS traversal) would be routed by this temp
 The two functions in the below pseudocode serve for this purpose: `with_type_object` and `with_type_container`.
 
 ```
-// ~/src/system/DAG.h
+// ~/src/system/CS_DAG.h
 
 #ifndef _DAG_h
 #define _DAG_h
@@ -2393,9 +2393,9 @@ using json = nlohmann::json;
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DAG {
+class CS_DAG {
   // Type utilities
-  using _a_DAG = DAG<Ts...>;
+  using _a_CS_DAG = CS_DAG<Ts...>;
   using _a_type_tuple = std::tuple<Ts...>;
   using _a_type_containers = std::tuple<std::shared_ptr<VectorTree<Ts>>...>;
   using _a_DAG_node_handles__obj = std::vector<DAG_Node_Handle>;
@@ -2435,11 +2435,11 @@ class DAG {
   template<typename F>
   decltype(auto) with_type_container(std::size_t type_id, F&& f) {
     using R = std::common_type_t<std::invoke_result_t<F, std::vector<Ts>&>...>;
-    using Fn = R(*)(DAG&, F&&);
+    using Fn = R(*)(CS_DAG&, F&&);
 
     static constexpr std::array<Fn, _type_list_size> function_array{
-      +[](DAG& DAG_, F&& f)->R { return std::forward<F>(f)(
-        std::get<std::shared_ptr<VectorTree<Ts>>>(DAG_._type_containers)); }...
+      +[](CS_DAG& CS_DAG_, F&& f)->R { return std::forward<F>(f)(
+        std::get<std::shared_ptr<VectorTree<Ts>>>(CS_DAG_._type_containers)); }...
     };
 
     return function_array[type_id](*this, std::forward<F>(f));
@@ -2455,12 +2455,12 @@ class DAG {
 
 public:
 
-  DAG() : _descendants(_type_list_size) {}  // TODO: prepare outer dimensions
+  CS_DAG() : _descendants(_type_list_size) {}  // TODO: prepare outer dimensions
 
   // TODO: Sample emplace function to demonstrate the solution for the the dynamic type selection.
   // TODO: Shall be updated for functional persistency.
   template<typename T, class... Args>
-  auto emplace(Args&&... args) const -> _a_DAG
+  auto emplace(Args&&... args) const -> _a_CS_DAG
   {
     auto& type_container = std::get<std::shared_ptr<VectorTree<T>>>(_type_containers);
     type_container = std::make_shared<VectorTree<T>(type_container->emplace_back(std::forward<Args>(args)...));
@@ -2472,7 +2472,7 @@ public:
 
     // TODO: update node positions, ancestors/descendants, etc.
 
-    return _a_DAG(new_type_containers, new_states, new_descendants, ...);
+    return _a_CS_DAG(new_type_containers, new_states, new_descendants, ...);
   }
   
   // get
@@ -2490,7 +2490,7 @@ public:
   
   // set
   template<typename T>
-  void set(std::size_t DAG_node_index, const json& json_) const -> _a_DAG
+  void set(std::size_t DAG_node_index, const json& json_) const -> _a_CS_DAG
   {
     const auto container_T = _type_containers.get<std::shared_ptr<VectorTree<T>>>();
     if (!container_T) {
@@ -2504,7 +2504,7 @@ public:
 
     // TODO: update node positions, ancestors/descendants, etc.
     
-    return _a_DAG(new_type_containers, new_states, new_descendants, ...);
+    return _a_CS_DAG(new_type_containers, new_states, new_descendants, ...);
   };
 
   // TODO: The DAG will have inner Iterator and ConstIterator classes, this function is to demonstrate the solution for the dynamic type selection.
@@ -2536,15 +2536,15 @@ Keep in mind that, having the static definitions would improve the other compone
 For example, if the SCs would have the SAs defined statically, the state management for the SCs and the SAs would become generic.
 
 ```
-// ~/src/system/DAG.h
+// ~/src/system/CS_DAG.h
 
 ...
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DAG {
+class CS_DAG {
   // Type utilities
-  using _a_DAG = DAG<Ts...>;
+  using _a_CS_DAG = CS_DAG<Ts...>;
   using _a_type_tuple = std::tuple<Ts...>;
   using _a_type_containers = std::tuple<std::shared_ptr<VectorTree<Ts>>...>;
   using _a_DAG_node_handles__obj = std::vector<DAG_Node_Handle>;
@@ -2571,19 +2571,19 @@ class DAG {
 };
 ```
 
-Moving the descendants to the type definitions requires an update for IDAG interface:
+Moving the descendants to the type definitions requires an update for ICS_DAG interface:
 
 ```
-// ~/src/system/IDAG.h
+// ~/src/system/ICS_DAG.h
 
-#ifndef _IDAG_h
-#define _IDAG_h
+#ifndef _ICS_DAG_h
+#define _ICS_DAG_h
 
 #include <vector>
 
-struct IDAG {
-  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
-  virtual std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const = 0;
+struct ICS_DAG {
+  virtual std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual std::vector<ICS_DAG const*> get_descendants(CS_DAG_t const* CS_DAG_) const = 0;
 };
 
 #endif
@@ -2599,12 +2599,12 @@ The descendants are moved to the type definitions:
 
 #include <nlohmann/json.hpp>
 #include "~/src/system/ICS_UI.h"
-#include "~/src/system/IDAG.h"
+#include "~/src/system/ICS_DAG.h"
 #include "~/src/system/DAG_node.h"
 
 using json = nlohmann::json;
 
-struct CS_EO_Panel : public ICS_UI, IDAG {
+struct CS_EO_Panel : public ICS_UI, ICS_DAG {
   double _thickness;
   double _width_a;
   double _width_b;
@@ -2653,21 +2653,21 @@ struct CS_EO_Panel : public ICS_UI, IDAG {
     };
   }
 
-  // IDAG interface function: get_ancestors
-  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
-    std::vector<IDAG const*> ancestors{};
-    ancestors.push_back(_EO_side_stiffener_1.get_object(DAG_));
-    ancestors.push_back(_EO_side_stiffener_2.get_object(DAG_));
+  // ICS_DAG interface function: get_ancestors
+  std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
+    std::vector<ICS_DAG const*> ancestors{};
+    ancestors.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
+    ancestors.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
     return ancestors;
   };
 
-  // IDAG interface function: get_descendants
-  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
-    std::vector<IDAG const*> descendants{};
-    descendants.push_back(_EO_side_stiffener_1.get_object(DAG_));
-    descendants.push_back(_EO_side_stiffener_2.get_object(DAG_));
-    descendants.push_back(_SA_panel_pressure.get_object(DAG_));
-    descendants.push_back(_SA_panel_buckling.get_object(DAG_));
+  // ICS_DAG interface function: get_descendants
+  std::vector<ICS_DAG const*> get_descendants(CS_DAG_t const* CS_DAG_) const {
+    std::vector<ICS_DAG const*> descendants{};
+    descendants.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
+    descendants.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
+    descendants.push_back(_SA_panel_pressure.get_object(CS_DAG_));
+    descendants.push_back(_SA_panel_buckling.get_object(CS_DAG_));
     return descendants;
   };
 };
@@ -2713,21 +2713,21 @@ In summary, an update on a node shall be propogated by the DAG inspecting the fo
 - the invariant and
 - the final state.
 
-**Considering the state propogation the IDAG interface becomes:**
+**Considering the state propogation the ICS_DAG interface becomes:**
 
 ```
-// ~/src/system/IDAG.h
+// ~/src/system/ICS_DAG.h
 
-#ifndef _IDAG_h
-#define _IDAG_h
+#ifndef _ICS_DAG_h
+#define _ICS_DAG_h
 
 #include <vector>
 
-struct IDAG {
-  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
-  virtual enum_DAG_node_states reevaluate_state__DAG(DAG_t const* DAG_) const = 0;
-  virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
-  virtual bool inspect_ancestors(DAG_t const* DAG_) const = 0;
+struct ICS_DAG {
+  virtual std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual enum_DAG_node_states reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual bool inspect_invariant(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual bool inspect_ancestors(CS_DAG_t const* CS_DAG_) const = 0;
 };
 
 #endif
@@ -2747,15 +2747,15 @@ Each user action with an update makes the update state true for the correspondin
 Hence, the members of the DAG becomes:
 
 ```
-// ~/src/system/DAG.h
+// ~/src/system/CS_DAG.h
 
 ...
 
 template<typename... Ts>
   requires (All_Json_Constructible<Ts...>)
-class DAG {
+class CS_DAG {
   // Type utilities
-  using _a_DAG = DAG<Ts...>;
+  using _a_CS_DAG = CS_DAG<Ts...>;
   using _a_type_tuple = std::tuple<Ts...>;
   using _a_type_containers = std::tuple<std::shared_ptr<VectorTree<Ts>>...>;
   using _a_DAG_node_handles__obj = std::vector<DAG_Node_Handle>;
@@ -2795,7 +2795,7 @@ I will not redefine the DAG for all of these states as its straight forward.
 
 **State Management**\
 The DAG is responsible from the management of the state of the data (i.e. enum_DAG_node_states).
-Previously, I defined IDAG interface for this purpose which requires: `reevaluate_state__DAG`, `inspect_invariant` and `inspect_ancestors`.
+Previously, I defined ICS_DAG interface for this purpose which requires: `reevaluate_state__DAG`, `inspect_invariant` and `inspect_ancestors`.
 However, not all the types of the SAA follows this path for the state inspection.
 Some may not have any ancestors (e.g. standard items like material), some may even not hold any invariant.
 Hence, we have three base types considering the updateability of the SAA types:
@@ -2803,22 +2803,22 @@ Hence, we have three base types considering the updateability of the SAA types:
 - Ancestor_Updatable: `reevaluate_state__DAG` calls `inspect_ancestors`.
 - Invariant_Updatable: Requires `inspect_invariant`. `reevaluate_state__DAG` calls `inspect_invariant` and `inspect_ancestors`.
 
-Obviously, IDAG interface treats all SAA types the same in terms of the updateability issue.
+Obviously, ICS_DAG interface treats all SAA types the same in terms of the updateability issue.
 I will define three abstract classes and move the updateability to those classes to obey the single responsibiliity rule.
-The IDAG interface becomes:
+The ICS_DAG interface becomes:
 
 ```
-// ~/src/system/IDAG.h
+// ~/src/system/ICS_DAG.h
 
-#ifndef _IDAG_h
-#define _IDAG_h
+#ifndef _ICS_DAG_h
+#define _ICS_DAG_h
 
 #include <vector>
 
-struct IDAG {
-  virtual std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const = 0;
-  virtual std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const = 0;
-  virtual bool reevaluate_state__DAG(DAG_t const* DAG_) const = 0;
+struct ICS_DAG {
+  virtual std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual std::vector<ICS_DAG const*> get_descendants(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const = 0;
 };
 
 #endif
@@ -2828,16 +2828,16 @@ I will involve the updateability interface later.
 The code snippet for the updateability interface would be:
 
 ```
-#include "IDAG.h"
+#include "ICS_DAG.h"
 
-struct INon_Updatable : public IDAG {
-  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return true; };
+struct INon_Updatable : public ICS_DAG {
+  bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const { return true; };
 };
 
-struct IAncestor_Updatable : public IDAG {
-  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return inspect_ancestors(DAG_); };
-  bool inspect_ancestors(DAG_t const* DAG_) const {
-    auto ancestors{ get_ancestors(DAG_) };
+struct IAncestor_Updatable : public ICS_DAG {
+  bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const { return inspect_ancestors(CS_DAG_); };
+  bool inspect_ancestors(CS_DAG_t const* CS_DAG_) const {
+    auto ancestors{ get_ancestors(CS_DAG_) };
     for (auto ancestor : ancestors) {
       if (!ancestor->get_state__DAG()) return false;
     }
@@ -2845,20 +2845,20 @@ struct IAncestor_Updatable : public IDAG {
   };
 };
 
-struct IInvariant_Updatable : public IDAG {
-  bool reevaluate_state__DAG(DAG_t const* DAG_) const {
-    auto inspection{ inspect_ancestors(DAG_) };
+struct IInvariant_Updatable : public ICS_DAG {
+  bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const {
+    auto inspection{ inspect_ancestors(CS_DAG_) };
     if (!inspection) return false;
-    return inspect_invariant(DAG_);
+    return inspect_invariant(CS_DAG_);
   };
-  bool inspect_ancestors(DAG_t const* DAG_) const {
-    auto ancestors{ get_ancestors(DAG_) };
+  bool inspect_ancestors(CS_DAG_t const* CS_DAG_) const {
+    auto ancestors{ get_ancestors(CS_DAG_) };
     for (auto ancestor : ancestors) {
-      if (!ancestor->get_state__DAG(DAG_)) return false;
+      if (!ancestor->get_state__DAG(CS_DAG_)) return false;
     }
     return true;
   };
-  virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
+  virtual bool inspect_invariant(CS_DAG_t const* CS_DAG_) const = 0;
 };
 ```
 
@@ -2916,13 +2916,13 @@ The concept would look like:
 
 // CAUTION: CBindable depends on the DAG which will depend on CBindable: circular dependency
 // TODO: Dependency inversion:
-//   Create IDAG_Base which defines create_bind_object method
-//   Inherit DAG<Ts...> from this interface
-//   Use IDAG_Base in this file instead of DAG_t
+//   Create ICS_DAG_Base which defines create_bind_object method
+//   Inherit CS_DAG<Ts...> from this interface
+//   Use ICS_DAG_Base in this file instead of CS_DAG_t
 template <typename T>
 concept CBindable = requires (T obj) {
   typename T::bind_type;
-  { obj.create_bind_object(DAG_t const* DAG_) } -> std::same_as<std::shared_ptr<typename T::bind_type>>;
+  { obj.create_bind_object(CS_DAG_t const* CS_DAG_) } -> std::same_as<std::shared_ptr<typename T::bind_type>>;
 };
 
 ...
@@ -2967,9 +2967,9 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
   
   ...
 
-  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_side_stiffener_1{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
-    auto EO_side_stiffener_2{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
+  std::shared_ptr<bind_type> create_bind_object(ICS_DAG_Base const* CS_DAG_) const {
+    auto EO_side_stiffener_1{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
     return std::make_shared<bind_type>(_thickness, _width_a, _width_b, EO_side_stiffener_1, EO_side_stiffener_2);
   };
 
@@ -3081,10 +3081,10 @@ void execute(std::size_t type_container_index, const std::string& function_name)
   py::scoped_interpreter guard{};  // Start Python interpreter
 
   // get the DAG
-  auto DAG_{ get_current_DAG() };
+  auto CS_DAG_{ get_current_CS_DAG() };
 
   // create the Bind object
-  auto bind_object{ DAG_.get_bind_object<T>(type_container_index) };
+  auto bind_object{ CS_DAG_.get_bind_object<T>(type_container_index) };
 
   // find the module containing the requested function
   auto module_name{ get_module(function_name) };
@@ -3160,7 +3160,7 @@ Hence:
 4. ICS_FE_Importable_Exportable: Can be constructed by the FE data (i.e. both online and offline) and can be involved in an FEA.
 
 ```
-// ~/src/system/FE.h
+// ~/src/system/ICS_FE.h
 
 #ifndef _FE_h
 #define _FE_h
@@ -3219,9 +3219,9 @@ public:
 
   void bootstrap();
   template<typename T>
-  void load(const DAG_t&, const DAG_Node<T>&);
+  void load(const CS_DAG_t&, const DAG_Node<T>&);
   template<typename T>
-  void insert(DAG_t&, const DAG_Node<T>&);
+  void insert(CS_DAG_t&, const DAG_Node<T>&);
   template<typename T>
   void save(const DAG_Node<T>&);
 
@@ -3362,7 +3362,7 @@ std::unique_ptr<sql::PreparedStatement> Database::prepare(const std::string& MyS
 }
 
 template<typename T>
-void DB::insert(DAG_t& DAG_, const DAG_Node<T>& DAG_node) {
+void DB::insert(CS_DAG_t& CS_DAG_, const DAG_Node<T>& DAG_node) {
   std::string table_name{ DB::table_name_prefix + T::_type_name };
 
   // MySQL string for the members
@@ -3390,7 +3390,7 @@ void DB::insert(DAG_t& DAG_, const DAG_Node<T>& DAG_node) {
       rs2->next();
       DB_key = rs2->getInt64(1);
     }
-    DAG_.set_DB_key(DAG_node, DB_key);
+    CS_DAG_.set_DB_key(DAG_node, DB_key);
     DAG_node.save_to_DB(*this);
     ps->executeUpdate();
   } catch (const sql::SQLException& e) {
@@ -3689,7 +3689,7 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
   CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2{}; // CAUTION: Normally, will be defined in CS_SC_Panel! to show the Bind object creation in detail.
 
   // Get the names of the members.
-  // Add get_member_names into the ICS interface.
+  // Add get_member_names into the ICS_Base interface.
   std::vector<std::string> get_member_names{
     return std::vector<std::string>{
       "_thickness",
@@ -3701,7 +3701,7 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
   };
 
   // Get the pointers to the above members.
-  // Add get_member_ptrs into the ICS interface.
+  // Add get_member_ptrs into the ICS_Base interface.
   std::vector<ICS_Data*> get_member_ptrs{
     return std::vector<ICS_Data*>{
       &_thickness,
@@ -3719,7 +3719,7 @@ struct CS_EO_Panel : public ICS_UI, Abstract_Invariant_Updatable {
 ...
 ```
 
-`ICS_Data` interface together with `get_member_names` and `get_member_ptrs` functions added to `ICS` interface
+`ICS_Data` interface together with `get_member_names` and `get_member_ptrs` functions added to `ICS_Base` interface
 allow the CS to perform the UI, MySQL DB and SP interactions generically.
 Within the CS, any interaction with the UI, MySQL DB and SP related with a CS object would implement the following flow:
 1. get the pointers to the members of the CS object as pointers to `ICS_Data` base class object and
@@ -3755,31 +3755,31 @@ All of these interfaces shall satisfy the above interfaces in order to:
 - suffice the DB interactions.
 - suffice the FE interactions.
 
-Hence, the CS shall form a class hierarchy which roots to a base class visualizing the interfaces defined in the previous sections (e.g. IDAG).
+Hence, the CS shall form a class hierarchy which roots to a base class visualizing the interfaces defined in the previous sections (e.g. ICS_DAG).
 
 ```
-// ~/src/system/ICS.h
+// ~/src/system/ICS_Base.h
 
 #ifndef _ICS_h
 #define _ICS_h
 
-struct ICS : public ICS_UI, IDAG, ICS_DB, ICS_Data {
-  virtual ~ICS() = default;
+struct ICS_Base : public ICS_UI, ICS_DAG, ICS_DB, ICS_Data {
+  virtual ~ICS_Base() = default;
 };
 
 #endif
 ```
 
 Additionally, each CS type shall extend one of the abstract classes defined for the FE and the updateability.
-The ICS interface becomes:
+The ICS_Base interface becomes:
 
 ```
-// ~/src/system/ICS.h
+// ~/src/system/ICS_Base.h
 
 #ifndef _ICS_h
 #define _ICS_h
 
-#include "IDAG.h"
+#include "ICS_DAG.h"
 
 // ---------------------------------------------
 // FE interface
@@ -3789,29 +3789,29 @@ struct FE_Exportable_t;
 struct FE_Importable_Exportable_t;
 
 template<typename T>
-struct ICS_0 {};
+struct ICS_Base_0 {};
 
 template<>
-struct ICS_0<FE_Non_t> : public ICS_FE_Non {
-  virtual ~ICS_0() = default;
+struct ICS_Base_0<FE_Non_t> : public ICS_FE_Non {
+  virtual ~ICS_Base_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Importable_t> : public ICS_FE_Importable {
-  virtual ~ICS_0() = default;
+struct ICS_Base_0<FE_Importable_t> : public ICS_FE_Importable {
+  virtual ~ICS_Base_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Exportable_t> : public ICS_FE_Exportable {
-  virtual ~ICS_0() = default;
+struct ICS_Base_0<FE_Exportable_t> : public ICS_FE_Exportable {
+  virtual ~ICS_Base_0() = default;
 };
 
 template<>
-struct ICS_0<FE_Importable_Exportable_t> : public ICS_FE_Importable_Exportable {
-  virtual ~ICS_0() = default;
+struct ICS_Base_0<FE_Importable_Exportable_t> : public ICS_FE_Importable_Exportable {
+  virtual ~ICS_Base_0() = default;
 };
 
-struct ICS_1 : public ICS_UI, IDAG, ICS_DB, ICS_Data {};
+struct ICS_Base_1 : public ICS_UI, ICS_DAG, ICS_DB, ICS_Data {};
 
 // ---------------------------------------------
 // Updateability interface
@@ -3821,43 +3821,43 @@ struct Ancestor_Updatable_t;
 struct Invariant_Updatable_t;
 
 template<typename FEType, typename UpdateableType>
-struct ICS {};
+struct ICS_Base {};
 
 template<typename FEType>
-struct ICS<FEType, Non_Updatable_t> : public ICS_0<FEType>, ICS_1 {
-  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return true; };
-  virtual ~ICS() = default;
+struct ICS_Base<FEType, Non_Updatable_t> : public ICS_Base_0<FEType>, ICS_Base_1 {
+  bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const { return true; };
+  virtual ~ICS_Base() = default;
 };
 
 template<typename FEType>
-struct ICS<FEType, Ancestor_Updatable_t> : public ICS_0<FEType>, ICS_1 {
-  bool reevaluate_state__DAG(DAG_t const* DAG_) const { return inspect_ancestors(DAG_); };
-  bool inspect_ancestors(DAG_t const* DAG_) const {
-    auto ancestors{ get_ancestors(DAG_) };
+struct ICS_Base<FEType, Ancestor_Updatable_t> : public ICS_Base_0<FEType>, ICS_Base_1 {
+  bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const { return inspect_ancestors(CS_DAG_); };
+  bool inspect_ancestors(CS_DAG_t const* CS_DAG_) const {
+    auto ancestors{ get_ancestors(CS_DAG_) };
     for (auto ancestor : ancestors) {
       if (!ancestor->get_state__DAG()) return false;
     }
     return true;
   };
-  virtual ~ICS() = default;
+  virtual ~ICS_Base() = default;
 };
 
 template<typename FEType>
-struct ICS<FEType, Invariant_Updatable_t> : public ICS_0<FEType>, ICS_1 {
-  bool reevaluate_state__DAG(DAG_t const* DAG_) const {
-    auto inspection{ inspect_ancestors(DAG_) };
+struct ICS_Base<FEType, Invariant_Updatable_t> : public ICS_Base_0<FEType>, ICS_Base_1 {
+  bool reevaluate_state__DAG(CS_DAG_t const* CS_DAG_) const {
+    auto inspection{ inspect_ancestors(CS_DAG_) };
     if (!inspection) return false;
-    return inspect_invariant(DAG_);
+    return inspect_invariant(CS_DAG_);
   };
-  bool inspect_ancestors(DAG_t const* DAG_) const {
-    auto ancestors{ get_ancestors(DAG_) };
+  bool inspect_ancestors(CS_DAG_t const* CS_DAG_) const {
+    auto ancestors{ get_ancestors(CS_DAG_) };
     for (auto ancestor : ancestors) {
-      if (!ancestor->get_state__DAG(DAG_)) return false;
+      if (!ancestor->get_state__DAG(CS_DAG_)) return false;
     }
     return true;
   };
-  virtual bool inspect_invariant(DAG_t const* DAG_) const = 0;
-  virtual ~ICS() = default;
+  virtual bool inspect_invariant(CS_DAG_t const* CS_DAG_) const = 0;
+  virtual ~ICS_Base() = default;
 };
 
 #endif
@@ -3877,29 +3877,29 @@ In other words, the EOs extends an interface related to the structural sizing:
 #ifndef _ICS_EO_h
 #define _ICS_EO_h
 
-#include "ICS.h"
+#include "ICS_Base.h"
 
 struct Non_Sizeable_t;
 struct Auto_Sizeable_t;
 struct Manual_Sizeable_t;
 
 template<typename FEType, typename UpdateableType, typename SizeableType>
-struct ICS_EO : public ICS<FEType, UpdateableType> {};
+struct ICS_EO : public ICS_Base<FEType, UpdateableType> {};
 
 template<typename FEType, typename UpdateableType>
-struct ICS_EO<FEType, UpdateableType, Non_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ICS_EO<FEType, UpdateableType, Non_Sizeable_t> : public ICS_Base<FEType, UpdateableType> {
   void size_for_RF() { ; };
   virtual ~ICS_EO() = default;
 };
 
 template<typename FEType, typename UpdateableType>
-struct ICS_EO<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ICS_EO<FEType, UpdateableType, Auto_Sizeable_t> : public ICS_Base<FEType, UpdateableType> {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
   virtual ~ICS_EO() = default;
 };
 
 template<typename FEType, typename UpdateableType>
-struct ICS_EO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType> {
+struct ICS_EO<FEType, UpdateableType, Manual_Sizeable_t> : public ICS_Base<FEType, UpdateableType> {
   virtual void size_for_RF() = 0;
   virtual ~ICS_EO() = default;
 };
@@ -3980,8 +3980,8 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
   };
 
   // Notice that CS_EO_Panel satisfies CBindable concept.
-  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_mat1{ DAG_->create_bind_object<CS_EO_Mat1>(_EO_mat1._index) };
+  std::shared_ptr<bind_type> create_bind_object(ICS_DAG_Base const* CS_DAG_) const {
+    auto EO_mat1{ CS_DAG_->create_bind_object<CS_EO_Mat1>(_EO_mat1._index) };
     return std::make_shared<bind_type>(
       _thickness,
       _width_a,
@@ -4025,17 +4025,17 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
     // TODO
   };
 
-  // IDAG interface function: get_ancestors
-  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
-    return std::vector<IDAG const*>{ _EO_mat1.get_object(DAG_) };
+  // ICS_DAG interface function: get_ancestors
+  std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
+    return std::vector<ICS_DAG const*>{ _EO_mat1.get_object(CS_DAG_) };
   };
 
-  // IDAG interface function: get_descendants
-  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
-    return std::vector<IDAG const*>{
-      _SC_panel.get_object(DAG_),
-      _SC_side_stiffener_1.get_object(DAG_),
-      _SC_side_stiffener_2.get_object(DAG_) };
+  // ICS_DAG interface function: get_descendants
+  std::vector<ICS_DAG const*> get_descendants(CS_DAG_t const* CS_DAG_) const {
+    return std::vector<ICS_DAG const*>{
+      _SC_panel.get_object(CS_DAG_),
+      _SC_side_stiffener_1.get_object(CS_DAG_),
+      _SC_side_stiffener_2.get_object(CS_DAG_) };
   };
   
   // FE interface function for FE_Importable_Exportable_t: import_FE
@@ -4049,7 +4049,7 @@ struct CS_EO_Panel : public ICS_EO<FE_Importable_Exportable_t, Invariant_Updatab
   };
 
   // Updateability interface function for Invariant_Updatable_t: inspect_invariant
-  bool inspect_invariant(DAG_t const* DAG_) const {
+  bool inspect_invariant(CS_DAG_t const* CS_DAG_) const {
     // TODO
   };
 };
@@ -4151,20 +4151,20 @@ struct ICS_SC_0 : public IExecutable, IReportable, ILoad {
 }
 
 template<typename FEType, typename UpdateableType, typename SizeableType>
-struct ICS_SC : public ICS<FEType, UpdateableType> {};
+struct ICS_SC : public ICS_Base<FEType, UpdateableType> {};
 
 // CAUTION: SCs cannot be Non_Sizeable_t. All SCs are the subject of structural sizing.
 
 // Auto_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ICS_SC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS<FEType, UpdateableType>, ICS_SC_0 {
+struct ICS_SC<FEType, UpdateableType, Auto_Sizeable_t> : public ICS_Base<FEType, UpdateableType>, ICS_SC_0 {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
   virtual ~ICS_SC() = default;
 };
 
 // Manual_Sizeable_t
 template<typename FEType, typename UpdateableType>
-struct ICS_SC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS<FEType, UpdateableType>, ICS_SC_0 {
+struct ICS_SC<FEType, UpdateableType, Manual_Sizeable_t> : public ICS_Base<FEType, UpdateableType>, ICS_SC_0 {
   virtual void size_for_RF() = 0;
   virtual ~ICS_SC() = default;
 };
@@ -4236,12 +4236,12 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
   };
 
   // Notice that CS_SC_Panel satisfies CBindable concept.
-  std::shared_ptr<bind_type> create_bind_object(IDAG_Base const* DAG_) const {
-    auto EO_panel{ DAG_->create_bind_object<CS_EO_Panel>(_EO_panel._index) };
-    auto EO_side_stiffener_1{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
-    auto EO_side_stiffener_2{ DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
-    auto SA_panel_pressure{ DAG_->create_bind_object<CS_SA_Panel_Buckling>(_SA_panel_pressure._index) };
-    auto SA_panel_buckling{ DAG_->create_bind_object<CS_SA_Panel_Pressure>(_SA_panel_buckling._index) };
+  std::shared_ptr<bind_type> create_bind_object(ICS_DAG_Base const* CS_DAG_) const {
+    auto EO_panel{ CS_DAG_->create_bind_object<CS_EO_Panel>(_EO_panel._index) };
+    auto EO_side_stiffener_1{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_1._index) };
+    auto EO_side_stiffener_2{ CS_DAG_->create_bind_object<CS_EO_Stiffener>(_EO_side_stiffener_2._index) };
+    auto SA_panel_pressure{ CS_DAG_->create_bind_object<CS_SA_Panel_Buckling>(_SA_panel_pressure._index) };
+    auto SA_panel_buckling{ CS_DAG_->create_bind_object<CS_SA_Panel_Pressure>(_SA_panel_buckling._index) };
     return std::make_shared<bind_type>(
       EO_panel,
       EO_side_stiffener_1,
@@ -4283,20 +4283,20 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
     // TODO
   };
 
-  // IDAG interface function: get_ancestors
-  std::vector<IDAG const*> get_ancestors(DAG_t const* DAG_) const {
-    std::vector<IDAG const*> ancestors{};
-    ancestors.push_back(_EO_panel.get_object(DAG_));
-    ancestors.push_back(_EO_side_stiffener_1.get_object(DAG_));
-    ancestors.push_back(_EO_side_stiffener_2.get_object(DAG_));
+  // ICS_DAG interface function: get_ancestors
+  std::vector<ICS_DAG const*> get_ancestors(CS_DAG_t const* CS_DAG_) const {
+    std::vector<ICS_DAG const*> ancestors{};
+    ancestors.push_back(_EO_panel.get_object(CS_DAG_));
+    ancestors.push_back(_EO_side_stiffener_1.get_object(CS_DAG_));
+    ancestors.push_back(_EO_side_stiffener_2.get_object(CS_DAG_));
     return ancestors;
   };
 
-  // IDAG interface function: get_descendants
-  std::vector<IDAG const*> get_descendants(DAG_t const* DAG_) const {
-    std::vector<IDAG const*> descendants{};
-    descendants.push_back(_SA_panel_pressure.get_object(DAG_));
-    descendants.push_back(_SA_panel_buckling.get_object(DAG_));
+  // ICS_DAG interface function: get_descendants
+  std::vector<ICS_DAG const*> get_descendants(CS_DAG_t const* CS_DAG_) const {
+    std::vector<ICS_DAG const*> descendants{};
+    descendants.push_back(_SA_panel_pressure.get_object(CS_DAG_));
+    descendants.push_back(_SA_panel_buckling.get_object(CS_DAG_));
     return descendants;
   };
   
@@ -4311,7 +4311,7 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
   };
 
   // Updateability interface function for Invariant_Updatable_t: inspect_invariant
-  bool inspect_invariant(DAG_t const* DAG_) const {
+  bool inspect_invariant(CS_DAG_t const* CS_DAG_) const {
     // TODO
   };
 
@@ -4322,24 +4322,24 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
 
   // ICS_SC interface function: run_analyses
   void run_analyses() {
-    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
-    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
     SA_panel_pressure.run_analysis();
     SA_panel_buckling.run_analysis();
   };
 
   // ICS_SC interface function: create_report
   void create_report() {
-    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
-    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
     SA_panel_pressure.create_report();
     SA_panel_buckling.create_report();
   };
 
   // ICS_SC interface function: get_effective_LCs
   std::vector<std::size_t> get_effective_LCs() {
-    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
-    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
     auto effective_LCs_1{ SA_panel_pressure.get_effective_LCs() };
     auto effective_LCs_2{ SA_panel_buckling.get_effective_LCs() };
     auto effective_LCs = std::vector<std::size_t>(effective_LCs_1.size() + effective_LCs_2.size());
@@ -4358,8 +4358,8 @@ struct CS_SC_Panel : public ICS_SC<FE_Importable_Exportable_t, Invariant_Updatab
 
   // ICS_SC interface function: get_critical_LC
   std::size_t get_critical_LC() {
-    auto SA_panel_pressure{ _SA_panel_pressure.get_object(DAG_) };
-    auto SA_panel_buckling{ _SA_panel_buckling.get_object(DAG_) };
+    auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
+    auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
     auto critical_LC_1{ SA_panel_pressure.get_critical_LC() };
     auto critical_LC_2{ SA_panel_buckling.get_critical_LC() };
     if (critical_LC_1 < critical_LC_2) return critical_LC_1
@@ -4412,12 +4412,68 @@ I will present a sample UML diagram for the DAG which is more readable and trace
 
 #### 4.2.2. The CS Design in Java <a id='sec422'></a>
 
-[The CS Design in C++](#sec421) section introduced a detail description about the design of the CS.
+I stated before that I prefer java as the language of the CS.
+Hence, the reaser would expect that a full design of the CS should exist in this section.
+However, previous sections described many details about the design of the CS.
 Hence, I will skip some of the discussions in this section.
+The javascriptt interface for the UI (i.e. spring boot) and the python interface for the SP (i.e. Py4J) will be skipped.
+The requirements for these interfaces have been discussed in detail in the previous sections.
+
+Lets start with the DAG.
+The DAG defined in the previous section ([The CS Design in C++](#sec421)) is optimized for the SAA.
+However, defining and developing a new data structure for an application is not a good design perspective
+while very efficient DAG definitions exist outside.
+A better solution is wrapping a generic DAG with a special one (i.e. CS_DAG) in order to cover the interfaces required by the CS:
+
+```
+// ~/src/system/DAG/CS_DAG.class
+
+import ICS_DAG.class
+
+class CS_DAG {
+
+import java.util.HashMap;
+
+class CS_DAG{
+  /*
+  CAUTION:
+    A bad solution to achieve static type definitions ddefined in the C++ solution.
+
+    Java does not provide type utilities to define the CS type data statically.
+    Hence, the container for each data type must be hardcoded.
+    This is not a good solution as it requires a manual update each time a new type is added.
+
+  private List<CS_EO_Panel> _EO_panels = new ArrayList<CS_EO_Panel>();
+  private List<CS_EO_Stiffener> _EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
+
+};
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 An important point to note here is that in this section
 I will follow the SoA strategy described in [Software Architecture](#sec3) section.
 
 I will skip the UI interface code (i.e. Spring Boot) as the related issues are covered in [The CS Design in C++](#sec421) section.
+
+
+
+
+
+
+
+
 
 
 

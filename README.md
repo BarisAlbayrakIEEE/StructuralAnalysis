@@ -4413,117 +4413,13 @@ I will present a sample UML diagram for the DAG which is more readable and trace
 #### 4.2.2. The CS Design in Java <a id='sec422'></a>
 
 I stated before that I prefer java as the language of the CS.
-Hence, the reaser would expect that a full design of the CS should exist in this section.
+Hence, the reader would expect that a full design of the CS should exist in this section.
 However, previous sections described many details about the design of the CS.
 Hence, I will skip some of the discussions in this section.
 The javascriptt interface for the UI (i.e. spring boot) and the python interface for the SP (i.e. Py4J) will be skipped.
 The requirements for these interfaces have been discussed in detail in the previous sections.
 
-Lets start with the component interaces.
-
-```
-// ~/src/system/ICS_UI.java
-
-#include <string>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
-
-interface ICS_UI {
-  virtual std::string get_type_name() const = 0;
-  virtual void get_from_json(json) = 0;
-  virtual json set_to_json() const = 0;
-};
-```
-
-
-
-
-```
-// ~/src/system/ICS_FE.java
-
-interface ICS_FE_Importable {
-  virtual void import_FE(const std::string& FE_file_path) = 0;
-};
-
-interface ICS_FE_Exportable {
-  virtual void export_FE(const std::string& FE_file_path) const = 0;
-};
-
-interface ICS_FE_Importable_Exportable {
-  virtual void import_FE(const std::string& FE_file_path) = 0;
-  virtual void export_FE(const std::string& FE_file_path) const = 0;
-};
-```
-
-
-
-
-
-
-```
-// ~/src/system/ICS_DB.java
-
-interface ICS_DB {
-  virtual void load_from_DB(const DB&) = 0;
-  virtual void save_to_DB(const DB&) const = 0;
-};
-```
-
-
-
-
-
-
-The DAG defined in the previous section ([The CS Design in C++](#sec421)) is optimized for the SAA.
-However, defining and developing a new data structure for an application is not a good design perspective
-while very efficient DAG definitions exist outside.
-A better solution is wrapping a generic DAG with a special one (i.e. CS_DAG) in order to cover the interfaces required by the CS:
-
-```
-// ~/src/system/DAG/CS_DAG.java
-
-import java.util.HashMap;
-import ICS_DAG.java
-
-class CS_DAG{
-
-  private java.util.HashMap<String, ICS_EO> _type_containers__CS_EO;
-  private java.util.HashMap<String, ICS_SC> _type_containers__CS_SC;
-  private java.util.HashMap<String, ICS_SCL> _type_containers__CS_SCL;
-  private java.util.HashMap<String, ICS_SA> _type_containers__CS_SA;
-  private java.util.HashMap<String, ICS_SAR> _type_containers__CS_SAR;
-
-};
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-An important point to note here is that in this section
-I will follow the SoA strategy described in [Software Architecture](#sec3) section.
-
-I will skip the UI interface code (i.e. Spring Boot) as the related issues are covered in [The CS Design in C++](#sec421) section.
-
-
-
-
-
-
-
-
-
-
+**TODO: INCLUDE THE FULL CS DESIGN HERE IN JAVA.**
 
 ### 4.3. The SP Design <a id='sec43'></a>
 
@@ -4590,7 +4486,7 @@ Even more, one can define `CS_SC_Panel` and `SP_SC_Panel` in the same source fil
 **Hence, the documentation shall clearly identify the two components, the design and the interaction between the two.**
 
 The 2nd issue is related with the DAG.
-As stated before, DAG is a link based data structure which holds the relations between the nodes.
+As stated before, the DAG is a link based data structure which holds the relations between the nodes.
 The relationships are semantically devided into two types: ancestor and descendant.
 The ancestor relationship infer the association while the other infers the ownership.
 However, as the DAG here is a DOD data structure that simulates the relations via indices
@@ -4605,7 +4501,7 @@ as it will turn out to be an ownership.
 
 Another point about the DAG is related with the cyclic relations.
 I mentioned about this issue before under **Memory Mangement** subtitle in [The Core System](#sec35).
-The DAG by definition does accept cyclic relations but it cannot detect the cyclic relations during the compilation
+The DAG by definition does not accept cyclic relations but it cannot detect the cyclic relations during the compilation
 as it defines the relations with indices.
 Hence, the DAG can only perform runtime checks which may not be detected during the tests.
 **Hence, the client shall define the types without cyclic relations.**

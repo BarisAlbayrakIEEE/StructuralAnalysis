@@ -2,99 +2,99 @@
 hide empty members
 skinparam classAttributeIconSize 0
 
-interface IUI
-interface IDAG
-interface IDB
+interface ICS_UI
+interface ICS_DAG
+interface ICS_DB
 interface ICS_Data
-interface ICS_1
+interface ICS_Base_1
 
-IUI <|-- ICS_1
-IDAG <|-- ICS_1
-IDB <|-- ICS_1
-ICS_Data <|-- ICS_1
+ICS_UI <|-- ICS_Base_1
+ICS_DAG <|-- ICS_Base_1
+ICS_DB <|-- ICS_Base_1
+ICS_Data <|-- ICS_Base_1
 
-interface IFE_Importable_Exportable
-interface "ICS_0<FE_Importable_Exportable_t>"
-interface "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
-interface "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
+interface ICS_FE_Importable_Exportable
+interface "ICS_Base_0<CS_FE_Importable_Exportable_t>"
+interface "ICS_Base<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t>"
+interface "ICS_EO<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Non_Sizeable_t>"
 
-IFE_Importable_Exportable <|-- "ICS_0<FE_Importable_Exportable_t>"
-"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
-ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Non_Updatable_t>"
-"ICS<FE_Importable_Exportable_t, Non_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>"
-"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_Mat1
-"IEO<FE_Importable_Exportable_t, Non_Updatable_t, Non_Sizeable_t>" <|-- EO_SCL_Panel
+ICS_FE_Importable_Exportable <|-- "ICS_Base_0<CS_FE_Importable_Exportable_t>"
+"ICS_Base_0<CS_FE_Importable_Exportable_t>" <|-- "ICS_Base<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t>"
+ICS_Base_1 <|-- "ICS_Base<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t>"
+"ICS_Base<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t>" <|-- "ICS_EO<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Non_Sizeable_t>"
+"ICS_EO<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Non_Sizeable_t>" <|-- CS_EO_Mat1
+"ICS_EO<CS_FE_Importable_Exportable_t, CS_Non_Updatable_t, CS_Non_Sizeable_t>" <|-- CS_EO_SCL_Panel
 
-class EO_Mat1 {
+class CS_EO_Mat1 {
     +std::string _DB_descriptor
 }
 
-class EO_SCL_Panel {
+class CS_EO_SCL_Panel {
     +std::string _DB_descriptor
 }
 
 
 
-interface "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
-interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
-interface "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+interface "ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>"
+interface "ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
+interface "ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
 
-ICS_1 <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
-"ICS_0<FE_Importable_Exportable_t>" <|-- "ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>"
-"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>"
-"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Auto_Sizeable_t>" <|-- EO_Panel
-"IEO<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- EO_Stiffener
+ICS_Base_1 <|-- "ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>"
+"ICS_Base_0<CS_FE_Importable_Exportable_t>" <|-- "ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>"
+"ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>"
+"ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+"ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Auto_Sizeable_t>" <|-- CS_EO_Panel
+"ICS_EO<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>" <|-- CS_EO_Stiffener
 
-class EO_Panel {
+class CS_EO_Panel {
     +double _thickness
     +double _width_a
     +double _width_b
-    +CS_DT_DN<EO_Mat1> _EO_mat1
+    +CS_DT_DN<CS_EO_Mat1> _EO_mat1
 }
-EO_Panel o-- EO_Mat1
+CS_EO_Panel o-- CS_EO_Mat1
 
-class EO_Stiffener {
+class CS_EO_Stiffener {
     +std::vector _dimensions
-    +CS_DT_DN<EO_Mat1> _EO_mat1
+    +CS_DT_DN<CS_EO_Mat1> _EO_mat1
 }
-EO_Stiffener o-- EO_Mat1
+CS_EO_Stiffener o-- CS_EO_Mat1
 
 
 
-interface IExecutable
-interface IReportable
-interface ILoad
-interface ISC_0
-interface "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
+interface ICS_Executable
+interface ICS_Reportable
+interface ICS_Load
+interface ICS_SC_Base_0
+interface "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
 
-IExecutable <|-- ISC_0
-IReportable <|-- ISC_0
-ILoad <|-- ISC_0
-ISC_0 <|-- "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-"ICS<FE_Importable_Exportable_t, Invariant_Updatable_t>" <|-- "ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>"
-"ISC<FE_Importable_Exportable_t, Invariant_Updatable_t, Manual_Sizeable_t>" <|-- SC_Panel
+ICS_Executable <|-- ICS_SC_Base_0
+ICS_Reportable <|-- ICS_SC_Base_0
+ICS_Load <|-- ICS_SC_Base_0
+ICS_SC_Base_0 <|-- "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+"ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+"ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>" <|-- CS_SC_Panel
 
-class SC_Panel {
-    +CS_DT_DN<EO_Panel> _EO_panel
-    +CS_DT_DN<EO_Stiffener> _EO_side_stiffener_1
-    +CS_DT_DN<EO_Stiffener> _EO_side_stiffener_2
-    +CS_DT_DN<EO_SCL_Panel> _EO_SCL_panel
+class CS_SC_Panel {
+    +CS_DT_DN<CS_EO_Panel> _EO_panel
+    +CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_1
+    +CS_DT_DN<CS_EO_Stiffener> _EO_side_stiffener_2
+    +CS_DT_DN<CS_EO_SCL_Panel> _EO_SCL_panel
 }
-SC_Panel o-- EO_Panel
-SC_Panel o-- EO_Stiffener
-SC_Panel o-- EO_SCL_Panel
+CS_SC_Panel o-- CS_EO_Panel
+CS_SC_Panel o-- CS_EO_Stiffener
+CS_SC_Panel o-- CS_EO_SCL_Panel
 
 
 
-class "DAG<CS_Types_t>" {
+class "CS_DAG<CS_Types_t>" {
     +std::tuple<VectorTree<CS_Types_t>...> _CS_data
     +...
 }
-"DAG<CS_Types_t>" *-- EO_Mat1
-"DAG<CS_Types_t>" *-- EO_Panel
-"DAG<CS_Types_t>" *-- EO_Stiffener
-"DAG<CS_Types_t>" *-- EO_SCL_Panel
-"DAG<CS_Types_t>" *-- SC_Panel
+"CS_DAG<CS_Types_t>" *-- CS_EO_Mat1
+"CS_DAG<CS_Types_t>" *-- CS_EO_Panel
+"CS_DAG<CS_Types_t>" *-- CS_EO_Stiffener
+"CS_DAG<CS_Types_t>" *-- CS_EO_SCL_Panel
+"CS_DAG<CS_Types_t>" *-- CS_SC_Panel
 
 @enduml

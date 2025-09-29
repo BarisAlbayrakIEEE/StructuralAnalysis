@@ -872,7 +872,7 @@ which would not be a part of `ICS_Base`.
 For example EOs would not define the `run_analysis` function.
 The EOs, SCs, SCLs, SAs and SARs are the fundamental components of the CS simulating the process flow.
 In other words, these components define additional interfaces on top of `ICS_Base`.
-Lets name these interfaces as well: `ICS_EO`, `ICS_SC_Base`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
+Lets name these interfaces as well: `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`.
 The subsections of [The CS Design in C++](#sec421) section analyzes these interfaces in C++ in terms of the software design.
 
 The DAG shall define five member containers derived from these interfaces.
@@ -898,10 +898,10 @@ class CS_DAG{
 
   // The interfaces below shall be defined on top of ICS_Base.
   private java.util.HashMap<String, ICS_EO> _type_containers__CS_EO;
-  private java.util.HashMap<String, ICS_SC_Base> _type_containers__SC;
-  private java.util.HashMap<String, ICS_SCL> _type_containers__SCL;
-  private java.util.HashMap<String, ICS_SA> _type_containers__SA;
-  private java.util.HashMap<String, ICS_SAR> _type_containers__SAR;
+  private java.util.HashMap<String, ICS_SC> _type_containers__CS_SC;
+  private java.util.HashMap<String, ICS_SCL> _type_containers__CS_SCL;
+  private java.util.HashMap<String, ICS_SA> _type_containers__CS_SA;
+  private java.util.HashMap<String, ICS_SAR> _type_containers__CS_SAR;
 
   ...
 };
@@ -1139,7 +1139,7 @@ Lets examine the CS with respect to the above rules.
 The CS involves a number of interfaces with the DAG, UI, FE, MySQL DB and SP.
 These interfaces define a base for the CS (i.e. `ICS_Base`).
 On top of these interfaces, the CS shall also include a couple of interfaces
-to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC_Base`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
+to define the analysis procedure (i.e. `ICS_EO`, `ICS_SC`, `ICS_SCL`, `ICS_SA` and `ICS_SAR`).
 These are all interfaces on top of which the CS would define the concrete types (e.g. `CS_EO_Panel`).
 
 **This view of the CS class hierarchy looks flat (i.e. only two levels excluding complex cross-relations).**
@@ -3162,8 +3162,8 @@ Hence:
 ```
 // ~/src/system/ICS_FE.h
 
-#ifndef _FE_h
-#define _FE_h
+#ifndef _ICS_FE_h
+#define _ICS_FE_h
 
 struct ICS_FE_Importable {
   virtual void import_FE(const std::string& FE_file_path) = 0;
@@ -4125,7 +4125,7 @@ Hence, one must locate this process under the SC definition where both are defin
 Considering the above discussions, the interface for the SCs is as follows:
 
 ```
-// ~/src/system/ICS_SC_Base.h
+// ~/src/system/ICS_SC.h
 
 #ifndef _ICS_SC_h
 #define _ICS_SC_h
@@ -4145,28 +4145,28 @@ struct ICS_Load {
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
-struct ICS_SC_Base_0 : public ICS_Executable, ICS_Reportable, ICS_Load {
+struct ICS_SC_0 : public ICS_Executable, ICS_Reportable, ICS_Load {
   virtual std::vector<std::size_t> get_effective_LCs() = 0; // Returns the type container indices for the corresponding EO_Load (e.g. EO_Load__Panel).
   virtual std::size_t get_critical_LC() = 0; // Returns the type container index of the LC causing the min RF.
 }
 
 template<typename FE_Type, typename Updateable_Type, typename Sizeable_Type>
-struct ICS_SC_Base : public ICS_Base<FE_Type, Updateable_Type> {};
+struct ICS_SC : public ICS_Base<FE_Type, Updateable_Type> {};
 
 // CAUTION: SCs cannot be CS_Non_Sizeable_t. All SCs are the subject of structural sizing.
 
 // CS_Auto_Sizeable_t
 template<typename FE_Type, typename Updateable_Type>
-struct ICS_SC_Base<FE_Type, Updateable_Type, CS_Auto_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type>, ICS_SC_Base_0 {
+struct ICS_SC<FE_Type, Updateable_Type, CS_Auto_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type>, ICS_SC_0 {
   void size_for_RF() { // TODO: Implement auto sizing. Would require new type definitions; };
-  virtual ~ICS_SC_Base() = default;
+  virtual ~ICS_SC() = default;
 };
 
 // CS_Manual_Sizeable_t
 template<typename FE_Type, typename Updateable_Type>
-struct ICS_SC_Base<FE_Type, Updateable_Type, CS_Manual_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type>, ICS_SC_Base_0 {
+struct ICS_SC<FE_Type, Updateable_Type, CS_Manual_Sizeable_t> : public ICS_Base<FE_Type, Updateable_Type>, ICS_SC_0 {
   virtual void size_for_RF() = 0;
-  virtual ~ICS_SC_Base() = default;
+  virtual ~ICS_SC() = default;
 };
 
 #endif
@@ -4180,7 +4180,7 @@ After defining the SC interface, we can implement CS_SC_Panel:
 #ifndef _CS_SC_Panel_h
 #define _CS_SC_Panel_h
 
-#include "~/src/system/ICS_SC_Base.h"
+#include "~/src/system/ICS_SC.h"
 #include "~/src/plugins/core/stiffener/CS_EO_Stiffener.h"
 #include "CS_EO_Panel.h"
 #include "CS_SA_Panel_Buckling.h"
@@ -4188,7 +4188,7 @@ After defining the SC interface, we can implement CS_SC_Panel:
 
 using json = nlohmann::json;
 
-struct CS_SC_Panel : public ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t> {
+struct CS_SC_Panel : public ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t> {
   std::size_t _type_container_index;
   DAG_Node<CS_EO_Panel> _CS_EO_panel;
   DAG_Node<CS_EO_Stiffener> _CS_EO_side_stiffener_1;
@@ -4320,7 +4320,7 @@ struct CS_SC_Panel : public ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invari
     // TODO
   };
 
-  // ICS_SC_Base interface function: run_analyses
+  // ICS_SC interface function: run_analyses
   void run_analyses() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4328,7 +4328,7 @@ struct CS_SC_Panel : public ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invari
     SA_panel_buckling.run_analysis();
   };
 
-  // ICS_SC_Base interface function: create_report
+  // ICS_SC interface function: create_report
   void create_report() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4336,7 +4336,7 @@ struct CS_SC_Panel : public ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invari
     SA_panel_buckling.create_report();
   };
 
-  // ICS_SC_Base interface function: get_effective_LCs
+  // ICS_SC interface function: get_effective_LCs
   std::vector<std::size_t> get_effective_LCs() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4356,7 +4356,7 @@ struct CS_SC_Panel : public ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invari
     return effective_LCs;
   };
 
-  // ICS_SC_Base interface function: get_critical_LC
+  // ICS_SC interface function: get_critical_LC
   std::size_t get_critical_LC() {
     auto SA_panel_pressure{ _SA_panel_pressure.get_object(CS_DAG_) };
     auto SA_panel_buckling{ _SA_panel_buckling.get_object(CS_DAG_) };
@@ -4419,7 +4419,20 @@ Hence, I will skip some of the discussions in this section.
 The javascriptt interface for the UI (i.e. spring boot) and the python interface for the SP (i.e. Py4J) will be skipped.
 The requirements for these interfaces have been discussed in detail in the previous sections.
 
-Lets start with the DAG.
+Lets start with the component interaces.
+
+```
+
+
+
+
+
+```
+
+
+
+
+
 The DAG defined in the previous section ([The CS Design in C++](#sec421)) is optimized for the SAA.
 However, defining and developing a new data structure for an application is not a good design perspective
 while very efficient DAG definitions exist outside.
@@ -4428,23 +4441,16 @@ A better solution is wrapping a generic DAG with a special one (i.e. CS_DAG) in 
 ```
 // ~/src/system/DAG/CS_DAG.class
 
+import java.util.HashMap;
 import ICS_DAG.class
 
-class CS_DAG {
-
-import java.util.HashMap;
-
 class CS_DAG{
-  /*
-  CAUTION:
-    A bad solution to achieve static type definitions ddefined in the C++ solution.
 
-    Java does not provide type utilities to define the CS type data statically.
-    Hence, the container for each data type must be hardcoded.
-    This is not a good solution as it requires a manual update each time a new type is added.
-
-  private List<CS_EO_Panel> _CS_EO_panels = new ArrayList<CS_EO_Panel>();
-  private List<CS_EO_Stiffener> _CS_EO_stiffeners = new ArrayList<CS_EO_Stiffener>();
+  private java.util.HashMap<String, ICS_EO> _type_containers__CS_EO;
+  private java.util.HashMap<String, ICS_SC> _type_containers__CS_SC;
+  private java.util.HashMap<String, ICS_SCL> _type_containers__CS_SCL;
+  private java.util.HashMap<String, ICS_SA> _type_containers__CS_SA;
+  private java.util.HashMap<String, ICS_SAR> _type_containers__CS_SAR;
 
 };
 

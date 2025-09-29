@@ -65,15 +65,15 @@ CS_EO_Stiffener o-- CS_EO_Mat1
 interface ICS_Executable
 interface ICS_Reportable
 interface ICS_Load
-interface ICS_SC_Base_0
-interface "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+interface ICS_SC_0
+interface "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
 
-ICS_Executable <|-- ICS_SC_Base_0
-ICS_Reportable <|-- ICS_SC_Base_0
-ICS_Load <|-- ICS_SC_Base_0
-ICS_SC_Base_0 <|-- "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
-"ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
-"ICS_SC_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>" <|-- CS_SC_Panel
+ICS_Executable <|-- ICS_SC_0
+ICS_Reportable <|-- ICS_SC_0
+ICS_Load <|-- ICS_SC_0
+ICS_SC_0 <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+"ICS_Base<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t>" <|-- "ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>"
+"ICS_SC<CS_FE_Importable_Exportable_t, CS_Invariant_Updatable_t, CS_Manual_Sizeable_t>" <|-- CS_SC_Panel
 
 class CS_SC_Panel {
     +CS_DT_DN<CS_EO_Panel> _CS_EO_panel

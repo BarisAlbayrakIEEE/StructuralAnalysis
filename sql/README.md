@@ -17,11 +17,10 @@ Other sql files would be implemented similarly: create_table__mat8.sql, create_t
 **Dynamic Tables:**\
 The main README of this repository explains the structural components (SCs), failure modes (FMs), reserve factors (RFs) and load cases (LCs) in detail.
 The RF related data may reach up to billions of entries for thousands of SCs and thousands of LCs.
-Hence, as its explained in the main README, the LC and RF related data will be stored in a DB in order for the memory efficiency.
+Hence, as its explained in the main README, the LC and RF related data will not be copied to the memory for the efficiency.
+Instead, these data will be remain in the DB and accessed when required.
 Lets call these tables as the **RF tables**.
-
-The other CS objects (e.g. Panel) also need to be stored in the tables.
-I will call these as **non-RF tables**.
+The tables for the other CS objects (e.g. Panel) are called **non-RF tables**.
 
 **The Design of the Non-RF Tables:**\
 Each CS object is defined by the CS statically.

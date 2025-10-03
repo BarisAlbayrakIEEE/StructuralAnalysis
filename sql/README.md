@@ -16,7 +16,7 @@ Other sql files would be implemented similarly: create_table__mat8.sql, create_t
 
 **Dynamic Tables:**\
 The main README of this repository explains the structural components (SCs), failure modes (FMs), reserve factors (RFs) and load cases (LCs) in detail.
-The RF related data may reach up to billions of entries for thousands of SCs and thousands of LCs which may be expected in terms of the SAA.
+The RF related data may reach up to billions of entries for thousands of SCs and thousands of LCs.
 Hence, as its explained in the main README, the LC and RF related data will be stored in a DB in order for the memory efficiency.
 Lets call these tables as the **RF tables**.
 

@@ -63,7 +63,7 @@ While both of them should be considered performance critical in terms of user pe
 the 1st one is way more crucial.
 Anyway, the read operations are performance critical.
 
-**As a summary, the DB tables shall be designed considering the performance of the read operations.**
+**As a summary, the RF tables shall be designed considering the performance of the read operations.**
 
 Currently, the RF tables are separated to define a table for each SC-FM couple.
 However, each table corresponding to each SC-FM combination may contain a large number of rows (e.g. 10^8)

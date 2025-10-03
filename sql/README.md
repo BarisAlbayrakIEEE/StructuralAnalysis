@@ -65,7 +65,7 @@ Anyway, the read operations are performance critical.
 
 **As a summary, the RF tables shall be designed considering the performance of the read operations.**
 
-Currently, the RF tables are separated to define a table for each SC-FM couple.
+Lets start by defining a table for each SC-FM couple as both the SC and FM are defined statically by the CS.
 However, each table corresponding to each SC-FM combination may contain a large number of rows (e.g. 10^8)
 so that the queries can take a long time.
 The RF tables shall be organized to return to the read queries efficiently.

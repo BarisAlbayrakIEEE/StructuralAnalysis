@@ -82,11 +82,9 @@ The partitioning works great in this case as it involves reading all data from a
 if the partitions are defined by the SC id.
 
 The 2nd use case requires gathering distributed data.
-If the partitioning is applied based on the SC id,
+If the partitioning is not applied based on the SC id,
 the query must scan all partitions of the SC-FM pair
 which kills the efficiency.
-Actually, the 2nd use case is a prove of the queries may include non-primary keys
-which is the worst scenario for the partitioning.
 The problem can be solved easily by the indexing appproach.
 
 In summary, for the best performance, the 1st use case requires partitions while the 2nd one requires indexing.

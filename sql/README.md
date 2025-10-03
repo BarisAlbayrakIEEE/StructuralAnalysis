@@ -82,8 +82,8 @@ The partitioning works great in this case as it involves reading all data from a
 if the partitions are defined by the SC id.
 
 The 2nd use case requires gathering distributed data.
-If the partitioning is not applied based on the SC id,
-the query must scan all partitions of the SC-FM pair
+If the partitioning is applied based on the SC id,
+the query must scan all partitions of the table of the SC-FM pair
 which kills the efficiency.
 The problem can be solved easily by the indexing appproach.
 

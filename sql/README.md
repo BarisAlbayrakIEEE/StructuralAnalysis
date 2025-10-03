@@ -55,7 +55,7 @@ In other words, the performance of the write operations can be excluded while de
 
 The read operations are a part of the reporting utilities of the structural analysis application (SAA)
 which is independent of the SP.
-The reporting faciliities involves two types:
+The reporting faciliities involve two types:
 - reporting via the UI forms,
 - reporting by creating report files (e.g. excel or word).
 

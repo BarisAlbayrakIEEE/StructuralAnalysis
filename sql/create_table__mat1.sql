@@ -1,3 +1,11 @@
+CREATE TABLE mat1 (
+    mat1_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(99) NOT NULL UNIQUE,
+    E   INT NOT NULL,      -- Young’s modulus
+    G   INT NOT NULL,      -- Shear modulus
+    nu  FLOAT NOT NULL     -- Poisson’s ratio
+);
+
 INSERT INTO mat1 (name, E, G, nu) VALUES ('Al_1001', 70001, 27001, 0.301);
 INSERT INTO mat1 (name, E, G, nu) VALUES ('Al_1002', 70002, 27002, 0.302);
 INSERT INTO mat1 (name, E, G, nu) VALUES ('Al_1003', 70003, 27003, 0.303);

@@ -1,27 +1,33 @@
 **Introduction:**\
-Tha SAA requires two types of DB tables where the 1st one is static (no updates at user level) and dynamic (frequent updates by the users).
-The standard item tables (i.e. material and fastener) are static tables managed by the master users
-while the reserve factor (RF) tables are dynamic such that they require write privileges for the users.
+Tha SAA requires two types of DB tables:
+- The static tables where the users dont have the write priviledes,
+- The dynamic tables where the users have the write priviledes.
 
+The standard item tables (i.e. material and fastener) are static tables
+while the core system (CS) object tables (e.g. Panel) are dynamic.
 Hence, I followed different approaches while designing these tables.
 
 **Static Tables:**\
 These are simple MySQL tables storing a small amount of data.
-Review the following sql files:
-- create_fastener.sql
-- create_mat1.sql
-- create_mat8.sql
-- initiate_fastener.sql
-- initiate_mat1.sql
-- initiate_mat8.sql
+Please review the following sql file as an example:
+- create_table__mat1.sql
+
+Other sql files would be implemented similarly: create_table__mat8.sql, create_table__fastener.sql, etc.
 
 **Dynamic Tables:**\
 The main README of this repository explains the structural components (SCs), failure modes (FMs), reserve factors (RFs) and load cases (LCs) in detail.
 The RF related data may reach up to billions of entries for thousands of SCs and thousands of LCs which may be expected in terms of the SAA.
 Hence, as its explained in the main README, the LC and RF related data will be stored in a DB in order for the memory efficiency.
+Lets call these tables as the **RF tables**.
+
+The other CS objects (e.g. Panel) also need to be stored in the tables.
+I will call these as **non-RF tables**.
 
 **The Design of the Non-RF Tables:**\
-The RF tables would include some columns listing the RF related data such as:
+Each CS object is defined by the CS statically.
+Hence, a table for each object can be created within the DB.
+Please review the following sql file as an example:
+- create_table__nonRF.sql
 
 **The Design of the RF Tables:**\
 The RF tables would include some columns listing the RF related data such as:
@@ -31,7 +37,7 @@ The RF tables would include some columns listing the RF related data such as:
 - some coefficients.
 
 The RF data varies for each SC-FM combination.
-The RF data for a SC-FM combination is defined statically by the core system (CS).
+The RF data for a SC-FM combination is defined statically by the CS.
 Hence, the DB may contain a predefined individual table for each SC-FM combination.
 
 The RF tables are subject to frequent reads and writes.
@@ -86,14 +92,17 @@ The problem can be solved easily by the indexing appproach.
 
 In summary, for the best performance, the 1st use case requires partitions while the 2nd one requires indexing.
 What about applying the two alternatives at the same time for the best user performance: a dual-table for each SC-FM pair.
-The DB would involve the tables such as:
-- table_panel_buckling_partitioned
-- table_panel_buckling_indexed
-- table_panel_pressure_partitioned
-- table_panel_pressure_indexed
-- table_stiffener_strength_partitioned
-- table_stiffener_strength_indexed
+Then, the DB would involve the tables such as:
+- RF__SC_Panel__Panel_Buckling__partitioned
+- RF__SC_Panel__Panel_Buckling__indexed
+- RF__SC_Panel__Panel_Pressure__partitioned
+- RF__SC_Panel__Panel_Pressure__indexed
+- RF__SC_Stiffener__Strength__partitioned
+- RF__SC_Stiffener__Strength__indexed
 
 The CS shall route the queries to the right table type:
 - Primary key queries -> partitioned table of the SC-FM pair
 - Non-primary key queries -> indexed table of the SC-FM pair
+
+Please review the following sql file as an example:
+- create_table__RF.sql

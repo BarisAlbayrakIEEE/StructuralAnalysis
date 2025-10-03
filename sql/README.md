@@ -78,7 +78,7 @@ I will introduce two use cases in order to examine the pros and cons of the two:
 
 The 1st use case requires to locate the requested SC-FM pair within a large table.
 For example, the data may be located at the rows between 1000 and 2000.
-The partitioning works great in this case as it involves reading all data from a single table
+The partitioning works great in this case as it involves reading all data from a single partition
 if the partitions are defined by the SC id.
 
 The 2nd use case requires gathering distributed data.
